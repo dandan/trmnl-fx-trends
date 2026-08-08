@@ -1,0 +1,42 @@
+{% comment %}
+  Quadrant — 400x240. No sparkline: at this size a 30px-tall trace next to
+  everything else is noise rather than information, so the space goes to the
+  numbers instead. Two pairs, with the range they moved over spelled out.
+{% endcomment %}
+
+<style>
+  .fx--quad .fx-row  { grid-template-columns: 1fr auto; gap: 10px; padding: 20px 0; }
+  .fx--quad .fx-pair { font-size: 16px; }
+  .fx--quad .fx-rate { font-size: 22px; }
+  {% comment %} No opacity: 1-bit dithers greys — see shared.liquid. {% endcomment %}
+  .fx--quad .fx-chg  { font-size: 11px; text-align: left; }
+  .fx--quad .fx-cell { display: flex; flex-direction: column; align-items: flex-end; }
+</style>
+
+<div class="layout layout--col layout--justify-start">
+  {% if fx_failed %}
+    <div class="fx-error">
+      <span class="title">Rates unavailable</span>
+    </div>
+  {% else %}
+    <div class="fx-list fx--quad">
+      {% for row in rows limit: 2 %}
+        <div class="fx-row">
+          <div class="fx-pair">{{ row.from }}<span class="fx-arrow">&rarr;</span>{{ row.to }}</div>
+          <div class="fx-cell">
+            <div class="fx-rate">{{ row.rate }}</div>
+            <div class="fx-chg">
+              {% if row.change_pct >= 0 %}&#9650;{% else %}&#9660;{% endif %}
+              {{ row.change_pct | abs }}% {{ range }}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>
+
+<div class="title_bar">
+  <span class="title">Exchange Rates</span>
+  <span class="instance">{{ as_of }}</span>
+</div>

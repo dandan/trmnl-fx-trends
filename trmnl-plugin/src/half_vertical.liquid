@@ -1,0 +1,57 @@
+{% comment %}
+  Half vertical — 400x480. Width is the constraint here, not height: the panel
+  is as tall as the full view, so all six rows still fit. What has to go is the
+  LO/HI column, and the endpoint dot — at 110px the viewBox squashes x by ~0.55
+  and a <circle> would render as a visible ellipse. The line itself is immune
+  thanks to non-scaling-stroke.
+{% endcomment %}
+
+<style>
+  {% comment %}
+    Every pair is exactly XXX -> XXX, so the first column's width is fixed and
+    predictable: ~92px at 14px bold. Declared at 96px rather than letting the
+    text overflow a narrower track into the gap.
+  {% endcomment %}
+  .fx--halfv .fx-row,
+  .fx--halfv .fx-head { grid-template-columns: 96px 86px 52px 1fr; gap: 8px; }
+  .fx--halfv .fx-row  { padding: 17px 0; }
+  .fx--halfv .fx-pair { font-size: 14px; }
+  .fx--halfv .fx-rate { font-size: 16px; }
+  .fx--halfv .fx-chg  { font-size: 11px; }
+  .fx--halfv .fx-head { font-size: 9px; letter-spacing: 0.1em; }
+</style>
+
+<div class="layout layout--col layout--justify-start">
+  {% if fx_failed %}
+    <div class="fx-error">
+      <span class="title">Rates unavailable</span>
+    </div>
+  {% else %}
+    <div class="fx-list fx--halfv">
+      <div class="fx-head">
+        <span></span><span>RATE</span><span>{{ range }}</span><span>TREND</span>
+      </div>
+
+      {% for row in rows limit: 6 %}
+        <div class="fx-row">
+          <div class="fx-pair">{{ row.from }}<span class="fx-arrow">&rarr;</span>{{ row.to }}</div>
+          <div class="fx-rate">{{ row.rate }}</div>
+          <div class="fx-chg">
+            {% if row.change_pct >= 0 %}&#9650;{% else %}&#9660;{% endif %}
+            {{ row.change_pct | abs }}%
+          </div>
+          <div class="fx-spark">
+            <svg viewBox="0 0 200 30" width="110" height="24" preserveAspectRatio="none">
+              <polyline points="{{ row.points }}" vector-effect="non-scaling-stroke"/>
+            </svg>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>
+
+<div class="title_bar">
+  <span class="title">Exchange Rates</span>
+  <span class="instance">{{ range }} &middot; {{ as_of }}</span>
+</div>

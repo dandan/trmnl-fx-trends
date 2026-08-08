@@ -278,13 +278,27 @@ study; porting them to JS is mechanical.
 
 **Test suite:** 44 offline tests (`npm test`) plus live checks (`npm run smoke`).
 
-### 5.4 Plugin
-- [ ] `settings.yml` — polling URL, form fields (§6.1), `refresh_interval: 3600`
-- [ ] `full.liquid` — 6 rows, per the layout study
-- [ ] `refresh-sample.mjs` + `.trmnlp.yml` for offline preview
-- [ ] `trmnlp serve` → matches the mockup
-- [ ] `half_horizontal`, `half_vertical`, `quadrant`
-- [ ] `deploy.sh` (§6.2)
+### 5.4 Plugin — **done**
+- [x] `settings.yml` — polling URL, form fields (§6.1), `refresh_interval: 3600`
+- [x] `full.liquid` — 6 rows, per the layout study
+- [x] `refresh-sample.mjs` + `.trmnlp.yml` for offline preview
+- [x] `trmnlp build` → all four views render; screenshotted at device size
+- [x] `half_horizontal` (3 rows), `half_vertical` (6 rows, no LO/HI),
+      `quadrant` (2 rows, no sparkline)
+- [x] `deploy.sh` (§6.2)
+- [x] `test-render.rb` — error state, empty rows, single pair, flat series
+
+> **One response, four sizes.** TRMNL renders every view from a single polling
+> response, so one `points` string must work at four widths. The Worker emits a
+> fixed `200 × 30` coordinate space and each view rescales via `viewBox` +
+> `preserveAspectRatio="none"`, with `vector-effect="non-scaling-stroke"` keeping
+> the line weight constant. This is why `w`/`h` are fixed in the polling URL
+> rather than varied per view.
+
+> **`half_vertical` takes 6 rows, not 3** as originally sketched. The panel is
+> 400×480 — the same *height* as the full view, so width is the constraint. What
+> gets dropped is the LO/HI column and the endpoint dot (at 110px wide a
+> `<circle>` renders as a visible ellipse), not the rows.
 
 ### 5.5 Ship
 - [ ] `wrangler secret put API_TOKEN`, deploy Worker
@@ -347,6 +361,10 @@ Carried over from the meetup plugin, learned the hard way there:
 - **`title_bar` is a sibling of `.layout`, not a child**, or it renders inline
   instead of pinning to the bottom.
 - **Direction is a glyph (▲/▼), never colour** — 1-bit panel.
+- **Pairs render as `GBP → AUD` with no column header.** `GBP/AUD` assumes the
+  reader knows the second currency is the quoted one; misread, the rate is wrong
+  by a large factor and a wall display gives no way to check. The arrow states
+  the direction, which also makes a "PAIR" header redundant.
 - **Each sparkline is scaled to its own range**, which is what makes a 0.67%
   mover and a 7.12% mover both readable. Row shapes are therefore *not*
   comparable to each other — the lo/hi column is what keeps that honest. Keep it.

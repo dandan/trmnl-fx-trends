@@ -1,0 +1,98 @@
+{% comment %}
+  Prepended to every view by TRMNL. Holds the shared styles and the framework
+  workarounds; each view supplies its own grid columns and row count.
+
+  THE SPARKLINE TRICK
+  The Worker emits `points` in a fixed 200x30 coordinate space (w=200&h=30 in
+  the polling URL). There is only ONE polling response for all four view sizes,
+  so the same string has to render at four different widths. viewBox does that
+  rescaling for free: set viewBox="0 0 200 30" and give the <svg> whatever
+  width/height the view needs. `vector-effect="non-scaling-stroke"` keeps the
+  line 2px regardless of how the box is squashed.
+
+  FRAMEWORK CAVEATS (carried over from meetup_2026, learned the hard way)
+  - No `label--inverted`, and no bare `label label--small` for text that must be
+    readable. Framework 3.2.0 resolves those through --framework-slot-* vars
+    that fall back to `transparent` under some palettes: the text occupies its
+    box but paints invisibly. Classes carrying their own colour are safe, and
+    anything below that must be readable sets its colour explicitly.
+  - `.title_bar` must be a SIBLING of `.layout`, placed after it, or it renders
+    inline instead of pinning to the bottom.
+  - Direction is a glyph, never a colour: the panel is 1-bit.
+{% endcomment %}
+
+<style>
+  .fx-list {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .fx-row {
+    display: grid;
+    align-items: center;
+    border-bottom: 1px dotted currentColor;
+  }
+  .fx-row:last-child { border-bottom: 0; }
+
+  .fx-head {
+    display: grid;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    font-weight: 700;
+    border-bottom: 1.5px solid currentColor;
+    padding-bottom: 4px;
+  }
+
+  {% comment %} Tabular figures so the rate column aligns down the screen. {% endcomment %}
+  .fx-rate, .fx-chg, .fx-range {
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+
+  {% comment %}
+    The arrow states the direction of conversion: GBP -> AUD reads as "1 GBP
+    buys this many AUD". The slash form relies on knowing that the second
+    currency is the one being quoted, which is not universal knowledge and is
+    wrong by a large factor if misread. The column needs no header as a result.
+  {% endcomment %}
+  .fx-pair { font-weight: 800; letter-spacing: -0.01em; white-space: nowrap; }
+  .fx-pair .fx-arrow { font-weight: 400; padding: 0 0.15em; }
+
+  .fx-rate { font-weight: 700; letter-spacing: -0.01em; }
+  .fx-chg  { font-weight: 700; }
+
+  {% comment %}
+    No opacity here, deliberately. The panel is 1-bit: anything between black
+    and white is dithered into a halftone, which at 10px turns small text into
+    grey mush. Secondary information is made secondary by size, not by tone.
+  {% endcomment %}
+  .fx-range { line-height: 1.3; }
+
+  .fx-spark { display: block; }
+  .fx-spark svg { display: block; }
+  .fx-spark polyline {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+  }
+  .fx-spark circle { fill: currentColor; }
+
+  {% comment %} Shown instead of the list when the Worker returns an error. {% endcomment %}
+  .fx-error {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 100%;
+    text-align: center;
+  }
+</style>
+
+{% comment %}
+  A Worker error response has `error` and no `rows`, so both states are
+  detectable from the merge variables alone.
+{% endcomment %}
+{% assign fx_failed = false %}
+{% if error or rows == nil or rows == empty %}{% assign fx_failed = true %}{% endif %}
