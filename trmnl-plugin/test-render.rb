@@ -61,7 +61,14 @@ VIEWS.each do |view, limit|
     check("#{view}: rate column is labelled LATEST", out.include?(">LATEST<"))
     check("#{view}: no time-claim the data can't back",
           !out.match?(/>\s*(TODAY|CURRENT|LIVE)\b/i))
+    # Headers name their column; the window governs change, trend AND lo/hi, so
+    # it is stated once in the title bar instead of pinned to one of them.
+    check("#{view}: change column is labelled CHANGE", out.include?(">CHANGE<"))
+    check("#{view}: no bare range code in the header row",
+          !out.match?(/>\s*\d[MY]\s*</))
   end
+  check("#{view}: title bar states the window",
+        out.include?(SAMPLE["range_label"]), "expected #{SAMPLE['range_label'].inspect}")
   check("#{view}: no unresolved Liquid", !out.include?("{{") && !out.include?("{%"))
   # Direction is stated explicitly: "GBP -> AUD" reads as "1 GBP buys N AUD".
   # The slash form relies on knowing which currency is being quoted.
@@ -100,6 +107,10 @@ VIEWS.each_key do |view|
   check("#{view}: shows the unavailable state", out.include?("Rates unavailable"))
   check("#{view}: no rows", count(out, /class="fx-row"/).zero?)
   check("#{view}: no NaN", !out.match?(/NaN/))
+  # With no data there is no window or date to report, so the title bar must not
+  # leave dangling separators behind ("· ECB").
+  check("#{view}: title bar degrades cleanly", out.include?("No data"))
+  check("#{view}: no orphaned separator", !out.match?(/&middot;\s*(ECB)?\s*<\/span>/))
 end
 
 # ---------------------------------------------------------------- empty rows

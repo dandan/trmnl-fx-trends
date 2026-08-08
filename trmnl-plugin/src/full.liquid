@@ -25,7 +25,7 @@
   {% else %}
     <div class="fx-list fx--full">
       <div class="fx-head">
-        <span></span><span>LATEST</span><span>{{ range }}</span><span>TREND</span><span>LO / HI</span>
+        <span></span><span>LATEST</span><span>CHANGE</span><span>TREND</span><span>LO / HI</span>
       </div>
 
       {% for row in rows limit: 6 %}
@@ -60,6 +60,11 @@
 <div class="title_bar">
   <span class="title">Exchange Rates</span>
   <span class="instance">
-    {% unless fx_failed %}{{ rows | size }} pairs &middot; {{ range }} &middot; {% endunless %}ECB {{ as_of }}
+    {% comment %}
+      The window leads, because it governs three of the four columns — the
+      change figure, the sparkline and lo/hi are all measured over it. Stating
+      it once here is what keeps CHANGE from being read as a daily move.
+    {% endcomment %}
+    {% if fx_failed %}No data{% else %}{{ range_label }} &middot; {{ rows | size }} pairs &middot; ECB {{ as_of }}{% endif %}
   </span>
 </div>

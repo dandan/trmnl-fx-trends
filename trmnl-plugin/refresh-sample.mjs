@@ -36,6 +36,13 @@ writeFileSync(join(here, "sample.json"), JSON.stringify(body, null, 2) + "\n");
 
 // Rewrite .trmnlp.yml. custom_fields drive the polling URL; variables are what
 // the offline preview actually renders.
+// Mirror EVERY top-level key the Worker returned, rather than an explicit list.
+// A hand-maintained list silently omits new fields, and the preview then renders
+// them blank while the tests — which read sample.json — still pass.
+const vars = Object.entries(body)
+  .map(([k, v]) => `  ${k}: ${JSON.stringify(v)}`)
+  .join("\n");
+
 const yml = `# TRMNLP config. Local preview uses the 'variables' below (offline, no token).
 # Regenerate with: node refresh-sample.mjs "GBP/AUD, EUR/USD" 1Y
 ---
@@ -49,10 +56,7 @@ custom_fields:
 
 variables:
   trmnl: {}
-  rows: ${JSON.stringify(body.rows)}
-  range: ${JSON.stringify(body.range)}
-  as_of: ${JSON.stringify(body.as_of)}
-  generated_at: ${JSON.stringify(body.generated_at)}
+${vars}
 `;
 writeFileSync(join(here, ".trmnlp.yml"), yml);
 

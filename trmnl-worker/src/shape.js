@@ -3,7 +3,7 @@
 import {
   crossSeries, downsample, extent, plotPoints, changePct, MAX_POINTS,
 } from "./series.js";
-import { HttpError } from "./source.js";
+import { HttpError, RANGES } from "./source.js";
 
 // Decimals follow magnitude: 158.34 wants 2, 1.1535 wants 4, 0.934701 wants 6.
 // One rule for the whole rate column, so it still aligns on tabular figures.
@@ -43,6 +43,10 @@ export function buildResponse(rates, pairs, { range, w, h }) {
   return {
     rows: pairs.map((p) => buildRow(rates, p, { w, h })),
     range,
+    // Spelled-out form for the display. The window governs change_pct, the
+    // sparkline and lo/hi alike, so the plugin states it once for the whole
+    // table rather than labelling any single column with it.
+    range_label: RANGES[range]?.label ?? range,
     as_of: dates.length ? dates[dates.length - 1] : null,
     generated_at: new Date().toISOString(),
   };

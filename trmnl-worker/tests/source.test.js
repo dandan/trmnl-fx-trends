@@ -36,6 +36,22 @@ test("every advertised range is usable", () => {
   }
 });
 
+// The plugin renders `range_label` verbatim, so a range without one would show
+// a blank window on the device. Defining both here is what prevents that.
+test("every range carries days and a spelled-out label", () => {
+  for (const [code, spec] of Object.entries(RANGES)) {
+    assert.ok(Number.isInteger(spec.days) && spec.days > 0, `${code} days`);
+    assert.match(spec.label, /^\d+ (MONTHS?|YEARS?)$/, `${code} label: ${spec.label}`);
+  }
+  assert.equal(RANGES["1Y"].label, "1 YEAR");
+  assert.equal(RANGES["3M"].label, "3 MONTHS");
+});
+
+test("ranges are ordered and strictly increasing in length", () => {
+  const days = Object.values(RANGES).map((s) => s.days);
+  assert.deepEqual(days, [...days].sort((a, b) => a - b));
+});
+
 test("symbolUnion dedupes, sorts, and drops the USD base", () => {
   const pairs = [
     { from: "GBP", to: "AUD" },

@@ -18,13 +18,16 @@ export const SUPPORTED = new Set([
 // Everything is quoted against USD, so USD itself is never a `symbols` entry.
 export const BASE = "USD";
 
+// The range vocabulary, and the only place it is defined. `label` is the
+// spelled-out form the plugin shows; keeping it here means a range can never be
+// added without one, which a lookup table on the display side would allow.
 export const RANGES = {
-  "1M": 30,
-  "3M": 91,
-  "6M": 182,
-  "1Y": 365,
-  "2Y": 730,
-  "5Y": 1826,
+  "1M": { days: 30, label: "1 MONTH" },
+  "3M": { days: 91, label: "3 MONTHS" },
+  "6M": { days: 182, label: "6 MONTHS" },
+  "1Y": { days: 365, label: "1 YEAR" },
+  "2Y": { days: 730, label: "2 YEARS" },
+  "5Y": { days: 1826, label: "5 YEARS" },
 };
 
 // Cache upstream responses at the edge for 6h. ECB publishes once per weekday,
@@ -77,11 +80,11 @@ function isoDate(d) {
 // to the most recent publication, which is why the last point of the series is
 // also the current rate (no separate "latest" call).
 export function rangeToDates(range, now = new Date()) {
-  const days = RANGES[range];
-  if (!days) {
+  const spec = RANGES[range];
+  if (!spec) {
     throw new HttpError(400, `Unknown range '${range}'. Valid: ${Object.keys(RANGES).join(", ")}.`);
   }
-  const start = new Date(now.getTime() - days * 86400000);
+  const start = new Date(now.getTime() - spec.days * 86400000);
   return { start: isoDate(start), end: isoDate(now) };
 }
 

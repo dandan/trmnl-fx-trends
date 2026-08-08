@@ -28,7 +28,11 @@
             <div class="fx-rate"><span class="fx-int">{{ fx_rp[0] }}</span><span class="fx-frac">{% if fx_rp[1] %}.{{ fx_rp[1] }}{% endif %}</span></div>
             <div class="fx-chg">
               {% if row.change_pct >= 0 %}&#9650;{% else %}&#9660;{% endif %}
-              {{ row.change_pct | abs }}% {{ range }}
+              {% comment %}
+                No header row here, so each change figure carries its own
+                window inline rather than relying on the title bar.
+              {% endcomment %}
+              {{ row.change_pct | abs }}% {{ range_label }}
             </div>
           </div>
         </div>
@@ -39,5 +43,5 @@
 
 <div class="title_bar">
   <span class="title">Exchange Rates</span>
-  <span class="instance">{{ as_of }}</span>
+  <span class="instance">{% if fx_failed %}No data{% else %}ECB {{ as_of }}{% endif %}</span>
 </div>
