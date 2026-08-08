@@ -168,7 +168,7 @@ trmnl-exchange-rates/
         ├── full.liquid              # 6 rows
         ├── half_horizontal.liquid   # 3 rows
         ├── half_vertical.liquid     # 3 rows, narrow
-        ├── quadrant.liquid          # 1–2 rows, no sparkline
+        ├── quadrant.liquid          # 3 rows, half_vertical layout
         └── shared.liquid            # styles + framework workarounds
 ```
 
@@ -284,7 +284,7 @@ study; porting them to JS is mechanical.
 - [x] `refresh-sample.mjs` + `.trmnlp.yml` for offline preview
 - [x] `trmnlp build` → all four views render; screenshotted at device size
 - [x] `half_horizontal` (3 rows), `half_vertical` (6 rows, no LO/HI),
-      `quadrant` (2 rows, no sparkline)
+      `quadrant` (3 rows, same columns as half_vertical)
 - [x] `deploy.sh` (§6.2)
 - [x] `test-render.rb` — error state, empty rows, single pair, flat series
 

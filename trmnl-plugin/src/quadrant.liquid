@@ -1,16 +1,24 @@
 {% comment %}
-  Quadrant — 400x240. No sparkline: at this size a 30px-tall trace next to
-  everything else is noise rather than information, so the space goes to the
-  numbers instead. Two pairs, with the range they moved over spelled out.
+  Quadrant — 400x240. Same shape as half_vertical (pair, rate, change, trend,
+  no HI/LO) but three rows instead of six, since the panel is half the height.
+
+  Earlier this view showed no sparkline at all, on the reasoning that a trace
+  this small was noise. With the row layout borrowed from half_vertical it earns
+  its place: the trend is the column that survives shrinking best, because it
+  carries shape rather than digits.
 {% endcomment %}
 
 <style>
-  .fx--quad .fx-row  { grid-template-columns: 1fr auto; gap: 10px; padding: 20px 0; }
-  .fx--quad .fx-pair { font-size: 16px; }
-  .fx--quad .fx-rate { font-size: 22px; }
-  {% comment %} No opacity: 1-bit dithers greys — see shared.liquid. {% endcomment %}
-  .fx--quad .fx-chg  { font-size: 11px; text-align: left; }
-  .fx--quad .fx-cell { display: flex; flex-direction: column; align-items: flex-end; }
+  .fx--quad .fx-row,
+  .fx--quad .fx-head { grid-template-columns: 88px minmax(76px, auto) 46px 1fr; gap: 7px; }
+  .fx--quad .fx-row  { padding: 9px 0; }
+  .fx--quad .fx-pair { font-size: 13px; }
+  .fx--quad .fx-rate { font-size: 15px; }
+  .fx--quad .fx-chg  { font-size: 10px; }
+  .fx--quad .fx-head { font-size: 8px; letter-spacing: 0.08em; }
+  {% comment %} Half the panel height, 3 rows, 19px row padding; capped like half_vertical. {% endcomment %}
+  .fx--quad .fx-spark svg { height: calc((var(--screen-h) / 2 - 70px) / 3 - 19px);
+                            max-height: calc(var(--screen-h) / 16); }
 </style>
 
 <div class="layout layout--col layout--justify-start">
@@ -20,20 +28,23 @@
     </div>
   {% else %}
     <div class="fx-list fx--quad">
-      {% for row in rows limit: 2 %}
+      <div class="fx-head">
+        <span></span><span>LATEST</span><span>CHANGE</span><span>TREND</span>
+      </div>
+
+      {% for row in rows limit: 3 %}
         <div class="fx-row">
           <div class="fx-pair">{{ row.from }}<span class="fx-arrow">&rarr;</span>{{ row.to }}</div>
-          <div class="fx-cell">
-            {%- assign fx_rp = row.rate | split: "." -%}
-            <div class="fx-rate"><span class="fx-int">{{ fx_rp[0] }}</span><span class="fx-frac">{% if fx_rp[1] %}.{{ fx_rp[1] }}{% endif %}</span></div>
-            <div class="fx-chg">
-              {% if row.change_pct >= 0 %}&#9650;{% else %}&#9660;{% endif %}
-              {% comment %}
-                No header row here, so each change figure carries its own
-                window inline rather than relying on the title bar.
-              {% endcomment %}
-              {{ row.change_pct | abs }}% {{ range_label }}
-            </div>
+          {%- assign fx_rp = row.rate | split: "." -%}
+          <div class="fx-rate"><span class="fx-int">{{ fx_rp[0] }}</span><span class="fx-frac">{% if fx_rp[1] %}.{{ fx_rp[1] }}{% endif %}</span></div>
+          <div class="fx-chg">
+            {% if row.change_pct >= 0 %}&#9650;{% else %}&#9660;{% endif %}
+            {{ row.change_pct | abs }}%
+          </div>
+          <div class="fx-spark">
+            <svg viewBox="0 0 200 30" width="100%" height="24" preserveAspectRatio="none">
+              <polyline points="{{ row.points }}" vector-effect="non-scaling-stroke"/>
+            </svg>
           </div>
         </div>
       {% endfor %}
@@ -43,5 +54,5 @@
 
 <div class="title_bar">
   <span class="title">Exchange Rates</span>
-  <span class="instance">{% if fx_failed %}No data{% else %}ECB {{ as_of }}{% endif %}</span>
+  <span class="instance">{% if fx_failed %}No data{% else %}{{ range_label }} &middot; {{ as_of }}{% endif %}</span>
 </div>

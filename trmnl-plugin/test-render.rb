@@ -17,10 +17,10 @@ VIEWS = {
   "full"            => 6,
   "half_horizontal" => 3,
   "half_vertical"   => 6,
-  "quadrant"        => 2,
+  "quadrant"        => 3,
 }.freeze
-SPARKLINE_VIEWS = %w[full half_horizontal half_vertical].freeze
-# half_vertical drops the LO/HI column for width; quadrant has no sparkline.
+SPARKLINE_VIEWS = VIEWS.keys.freeze
+# Only the wide views carry HI/LO; half_vertical and quadrant drop it for width.
 RANGE_VIEWS = %w[full half_horizontal].freeze
 
 SHARED = File.read(File.join(HERE, "src", "shared.liquid"))
@@ -59,16 +59,14 @@ VIEWS.each do |view, limit|
   # "LATEST", never "TODAY"/"CURRENT": ECB publishes once per working day around
   # 16:00 CET, so the newest figure is yesterday's or Friday's for roughly three
   # quarters of the week. Only "latest" is true in every case.
-  if view != "quadrant"
-    check("#{view}: rate column is labelled LATEST", out.include?(">LATEST<"))
-    check("#{view}: no time-claim the data can't back",
-          !out.match?(/>\s*(TODAY|CURRENT|LIVE)\b/i))
-    # Headers name their column; the window governs change, trend AND lo/hi, so
-    # it is stated once in the title bar instead of pinned to one of them.
-    check("#{view}: change column is labelled CHANGE", out.include?(">CHANGE<"))
-    check("#{view}: no bare range code in the header row",
-          !out.match?(/>\s*\d[MY]\s*</))
-  end
+  check("#{view}: rate column is labelled LATEST", out.include?(">LATEST<"))
+  check("#{view}: no time-claim the data can't back",
+        !out.match?(/>\s*(TODAY|CURRENT|LIVE)\b/i))
+  # Headers name their column; the window governs change, trend AND hi/lo, so
+  # it is stated once in the title bar instead of pinned to one of them.
+  check("#{view}: change column is labelled CHANGE", out.include?(">CHANGE<"))
+  check("#{view}: no bare range code in the header row",
+        !out.match?(/>\s*\d[MY]\s*</))
   check("#{view}: title bar states the window",
         out.include?(SAMPLE["range_label"]), "expected #{SAMPLE['range_label'].inspect}")
   check("#{view}: no unresolved Liquid", !out.include?("{{") && !out.include?("{%"))

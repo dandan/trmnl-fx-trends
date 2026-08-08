@@ -19,7 +19,7 @@ trmnl-plugin/
     ├── full.liquid            # 6 rows
     ├── half_horizontal.liquid # 3 rows
     ├── half_vertical.liquid   # 6 rows, narrow — no LO/HI column
-    ├── quadrant.liquid        # 2 rows, no sparkline
+    ├── quadrant.liquid        # 3 rows, same columns as half_vertical
     └── shared.liquid      # shared styles + framework workarounds
 ```
 
