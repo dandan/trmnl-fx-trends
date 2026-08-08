@@ -50,6 +50,6 @@ custom_fields:
   - 2Y
   - 5Y
   default: 1Y
-name: Exchange Rates
-description: Currency pairs with sparklines
+name: Exchange Rates - Sparklines
+description: Show multiple exchange rate charts
 refresh_interval: 3600
