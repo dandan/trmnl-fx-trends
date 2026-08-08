@@ -1,0 +1,19 @@
+name = "exchange-rates-trmnl"
+main = "src/index.js"
+compatibility_date = "2026-08-01"
+
+# Free-tier workers.dev subdomain; after `wrangler deploy` the endpoint is:
+#   https://exchange-rates-trmnl.<your-subdomain>.workers.dev/rates?pairs=...
+workers_dev = true
+
+# No bindings. The Worker is stateless — upstream responses are cached at the
+# edge via `cf.cacheTtl` on the outbound fetch (see src/source.js), so there is
+# no KV, no D1 and no cron. See BUILD_PLAN.md §2.
+#
+# Secret (NOT stored here) — set it once with:
+#   npx wrangler secret put API_TOKEN
+# Requests must send:  Authorization: Bearer <that value>
+# The upstream is keyless; this guards the Worker's own quota. See §2.1.
+
+[observability]
+enabled = true

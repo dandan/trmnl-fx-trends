@@ -1,0 +1,8 @@
+node_modules/
+.wrangler/
+_build/
+
+# Secrets and per-account deploy profiles
+.dev.vars
+.env.*
+!.env.example

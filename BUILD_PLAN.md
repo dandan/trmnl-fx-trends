@@ -248,22 +248,35 @@ study; porting them to JS is mechanical.
 
 ## 5. Build order
 
-### 5.1 Worker skeleton
-- [ ] `npm init`, wrangler dep, `wrangler.toml` (no bindings)
-- [ ] `/` health endpoint, bearer auth, `/rates` returning a stub
-- [ ] `npm run dev` + curl with the token → 200
+### 5.1 Worker skeleton — **done**
+- [x] `npm init`, wrangler dep, `wrangler.toml` (no bindings)
+- [x] `/` health endpoint, bearer auth, `/rates`
+- [x] `npm run dev` + curl with the token → 200, verified in workerd
 
-### 5.2 Source + series
-- [ ] `source.js`: range → dates, symbol union, fetch with `cf.cacheTtl`
-- [ ] `series.js`: cross-rate, downsample, scale
-- [ ] `shape.js`: rounding rules, response assembly
-- [ ] `/rates` returns `rate`, `points`, `change_pct`, `lo`, `hi`
-- [ ] Verify GBP/AUD 1Y ≈ −7.24% against §1
+> **workerd constraint:** `src/index.js` must export *nothing but* the default
+> handler. Every named export of the entrypoint is treated as a service
+> entrypoint and must be a function or `ExportedHandler`, so a plain constant
+> (`export const MAX_PAIRS = 8`) makes the runtime refuse to start with
+> `Incorrect type for map entry`. Plain Node imports it fine, so `node --test`
+> cannot catch this — there is now a test asserting the entrypoint has no named
+> exports. Shared helpers live in `source.js`.
 
-### 5.3 Hardening
-- [ ] Confirm a 5Y request (123 KB upstream) stays inside Worker CPU limits
-- [ ] Bad input: unknown code, malformed pair, 9 pairs, `range=99Y`
-- [ ] Simulate upstream 500 → clean 502
+### 5.2 Source + series — **done**
+- [x] `source.js`: range → dates, symbol union, fetch with `cf.cacheTtl`
+- [x] `series.js`: cross-rate, downsample, scale
+- [x] `shape.js`: rounding rules, response assembly
+- [x] `/rates` returns `rate`, `points`, `change_pct`, `lo`, `hi`
+- [x] Verified GBP/AUD 1Y = −7.24% against §1, live
+
+### 5.3 Hardening — **done**
+- [x] 5Y CPU measured at **3.71 ms** (255 dates: 3.16 ms), against the 10 ms
+      free-tier limit. Cost barely grows with range because downsampling caps
+      the plotting work — `5Y` is safe to offer
+- [x] Bad input: unknown code, malformed pair, >8 pairs, `range=99Y` → 400
+- [x] Upstream 503 → clean 502, no partial payload
+- [x] Edge cases: flat series, single point, identical pair, gappy dates
+
+**Test suite:** 44 offline tests (`npm test`) plus live checks (`npm run smoke`).
 
 ### 5.4 Plugin
 - [ ] `settings.yml` — polling URL, form fields (§6.1), `refresh_interval: 3600`
