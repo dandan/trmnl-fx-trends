@@ -51,6 +51,5 @@ custom_fields:
   - 5Y
   default: 1Y
 name: Exchange Rates
-description: Currency pairs with their current rate and a sparkline, from ECB reference
-  data.
+description: Currency pairs with sparklines
 refresh_interval: 3600

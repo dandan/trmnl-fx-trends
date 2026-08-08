@@ -301,10 +301,31 @@ study; porting them to JS is mechanical.
 > `<circle>` renders as a visible ellipse), not the rows.
 
 ### 5.5 Ship
-- [ ] `wrangler secret put API_TOKEN`, deploy Worker
-- [ ] Create the private plugin in the TRMNL UI, paste form fields + markup
-- [ ] `./deploy.sh personal`
+Two `deploy.sh` scripts, different argument contracts — run each from its own
+directory:
+
+```bash
+cd trmnl-worker
+npx wrangler login                  # first time only
+npx wrangler secret put API_TOKEN   # paste the token from .dev.vars
+./deploy.sh                         # no arguments
+
+cd ../trmnl-plugin
+cp .env.example .env.personal       # fill in TRMNL_API_KEY only
+./deploy.sh personal --create       # takes a profile
+```
+
+- [ ] Worker: secret set and deployed
+- [ ] Plugin: created via `--create` (writes `TRMNL_PLUGIN_ID` back to the profile)
+- [ ] Add the plugin to a device playlist (the only manual step)
 - [ ] Confirm on device
+
+> **No UI setup needed.** `trmnlp push` with no plugin ID POSTs
+> `/api/plugin_settings` to create a private plugin, then uploads `src/` as a
+> zip — `settings.yml` carries the strategy, polling URL, bearer header and form
+> fields, and `src/*.liquid` the markup for all four views. The new ID is written
+> back into the profile, so later deploys are just `./deploy.sh personal`.
+> A failed create is cleaned up by trmnlp itself.
 
 ---
 

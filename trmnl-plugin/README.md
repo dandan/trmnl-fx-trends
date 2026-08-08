@@ -129,21 +129,45 @@ Carried over from `meetup_2026`, learned the hard way there:
 
 ## First-time setup on a new account
 
-1. Create a **Private Plugin** in TRMNL.
-2. **Form Fields:** paste the `custom_fields` from [`src/settings.yml`](src/settings.yml).
-3. **Strategy:** Polling, `GET`, URL:
-   ```
-   https://<worker>.workers.dev/rates?pairs={{ pairs | url_encode }}&range={{ range }}&w=200&h=30
-   ```
-   Add header `Authorization: Bearer <API_TOKEN>`.
-4. **Markup:** paste from each `src/*.liquid`.
-5. Copy the plugin's ID from its dashboard URL (`/plugin_settings/<ID>/edit`)
-   into a `.env.<profile>`.
+```bash
+cp .env.example .env.personal   # fill in TRMNL_API_KEY only
+./deploy.sh personal --create
+```
+
+That's the whole setup. `trmnlp push` with no plugin ID POSTs
+`/api/plugin_settings` to create a private plugin, then uploads `src/` as a zip
+— so `settings.yml` carries the strategy, polling URL, bearer header and form
+fields, and `src/*.liquid` carries the markup for all four views. Nothing is
+pasted into the web UI. The new plugin ID is written back into
+`.env.personal`, so every subsequent deploy is just `./deploy.sh personal`.
+
+`--create` refuses to run if the profile already has a `TRMNL_PLUGIN_ID`, since
+that would leave a duplicate plugin on the account. It is the mirror of the
+existing guard that refuses to push *without* one.
+
+### What is and isn't parameterised
+
+`polling_url` carries the real Worker host and is committed in
+[`src/settings.yml`](src/settings.yml). It is not a secret, one Worker serves
+every account, and it only changes if the Worker is renamed — so it lives where
+it is used rather than being injected at deploy time.
+
+Only two values are held out of git, and each for a specific reason:
+
+| Value | Why it isn't committed |
+|---|---|
+| `API_TOKEN` | A secret. Injected into `settings.yml` for the upload, reverted by an `EXIT` trap. |
+| `TRMNL_PLUGIN_ID` | Account-specific, *and* `trmnlp push` overwrites `settings.yml` with the server's copy including its `id`. |
+
+> **The one step that stays manual** is adding the plugin to a device playlist —
+> trmnlp has no API for it. The script prints the link when it finishes.
+
+If the upload fails partway, trmnlp deletes the plugin it just created, so a
+failed `--create` doesn't leave an orphan behind.
 
 ## Deploy
 
 ```bash
-cp .env.example .env.personal   # fill in key + plugin ID
 ./deploy.sh personal            # uploads settings.yml + all src/*.liquid
 ```
 

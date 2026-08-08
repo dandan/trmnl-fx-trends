@@ -103,7 +103,7 @@ Measured CPU (excluding network), against the 10ms free-tier limit:
 ```bash
 npx wrangler login              # first time only
 npx wrangler secret put API_TOKEN
-./deploy.sh                     # runs tests, then deploys
+./deploy.sh                     # no arguments — runs tests, then deploys
 ```
 
 Endpoint: `https://exchange-rates-trmnl.<subdomain>.workers.dev/rates`.
