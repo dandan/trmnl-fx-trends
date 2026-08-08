@@ -3,13 +3,21 @@
 {% endcomment %}
 
 <style>
+  {% comment %} TREND takes the free width; HI / LO sizes to content. See full.liquid. {% endcomment %}
   .fx--halfh .fx-row,
-  .fx--halfh .fx-head { grid-template-columns: 100px minmax(130px, auto) 82px 170px 1fr; gap: 14px; }
-  .fx--halfh .fx-row  { padding: 14px 0; }
+  .fx--halfh .fx-head { grid-template-columns: 100px minmax(130px, auto) 82px 1fr auto; gap: 14px; }
+  {% comment %}
+    11px, not 14: three rows plus the header and title_bar only just fit 240px
+    on TRMNL OG, and the list now fills its container, so an overflow would
+    push the last row under the title bar rather than leaving a gap.
+  {% endcomment %}
+  .fx--halfh .fx-row  { padding: 11px 0; }
   .fx--halfh .fx-pair { font-size: 16px; }
   .fx--halfh .fx-rate { font-size: 19px; }
   .fx--halfh .fx-chg  { font-size: 12px; }
-  .fx--halfh .fx-range{ font-size: 9px; }
+  .fx--halfh .fx-range{ font-size: 11px; }
+  {% comment %} Half the panel height, 3 rows, 23px row padding. {% endcomment %}
+  .fx--halfh .fx-spark svg { height: calc((var(--screen-h) / 2 - 82px) / 3 - 23px); }
 </style>
 
 <div class="layout layout--col layout--justify-start">
@@ -20,7 +28,7 @@
   {% else %}
     <div class="fx-list fx--halfh">
       <div class="fx-head">
-        <span></span><span>LATEST</span><span>CHANGE</span><span>TREND</span><span>LO / HI</span>
+        <span></span><span>LATEST</span><span>CHANGE</span><span>TREND</span><span>HI / LO</span>
       </div>
 
       {% for row in rows limit: 3 %}
@@ -34,12 +42,12 @@
           </div>
           <div class="fx-spark">
             {%- assign fx_xy = row.points | split: " " | last | split: "," -%}
-            <svg viewBox="0 0 200 30" width="170" height="26" preserveAspectRatio="none">
+            <svg viewBox="0 0 200 30" width="100%" height="26" preserveAspectRatio="none">
               <polyline points="{{ row.points }}" vector-effect="non-scaling-stroke"/>
-              <circle cx="{{ fx_xy[0] }}" cy="{{ fx_xy[1] }}" r="3"/>
+              <line x1="{{ fx_xy[0] }}" y1="{{ fx_xy[1] | minus: 3 }}" x2="{{ fx_xy[0] }}" y2="{{ fx_xy[1] | plus: 3 }}" vector-effect="non-scaling-stroke"/>
             </svg>
           </div>
-          <div class="fx-range">{{ row.lo }}<br/>{{ row.hi }}</div>
+          <div class="fx-range"><span>{{ row.hi }}</span><span>{{ row.lo }}</span></div>
         </div>
       {% endfor %}
     </div>

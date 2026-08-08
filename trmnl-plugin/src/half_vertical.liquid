@@ -19,6 +19,10 @@
   .fx--halfv .fx-rate { font-size: 16px; }
   .fx--halfv .fx-chg  { font-size: 11px; }
   .fx--halfv .fx-head { font-size: 9px; letter-spacing: 0.1em; }
+  {% comment %} Narrow plot, so a squatter shape than the wide views. {% endcomment %}
+  {% comment %} Capped too: this column is narrow, so an unbounded height goes square. {% endcomment %}
+  .fx--halfv .fx-spark svg { height: calc((var(--screen-h) - 82px) / 6 - 35px);
+                             max-height: calc(var(--screen-h) / 16); }
 </style>
 
 <div class="layout layout--col layout--justify-start">

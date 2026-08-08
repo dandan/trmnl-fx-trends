@@ -52,9 +52,17 @@
   .fx-int  { width: {{ fx_iw }}ch; text-align: right; }
   .fx-frac { width: {{ fx_fwch }}ch; text-align: left; }
 
+  {% comment %}
+    Rows share the panel height equally, and the plot fills whatever height its
+    row gets. TRMNL X has ~240 CSS px more height than OG; sending that surplus
+    to the gutters (justify-content: space-between) produced 33px gaps between
+    rows and left the traces at 52px — tall rows with a thin chart floating in
+    them. Sending it to the plots instead is what actually uses the panel.
+  {% endcomment %}
   .fx-list {
     display: flex;
     flex-direction: column;
+    flex: 1;
     width: 100%;
   }
 
@@ -115,11 +123,65 @@
     No opacity here, deliberately. The panel is 1-bit: anything between black
     and white is dithered into a halftone, which at 10px turns small text into
     grey mush. Secondary information is made secondary by size, not by tone.
-  {% endcomment %}
-  .fx-range { line-height: 1.3; }
 
-  .fx-spark { display: block; }
-  .fx-spark svg { display: block; }
+    These are the sparkline's y-axis bounds, so they are laid out as axis labels:
+    HI at the top of the plot box, LO at the bottom, matching where those values
+    actually sit in the trace beside them. Each view sets the height to match its
+    own plot box.
+  {% endcomment %}
+  .fx-range {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    line-height: 1;
+    white-space: nowrap;
+    {% comment %}
+      Stretch to the row's content height, which the sparkline sets — so HI and
+      LO stay pinned to the top and bottom of the plot box at any device size.
+      A fixed px height here would drift apart from the trace on TRMNL X.
+    {% endcomment %}
+    align-self: stretch;
+  }
+
+  {% comment %}
+    DEVICE-INDEPENDENT SPARKLINE SHAPE
+    The sparkline width is `1fr`, so it grows with the panel. Fixing its height
+    in px therefore flattens the trace on bigger screens: on TRMNL OG the plot
+    was 331x30 (11:1), but on TRMNL X the width grew 3.1x while a fixed 30px
+    only grew by the device's 1.8x UI scale, giving 1028x54 — 19:1.
+
+    `aspect-ratio` pins the shape instead of the height, so the trace looks the
+    same on every device and the row simply gets taller where there is room.
+    Each view sets its own ratio, because a 331px-wide plot and a 110px-wide one
+    should not be the same shape.
+
+    Each also sets a max-height as a fraction of --screen-h, because ratio alone
+    is unbounded: on a panel that is much wider without being proportionally
+    taller, the plot grows until the rows no longer fit. half_vertical showed
+    this most sharply — its narrow column widens the most in relative terms, and
+    an uncapped 4.5:1 overflowed the panel by 495px on TRMNL X.
+  {% endcomment %}
+  {% comment %}
+    Each view gives the plot an explicit height derived from the panel:
+
+        (screen height - chrome) / rows - row padding
+
+    Deliberately NOT height: 100%. A percentage needs a definite parent height,
+    and inside a flexed row that resolves circularly — the rows grew to fit the
+    plot rather than the plot fitting the rows, overflowing TRMNL OG by 76px.
+
+    The subtraction matters: row padding is a constant, so the height available
+    to the plot grows faster than the panel does (OG 37px vs TRMNL X 87px, a
+    2.3x jump for a 1.6x taller screen). A plain fraction of --screen-h cannot
+    hit both, which is why this is a subtraction and not a division.
+  {% endcomment %}
+  .fx-spark {
+    display: flex;
+    align-items: center;
+    align-self: stretch;
+    width: 100%;
+  }
+  .fx-spark svg { display: block; width: 100%; height: 100%; }
   .fx-spark polyline {
     fill: none;
     stroke: currentColor;
@@ -127,7 +189,17 @@
     stroke-linejoin: round;
     stroke-linecap: round;
   }
-  .fx-spark circle { fill: currentColor; }
+  {% comment %}
+    "Latest value" marker. A <circle> cannot be used once the sparkline stretches
+    to fill its track: preserveAspectRatio="none" scales x and y independently,
+    so a circle renders as a visible ellipse. A vertical line stays vertical
+    under any horizontal stretch, and non-scaling-stroke keeps it 2px wide.
+  {% endcomment %}
+  .fx-spark line {
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: butt;
+  }
 
   {% comment %} Shown instead of the list when the Worker returns an error. {% endcomment %}
   .fx-error {

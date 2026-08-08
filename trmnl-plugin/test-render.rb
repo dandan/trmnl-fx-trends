@@ -20,6 +20,8 @@ VIEWS = {
   "quadrant"        => 2,
 }.freeze
 SPARKLINE_VIEWS = %w[full half_horizontal half_vertical].freeze
+# half_vertical drops the LO/HI column for width; quadrant has no sparkline.
+RANGE_VIEWS = %w[full half_horizontal].freeze
 
 SHARED = File.read(File.join(HERE, "src", "shared.liquid"))
 SAMPLE = JSON.parse(File.read(File.join(HERE, "sample.json")))
@@ -86,6 +88,22 @@ VIEWS.each do |view, limit|
   expected = SAMPLE["rows"].first(limit).map { |r| r["rate"].to_s }
   check("#{view}: split cells reassemble to the original rates",
         rendered == expected, "#{rendered.inspect} != #{expected.inspect}")
+
+  # LO/HI are the sparkline's y-axis bounds, so HI must print above LO to match
+  # where those values sit in the trace beside them. The original markup had
+  # them the other way round, which reads as an upside-down axis.
+  if RANGE_VIEWS.include?(view)
+    pairs_hi_lo = out.scan(%r{<div class="fx-range"><span>([^<]*)</span><span>([^<]*)</span></div>})
+    check("#{view}: HI is printed above LO",
+          pairs_hi_lo.all? { |hi, lo| Float(hi) >= Float(lo) },
+          pairs_hi_lo.reject { |hi, lo| Float(hi) >= Float(lo) }.inspect)
+    expected_hi = SAMPLE["rows"].first(limit).map { |r| r["hi"].to_s }
+    check("#{view}: top value is the row's hi", pairs_hi_lo.map(&:first) == expected_hi)
+    # The header must read in the same order the values are stacked, or it
+    # implies the top number is the low.
+    check("#{view}: header reads HI / LO, matching the stacking order",
+          out.include?("HI / LO") && !out.include?("LO / HI"))
+  end
 
   if SPARKLINE_VIEWS.include?(view)
     check("#{view}: #{expected_rows} polylines", count(out, /<polyline/) == expected_rows)
