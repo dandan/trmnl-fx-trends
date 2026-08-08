@@ -1,0 +1,13 @@
+# Copy to .prod.vars and set a real value:  openssl rand -hex 32
+#
+# The token the DEPLOYED Worker checks against. Deliberately separate from
+# .dev.vars, which is wrangler's local-development file — every key there is
+# injected into `wrangler dev`, so a production secret does not belong in it.
+#
+# Two things read this file, which is what keeps them in step:
+#   trmnl-worker/deploy.sh --set-secret   -> pushes it to Cloudflare
+#   trmnl-plugin/deploy.sh                -> injects it into the polling header
+#
+# It lives here, not in .env.<profile>: one Worker serves every TRMNL account,
+# so the token is project-scoped, not account-scoped.
+API_TOKEN=replace-me

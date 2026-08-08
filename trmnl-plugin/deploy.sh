@@ -29,7 +29,7 @@
 # TRMNL_API_KEY is exported so it overrides ~/.config/trmnlp/config.yml, which
 # means switching accounts needs no `trmnlp login` and won't clobber the stored
 # key. The Worker is shared between accounts, so API_TOKEN is NOT part of a
-# profile — it comes from the environment or ../trmnl-worker/.dev.vars.
+# profile — it comes from the environment or ../trmnl-worker/.prod.vars.
 #
 # The Worker host in polling_url is committed in src/settings.yml. It is not a
 # secret, one Worker serves every account, and it only changes if the Worker is
@@ -117,14 +117,25 @@ else
   fi
 fi
 
-# --- Resolve the Worker's bearer token (env wins, else the Worker's .dev.vars) ---
-ENV_FILE="../trmnl-worker/.dev.vars"
+# --- Resolve the DEPLOYED Worker's bearer token (env wins, else .prod.vars) ---
+#
+# .prod.vars, not .dev.vars: the latter is wrangler's local-development file and
+# every key in it is injected into `wrangler dev`, so the production token does
+# not belong there. It is also not in .env.<profile>, because one Worker serves
+# every TRMNL account — the token is project-scoped, not account-scoped.
+#
+# The same file feeds `../trmnl-worker/deploy.sh --set-secret`, so the value
+# Cloudflare checks and the value in this polling header have one source.
+TOKEN_FILE="../trmnl-worker/.prod.vars"
 TOKEN="${API_TOKEN:-}"
-if [ -z "$TOKEN" ] && [ -f "$ENV_FILE" ]; then
-  TOKEN="$(grep -E '^API_TOKEN=' "$ENV_FILE" | head -1 | cut -d= -f2-)"
+if [ -z "$TOKEN" ] && [ -f "$TOKEN_FILE" ]; then
+  TOKEN="$(grep -E '^API_TOKEN=' "$TOKEN_FILE" | head -1 | cut -d= -f2-)"
 fi
-if [ -z "$TOKEN" ]; then
-  echo "Error: API_TOKEN not set (checked env and $ENV_FILE)." >&2
+if [ -z "$TOKEN" ] || [ "$TOKEN" = "replace-me" ]; then
+  echo "Error: no production API_TOKEN (checked \$API_TOKEN and $TOKEN_FILE)." >&2
+  echo "       cp ../trmnl-worker/.prod.vars.example ../trmnl-worker/.prod.vars" >&2
+  echo "       then set API_TOKEN=\$(openssl rand -hex 32) in it, and run" >&2
+  echo "       ../trmnl-worker/deploy.sh --set-secret to push it to Cloudflare." >&2
   exit 1
 fi
 

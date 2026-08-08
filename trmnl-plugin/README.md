@@ -154,10 +154,19 @@ it is used rather than being injected at deploy time.
 
 Only two values are held out of git, and each for a specific reason:
 
-| Value | Why it isn't committed |
-|---|---|
-| `API_TOKEN` | A secret. Injected into `settings.yml` for the upload, reverted by an `EXIT` trap. |
-| `TRMNL_PLUGIN_ID` | Account-specific, *and* `trmnlp push` overwrites `settings.yml` with the server's copy including its `id`. |
+| Value | Where it lives | Why |
+|---|---|---|
+| `API_TOKEN` | `../trmnl-worker/.prod.vars` | A secret. Injected into `settings.yml` for the upload, reverted by an `EXIT` trap. |
+| `TRMNL_PLUGIN_ID` | `.env.<profile>` | Account-specific, *and* `trmnlp push` overwrites `settings.yml` with the server's copy including its `id`. |
+
+The token is read from `.prod.vars` rather than `.dev.vars` because the latter
+is wrangler's local-development file — every key in it is injected into
+`wrangler dev`. And not from `.env.<profile>`, because one Worker serves every
+TRMNL account, so the token is project-scoped rather than account-scoped.
+
+`../trmnl-worker/deploy.sh --set-secret` reads the same file to provision
+Cloudflare, so the token the Worker checks and the token in this polling header
+cannot drift apart.
 
 > **The one step that stays manual** is adding the plugin to a device playlist —
 > trmnlp has no API for it. The script prints the link when it finishes.

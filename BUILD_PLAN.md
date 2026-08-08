@@ -307,8 +307,8 @@ directory:
 ```bash
 cd trmnl-worker
 npx wrangler login                  # first time only
-npx wrangler secret put API_TOKEN   # paste the token from .dev.vars
-./deploy.sh                         # no arguments
+cp .prod.vars.example .prod.vars    # then: API_TOKEN=$(openssl rand -hex 32)
+./deploy.sh --set-secret            # pushes the secret, then deploys
 
 cd ../trmnl-plugin
 cp .env.example .env.personal       # fill in TRMNL_API_KEY only

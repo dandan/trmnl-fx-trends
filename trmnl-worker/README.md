@@ -101,10 +101,19 @@ Measured CPU (excluding network), against the 10ms free-tier limit:
 ## Deploy
 
 ```bash
-npx wrangler login              # first time only
-npx wrangler secret put API_TOKEN
-./deploy.sh                     # no arguments — runs tests, then deploys
+npx wrangler login                       # first time only
+cp .prod.vars.example .prod.vars         # then: API_TOKEN=$(openssl rand -hex 32)
+./deploy.sh --set-secret                 # pushes the secret, then deploys
+./deploy.sh                              # subsequent deploys
 ```
+
+`.prod.vars` holds the **deployed** Worker's token, deliberately separate from
+`.dev.vars` — the latter is wrangler's local-development file and every key in
+it is injected into `wrangler dev`, so a production secret has no business
+there. Both this script (`--set-secret`) and `../trmnl-plugin/deploy.sh` read
+`.prod.vars`, so the value Cloudflare checks and the value in the plugin's
+polling header come from one source and cannot drift. When they do drift the
+only symptom is a silent `401` behind "Rates unavailable" on the device.
 
 Endpoint: `https://exchange-rates-trmnl.<subdomain>.workers.dev/rates`.
 Logs: `npm run tail`.

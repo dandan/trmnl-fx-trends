@@ -2,7 +2,18 @@ node_modules/
 .wrangler/
 _build/
 
-# Secrets and per-account deploy profiles
+# Secrets and per-account deploy profiles.
+# NOTE: gitignore only treats '#' as a comment at the START of a line — a
+# trailing comment becomes part of the pattern and silently matches nothing.
+# Keep every comment on its own line.
+
+# wrangler dev's local vars
 .dev.vars
+
+# the deployed Worker's token, shared by the plugin deploy
+.prod.vars
+!.prod.vars.example
+
+# per-account TRMNL deploy profiles
 .env.*
 !.env.example
