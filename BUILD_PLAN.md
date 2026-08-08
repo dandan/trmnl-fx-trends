@@ -368,8 +368,11 @@ Carried over from the meetup plugin, learned the hard way there:
 - **Each sparkline is scaled to its own range**, which is what makes a 0.67%
   mover and a 7.12% mover both readable. Row shapes are therefore *not*
   comparable to each other — the lo/hi column is what keeps that honest. Keep it.
-- **Decimals follow magnitude** (2 / 4 / 6dp) so the rate column still aligns on
-  tabular figures.
+- **Decimals follow magnitude** (2 / 4 / 6dp, in the Worker), and the rate cell
+  is split into integer/fraction spans so the decimal points line up. Widths are
+  measured in Liquid from the rows on screen rather than fixed at the worst case
+  — 10ch for majors instead of 12ch — with the track set to `minmax(…, auto)` so
+  a 5-digit rate widens it instead of overflowing.
 
 ### 6.4 Refresh interval
 

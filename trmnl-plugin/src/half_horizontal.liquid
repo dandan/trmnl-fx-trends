@@ -4,7 +4,7 @@
 
 <style>
   .fx--halfh .fx-row,
-  .fx--halfh .fx-head { grid-template-columns: 100px 130px 82px 170px 1fr; gap: 14px; }
+  .fx--halfh .fx-head { grid-template-columns: 100px minmax(130px, auto) 82px 170px 1fr; gap: 14px; }
   .fx--halfh .fx-row  { padding: 14px 0; }
   .fx--halfh .fx-pair { font-size: 16px; }
   .fx--halfh .fx-rate { font-size: 19px; }
@@ -26,7 +26,8 @@
       {% for row in rows limit: 3 %}
         <div class="fx-row">
           <div class="fx-pair">{{ row.from }}<span class="fx-arrow">&rarr;</span>{{ row.to }}</div>
-          <div class="fx-rate">{{ row.rate }}</div>
+          {%- assign fx_rp = row.rate | split: "." -%}
+            <div class="fx-rate"><span class="fx-int">{{ fx_rp[0] }}</span><span class="fx-frac">{% if fx_rp[1] %}.{{ fx_rp[1] }}{% endif %}</span></div>
           <div class="fx-chg">
             {% if row.change_pct >= 0 %}&#9650;{% else %}&#9660;{% endif %}
             {{ row.change_pct | abs }}%

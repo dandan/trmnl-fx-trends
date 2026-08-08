@@ -21,7 +21,37 @@
   - Direction is a glyph, never a colour: the panel is 1-bit.
 {% endcomment %}
 
+{% comment %}
+  DECIMAL ALIGNMENT
+  The rate column splits into an integer span and a fraction span so the decimal
+  points line up. Sizing both to the theoretical worst case would waste space:
+  across all 870 possible pairs the widest integer is 5 digits (AUD/IDR =
+  12564.07) and the widest fraction is 6 (AUD/CAD = 0.986342), so a fixed
+  allocation needs 12ch to show strings that are never longer than 8ch.
+
+  Instead, measure the rows actually being displayed. A set of majors comes out
+  at 10ch — two more than right-alignment — and the wide allocation only appears
+  when a pair genuinely needs it.
+
+  Widths are in `ch`, which with tabular-nums is exactly one digit, so this
+  scales with each view's font size for free.
+{% endcomment %}
+{%- assign fx_iw = 1 -%}
+{%- assign fx_fw = 0 -%}
+{%- for fx_r in rows -%}
+  {%- assign fx_p = fx_r.rate | split: "." -%}
+  {%- assign fx_a = fx_p[0] | size -%}
+  {%- if fx_a > fx_iw %}{% assign fx_iw = fx_a %}{% endif -%}
+  {%- assign fx_b = fx_p[1] | size -%}
+  {%- if fx_b > fx_fw %}{% assign fx_fw = fx_b %}{% endif -%}
+{%- endfor -%}
+{%- comment -%} +1 for the decimal point itself, unless nothing has a fraction. {%- endcomment -%}
+{%- if fx_fw > 0 %}{% assign fx_fwch = fx_fw | plus: 1 %}{% else %}{% assign fx_fwch = 0 %}{% endif -%}
+
 <style>
+  .fx-int  { width: {{ fx_iw }}ch; text-align: right; }
+  .fx-frac { width: {{ fx_fwch }}ch; text-align: left; }
+
   .fx-list {
     display: flex;
     flex-direction: column;
@@ -44,11 +74,17 @@
     padding-bottom: 4px;
   }
 
-  {% comment %} Tabular figures so the rate column aligns down the screen. {% endcomment %}
+  {% comment %}
+    Tabular figures are what make `ch` a reliable unit here: every digit is
+    exactly one `ch` wide, so the two spans above line the decimals up exactly.
+  {% endcomment %}
   .fx-rate, .fx-chg, .fx-range {
     font-variant-numeric: tabular-nums;
     text-align: right;
   }
+
+  {% comment %} Right-packed, so the pair of spans sits against the column edge. {% endcomment %}
+  .fx-rate { display: flex; justify-content: flex-end; }
 
   {% comment %}
     The arrow states the direction of conversion: GBP -> AUD reads as "1 GBP

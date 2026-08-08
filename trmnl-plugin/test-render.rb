@@ -61,6 +61,17 @@ VIEWS.each do |view, limit|
         "got #{count(out, /&rarr;/)}")
   check("#{view}: no slash-form pairs left", !out.include?("fx-slash"))
 
+  # Rates split into integer/fraction spans so the decimals line up.
+  check("#{view}: #{expected_rows} split rate cells",
+        count(out, /class="fx-int"/) == expected_rows &&
+        count(out, /class="fx-frac"/) == expected_rows)
+  # The int/frac halves must reassemble into exactly the source rate.
+  rendered = out.scan(%r{<span class="fx-int">([^<]*)</span><span class="fx-frac">([^<]*)</span>})
+                .map { |i, f| "#{i}#{f}" }
+  expected = SAMPLE["rows"].first(limit).map { |r| r["rate"].to_s }
+  check("#{view}: split cells reassemble to the original rates",
+        rendered == expected, "#{rendered.inspect} != #{expected.inspect}")
+
   if SPARKLINE_VIEWS.include?(view)
     check("#{view}: #{expected_rows} polylines", count(out, /<polyline/) == expected_rows)
     # Every points attribute must be pairs of finite numbers.

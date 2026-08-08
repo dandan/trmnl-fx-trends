@@ -13,7 +13,7 @@
     text overflow a narrower track into the gap.
   {% endcomment %}
   .fx--halfv .fx-row,
-  .fx--halfv .fx-head { grid-template-columns: 96px 86px 52px 1fr; gap: 8px; }
+  .fx--halfv .fx-head { grid-template-columns: 96px minmax(86px, auto) 52px 1fr; gap: 8px; }
   .fx--halfv .fx-row  { padding: 17px 0; }
   .fx--halfv .fx-pair { font-size: 14px; }
   .fx--halfv .fx-rate { font-size: 16px; }
@@ -35,7 +35,8 @@
       {% for row in rows limit: 6 %}
         <div class="fx-row">
           <div class="fx-pair">{{ row.from }}<span class="fx-arrow">&rarr;</span>{{ row.to }}</div>
-          <div class="fx-rate">{{ row.rate }}</div>
+          {%- assign fx_rp = row.rate | split: "." -%}
+            <div class="fx-rate"><span class="fx-int">{{ fx_rp[0] }}</span><span class="fx-frac">{% if fx_rp[1] %}.{{ fx_rp[1] }}{% endif %}</span></div>
           <div class="fx-chg">
             {% if row.change_pct >= 0 %}&#9650;{% else %}&#9660;{% endif %}
             {{ row.change_pct | abs }}%

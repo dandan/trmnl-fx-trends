@@ -5,7 +5,7 @@
 
 <style>
   .fx--full .fx-row,
-  .fx--full .fx-head { grid-template-columns: 112px 148px 92px 200px 1fr; gap: 16px; }
+  .fx--full .fx-head { grid-template-columns: 112px minmax(148px, auto) 92px 200px 1fr; gap: 16px; }
   {% comment %} 15px pads 6 rows out to fill the panel above the title_bar. {% endcomment %}
   .fx--full .fx-row  { padding: 15px 0; }
   .fx--full .fx-pair { font-size: 19px; }
@@ -31,7 +31,8 @@
       {% for row in rows limit: 6 %}
         <div class="fx-row">
           <div class="fx-pair">{{ row.from }}<span class="fx-arrow">&rarr;</span>{{ row.to }}</div>
-          <div class="fx-rate">{{ row.rate }}</div>
+          {%- assign fx_rp = row.rate | split: "." -%}
+            <div class="fx-rate"><span class="fx-int">{{ fx_rp[0] }}</span><span class="fx-frac">{% if fx_rp[1] %}.{{ fx_rp[1] }}{% endif %}</span></div>
           <div class="fx-chg">
             {% if row.change_pct >= 0 %}&#9650;{% else %}&#9660;{% endif %}
             {{ row.change_pct | abs }}%

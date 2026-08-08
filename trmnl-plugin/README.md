@@ -91,8 +91,16 @@ These are constraints of the panel, not preferences:
   and a 7.12% mover both read clearly. Row shapes are therefore **not**
   comparable to each other — the LO/HI column is what keeps that honest, so
   don't drop it from the wide views.
-- **Decimals follow magnitude** (2 / 4 / 6dp, decided in the Worker) so the rate
-  column aligns on tabular figures.
+- **Decimals follow magnitude** (2 / 4 / 6dp, decided in the Worker).
+- **Rates are decimal-aligned, sized to the data.** The cell splits into an
+  integer and a fraction span with `ch` widths, measured from the rows actually
+  on screen. A fixed worst-case allocation would need `12ch` (widest integer is
+  `AUD→IDR = 12564.07`, widest fraction `AUD→CAD = 0.986342`) to show strings
+  never longer than 8ch; measuring instead costs `10ch` for a set of majors and
+  only widens when a pair needs it. The rate track is `minmax(…, auto)` so it
+  grows rather than overflowing into TREND.
+  Note this aligns decimals but leaves *both* outer edges ragged — that is
+  inherent to decimal alignment, not a bug.
 
 ### Framework caveats
 
