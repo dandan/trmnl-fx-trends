@@ -361,6 +361,10 @@ Carried over from the meetup plugin, learned the hard way there:
 - **`title_bar` is a sibling of `.layout`, not a child**, or it renders inline
   instead of pinning to the bottom.
 - **Direction is a glyph (▲/▼), never colour** — 1-bit panel.
+- **The rate column is headed `LATEST`.** ECB publishes once per working day
+  ~16:00 CET, so `TODAY` would be wrong for roughly three quarters of the week
+  and `CURRENT` implies a live quote rather than a daily fixing. `as_of` in the
+  title bar carries the date.
 - **Pairs render as `GBP → AUD` with no column header.** `GBP/AUD` assumes the
   reader knows the second currency is the quoted one; misread, the rate is wrong
   by a large factor and a wall display gives no way to check. The arrow states

@@ -91,6 +91,12 @@ These are constraints of the panel, not preferences:
   and a 7.12% mover both read clearly. Row shapes are therefore **not**
   comparable to each other — the LO/HI column is what keeps that honest, so
   don't drop it from the wide views.
+- **The rate column is headed `LATEST`, never `TODAY` or `CURRENT`.** The ECB
+  publishes once per working day around 16:00 CET, so the newest figure is
+  yesterday's or Friday's for roughly three quarters of the week — a "today"
+  label would be wrong most of the time, and "current" implies a live market
+  quote rather than a daily reference fixing. The header answers *which* rate;
+  the title bar's `as_of` answers *as of when*.
 - **Decimals follow magnitude** (2 / 4 / 6dp, decided in the Worker).
 - **Rates are decimal-aligned, sized to the data.** The cell splits into an
   integer and a fraction span with `ch` widths, measured from the rows actually

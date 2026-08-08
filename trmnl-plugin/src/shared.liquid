@@ -75,6 +75,19 @@
   }
 
   {% comment %}
+    Header alignment follows the data beneath it. Column 1 (the pair) has no
+    header at all. Columns 2 and 4 centre, because neither has an edge to align
+    to: the rate is decimal-aligned so both its outer edges are ragged, and the
+    sparkline is a trace spanning its whole track rather than text. Columns 3
+    and 5 sit above right-aligned numbers. Views with four columns simply have
+    no nth-child(5) to match.
+  {% endcomment %}
+  .fx-head span:nth-child(2),
+  .fx-head span:nth-child(4) { text-align: center; }
+  .fx-head span:nth-child(3),
+  .fx-head span:nth-child(5) { text-align: right; }
+
+  {% comment %}
     Tabular figures are what make `ch` a reliable unit here: every digit is
     exactly one `ch` wide, so the two spans above line the decimals up exactly.
   {% endcomment %}

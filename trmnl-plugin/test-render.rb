@@ -54,6 +54,14 @@ VIEWS.each do |view, limit|
         "got #{count(out, /class="fx-row"/)}")
   check("#{view}: no NaN/Infinity", !out.match?(/NaN|Infinity/))
   check("#{view}: title_bar present", out.include?("title_bar"))
+  # "LATEST", never "TODAY"/"CURRENT": ECB publishes once per working day around
+  # 16:00 CET, so the newest figure is yesterday's or Friday's for roughly three
+  # quarters of the week. Only "latest" is true in every case.
+  if view != "quadrant"
+    check("#{view}: rate column is labelled LATEST", out.include?(">LATEST<"))
+    check("#{view}: no time-claim the data can't back",
+          !out.match?(/>\s*(TODAY|CURRENT|LIVE)\b/i))
+  end
   check("#{view}: no unresolved Liquid", !out.include?("{{") && !out.include?("{%"))
   # Direction is stated explicitly: "GBP -> AUD" reads as "1 GBP buys N AUD".
   # The slash form relies on knowing which currency is being quoted.
