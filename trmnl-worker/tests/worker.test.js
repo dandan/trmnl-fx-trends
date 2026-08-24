@@ -6,6 +6,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import worker from "../src/index.js";
 import { HttpError, parsePairs, MAX_PAIRS } from "../src/source.js";
+import { _primeCache } from "../src/allowlist.js";
 
 const FIXTURE = JSON.parse(
   readFileSync(new URL("./fixtures/frankfurter-1y.json", import.meta.url)),
@@ -17,8 +18,9 @@ const upstream = async () => new Response(JSON.stringify(FIXTURE), {
   status: 200, headers: { "Content-Type": "application/json" },
 });
 
-function call(path, { token = TOKEN, env = ENV, fetchImpl = upstream } = {}) {
+function call(path, { token = TOKEN, env = ENV, fetchImpl = upstream, ip = null } = {}) {
   const headers = token ? { Authorization: `Bearer ${token}` } : {};
+  if (ip) headers["CF-Connecting-IP"] = ip;
   const req = new Request(`https://worker.test${path}`, { headers });
   return worker.fetch(req, env, {}, fetchImpl);
 }
@@ -59,6 +61,23 @@ test("a missing API_TOKEN fails closed with a 500", async () => {
   const res = await call("/rates?pairs=GBP/AUD", { env: {} });
   assert.equal(res.status, 500);
   assert.match((await body(res)).error, /misconfigured/i);
+});
+
+test("a caller outside the TRMNL IP list is refused before the token is read", async () => {
+  _primeCache(["78.46.130.97", "2a01:4f8:120:52b6::2"]);
+  const res = await call("/rates?pairs=GBP/AUD", { ip: "1.2.3.4", token: null });
+  assert.equal(res.status, 403, "403, not 401: the origin decided this, not the token");
+  assert.equal((await body(res)).error, "Forbidden");
+
+  assert.equal((await call("/rates?pairs=GBP/AUD", { ip: "78.46.130.97" })).status, 200);
+  assert.equal((await call("/rates?pairs=GBP/AUD", { ip: "2A01:4F8:120:52B6::2" })).status, 200);
+  _primeCache(null);
+});
+
+test("the health endpoint stays reachable from any IP", async () => {
+  _primeCache(["78.46.130.97"]);
+  assert.equal((await call("/", { ip: "1.2.3.4", token: null })).status, 200);
+  _primeCache(null);
 });
 
 test("happy path returns rows for every requested pair", async () => {

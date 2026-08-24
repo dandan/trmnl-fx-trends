@@ -67,10 +67,22 @@ curl -H "Authorization: Bearer $(grep API_TOKEN .dev.vars | cut -d= -f2)" \
   "http://localhost:8787/rates?pairs=GBP/AUD,USD/JPY&range=1Y"
 ```
 
+`wrangler dev` sets `CF-Connecting-IP` to loopback, which the allowlist treats as
+"no origin" and allows — so local requests work untouched. To exercise the check
+itself, send the header yourself (this fetches the real list from trmnl.com):
+
+```bash
+T=$(grep API_TOKEN .dev.vars | cut -d= -f2)
+curl -so /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $T" \
+  -H "CF-Connecting-IP: 1.2.3.4"      "http://localhost:8787/rates?pairs=GBP/AUD"   # 403
+curl -so /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $T" \
+  -H "CF-Connecting-IP: 78.46.130.97" "http://localhost:8787/rates?pairs=GBP/AUD"   # 200
+```
+
 ## Tests
 
 ```bash
-npm test      # 45 unit + handler tests, fully offline
+npm test      # 58 unit + handler tests, fully offline
 npm run smoke # live checks against the real API
 ```
 
@@ -120,3 +132,27 @@ Logs: `npm run tail`.
 
 The token is not protecting a secret — the upstream is keyless — it guards this
 Worker's own quota so it can't be used as a general-purpose proxy.
+
+## Access control
+
+`/rates` applies two independent checks; `/` (health) applies neither.
+
+1. **Source IP** must appear in TRMNL's published poller list
+   ([`trmnl.com/api/ips`](https://trmnl.com/api/ips)), compared against
+   `CF-Connecting-IP`. TRMNL does not sign its polling requests, so this is the
+   only property of a poll that cannot be forged. It proves *a* TRMNL server,
+   not *this* plugin instance — every TRMNL user polls from the same handful of
+   addresses — which is why it supplements the token rather than replacing it.
+2. **Bearer token**, as above.
+
+The list is fetched lazily on the request path and memoised in a module global
+for 24h, so a warm isolate serves thousands of requests per fetch. No KV binding
+and no cron trigger: the refresh has no work to do except when a request
+arrives. A failed refresh keeps serving the last-known-good list and backs off
+for a minute.
+
+**This check fails open.** If the list has never been fetched successfully in
+this isolate, requests are allowed. The payload is public exchange-rate data,
+and a TRMNL API outage that also blanked the device would be a worse failure
+than briefly serving an unknown caller. `wrangler dev` and the unit tests see no
+`CF-Connecting-IP` and are likewise allowed.

@@ -16,6 +16,7 @@ import {
   SUPPORTED, RANGES, HttpError, rangeToDates, symbolUnion, fetchRates, parsePairs,
 } from "./source.js";
 import { buildResponse } from "./shape.js";
+import { ipAllowed } from "./allowlist.js";
 
 const W_MIN = 40, W_MAX = 800;
 const H_MIN = 10, H_MAX = 200;
@@ -98,6 +99,12 @@ export default {
 
     if (url.pathname !== "/rates") {
       return json({ error: "Not found" }, 404);
+    }
+
+    // Network origin first: the bearer token proves a shared secret, this proves
+    // the caller is a TRMNL server. Neither is sufficient alone — see allowlist.js.
+    if (!(await ipAllowed(request.headers.get("CF-Connecting-IP")))) {
+      return json({ error: "Forbidden" }, 403);
     }
 
     const denied = await authorize(request, env);
