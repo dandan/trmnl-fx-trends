@@ -13,6 +13,7 @@
 const IPS_URL = "https://trmnl.com/api/ips";
 const TTL_MS = 24 * 60 * 60 * 1000;   // refresh the list daily
 const RETRY_MS = 60 * 1000;           // after a failure, don't hammer the API
+const MISS_MS = 60 * 1000;            // floor on re-checking a miss against a fresh list
 
 // Module globals live as long as the isolate (minutes to hours across many
 // requests), so this collapses nearly every repeat fetch on its own. The
@@ -73,12 +74,17 @@ async function refresh(fetchImpl) {
   }
 }
 
+// One refresh at a time per isolate, however many requests are waiting on it.
+function sharedRefresh(fetchImpl) {
+  if (!inflight) inflight = refresh(fetchImpl).finally(() => { inflight = null; });
+  return inflight;
+}
+
 async function trmnlIps(fetchImpl) {
   const now = Date.now();
   if (cache.ips && now - cache.at < TTL_MS) return cache.ips;
   if (now < nextAttempt) return cache.ips;
-  if (!inflight) inflight = refresh(fetchImpl).finally(() => { inflight = null; });
-  return inflight;
+  return sharedRefresh(fetchImpl);
 }
 
 // `wrangler dev` sets CF-Connecting-IP itself, to loopback. Cloudflare never
@@ -90,14 +96,30 @@ const LOOPBACK = new Set(["127.0.0.1", normalizeIp("::1")]);
 // loopback one from `wrangler dev`) and an unavailable list both allow.
 export async function ipAllowed(ip, fetchImpl = fetch) {
   if (!ip || LOOPBACK.has(normalizeIp(ip))) return true;
+  const key = normalizeIp(ip);
+
   const ips = await trmnlIps(fetchImpl);
   if (!ips) return true;
-  return ips.has(normalizeIp(ip));
+  if (ips.has(key)) return true;
+
+  // A miss may only mean the list has moved on: TRMNL adding a poller IP would
+  // otherwise 403 every poll until the TTL expired, blanking the device for up
+  // to a day with nothing to explain it — the failure the fail-open exists to
+  // prevent, arriving by another route. Re-check once against a fresh copy.
+  // MISS_MS and the failure backoff together cap this at one fetch per minute
+  // however many rejected requests arrive.
+  const now = Date.now();
+  if (now - cache.at < MISS_MS || now < nextAttempt) return false;
+  const fresh = await sharedRefresh(fetchImpl);
+  return fresh ? fresh.has(key) : true;
 }
 
-// Test-only: seed or clear the module cache so tests need no network.
-export function _primeCache(list) {
-  cache = list ? { at: Date.now(), ips: new Set(list.map(normalizeIp)) } : { at: 0, ips: null };
+// Test-only: seed or clear the module cache so tests need no network. `ageMs`
+// backdates the seeded list, to exercise the re-check-on-miss path.
+export function _primeCache(list, ageMs = 0) {
+  cache = list
+    ? { at: Date.now() - ageMs, ips: new Set(list.map(normalizeIp)) }
+    : { at: 0, ips: null };
   inflight = null;
   nextAttempt = 0;
 }

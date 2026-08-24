@@ -82,7 +82,7 @@ curl -so /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $T" \
 ## Tests
 
 ```bash
-npm test      # 58 unit + handler tests, fully offline
+npm test      # 61 unit + handler tests, fully offline
 npm run smoke # live checks against the real API
 ```
 
@@ -150,6 +150,11 @@ for 24h, so a warm isolate serves thousands of requests per fetch. No KV binding
 and no cron trigger: the refresh has no work to do except when a request
 arrives. A failed refresh keeps serving the last-known-good list and backs off
 for a minute.
+
+A miss against a list older than a minute triggers one re-check before the
+request is rejected. Without it, a poller IP that TRMNL added after the last
+refresh would 403 every poll until the TTL expired — blanking the device for up
+to a day, which is the failure the fail-open exists to prevent.
 
 **This check fails open.** If the list has never been fetched successfully in
 this isolate, requests are allowed. The payload is public exchange-rate data,

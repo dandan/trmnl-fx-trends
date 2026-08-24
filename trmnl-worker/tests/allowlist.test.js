@@ -60,6 +60,29 @@ test("fetches the list once, then serves from the module cache", async () => {
   assert.equal(fetches, 1, "concurrent misses share one in-flight fetch");
 });
 
+test("re-checks a miss against a fresh list, catching a newly added TRMNL IP", async () => {
+  _primeCache(["78.46.130.97"], 2 * 60 * 1000);   // yesterday's list, in effect
+  const withNewIp = async () => new Response(JSON.stringify({
+    data: { ipv4: ["78.46.130.97", "5.6.7.8"], ipv6: [] },
+  }), { status: 200 });
+  assert.equal(await ipAllowed("5.6.7.8", withNewIp), true,
+    "a poller IP added since the last refresh must not 403 until the TTL expires");
+});
+
+test("a miss on a fresh list is rejected without another fetch", async () => {
+  let fetches = 0;
+  const counting = async (...a) => { fetches++; return ok(...a); };
+  assert.equal(await ipAllowed("1.2.3.4", counting), false);
+  assert.equal(await ipAllowed("1.2.3.4", counting), false);
+  assert.equal(fetches, 1, "MISS_MS stops every rejected request triggering a refresh");
+});
+
+test("a re-check that fails leaves the miss rejected, not allowed", async () => {
+  _primeCache(["78.46.130.97"], 2 * 60 * 1000);
+  assert.equal(await ipAllowed("1.2.3.4", boom), false,
+    "a usable list still says no; only having no list at all fails open");
+});
+
 test("backs off rather than refetching on every request after a failure", async () => {
   let fetches = 0;
   const failing = async () => { fetches++; throw new Error("down"); };

@@ -211,6 +211,8 @@ Response:
 
 ### 4.2 Request pipeline
 
+0. **Origin** — `CF-Connecting-IP` against TRMNL's published poller list. Runs
+   before the token so a rejection is a `403`, not a `401`. See §4.3.
 1. **Auth** — bearer token, constant-time compare. Reuse `timingSafeEqual` from
    `meetup_2026/trmnl-worker/src/index.js`; it's already correct.
 2. **Validate** — parse `pairs`, reject codes outside the hardcoded 30, cap at 8
@@ -234,6 +236,22 @@ study; porting them to JS is mechanical.
 
 ### 4.3 Guards
 
+- **TRMNL IP allowlist** — `src/allowlist.js` checks `CF-Connecting-IP` against
+  [`trmnl.com/api/ips`](https://trmnl.com/api/ips). TRMNL does not sign its
+  polling requests — no HMAC, no mTLS, no token of its own — so source IP is the
+  only property of a poll that cannot be forged. It proves *a* TRMNL server, not
+  *this* plugin instance (every TRMNL user polls from the same seven addresses),
+  which is why it supplements the token rather than replacing it.
+
+  The list is fetched lazily on the request path and memoised in a module global
+  for 24h — no KV binding, no cron trigger, since the refresh has no work to do
+  except when a request arrives. **It fails open:** with no list ever fetched in
+  this isolate, requests are allowed. The payload is public exchange-rate data,
+  and a TRMNL outage that also blanked the device would be the worse failure. A
+  miss on a list older than a minute triggers one re-check before rejecting, so
+  a poller IP added by TRMNL does not 403 until the TTL expires. Loopback counts
+  as no origin: `wrangler dev` sets `CF-Connecting-IP` itself, and Cloudflare
+  never sends loopback there.
 - **Bearer token** — `wrangler secret put API_TOKEN`. Fail closed if unset.
   Note the upstream is keyless, so this guards the Worker's own quota rather than
   any secret — see §2.1.
