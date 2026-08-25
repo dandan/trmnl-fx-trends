@@ -7,7 +7,7 @@ polling_verb: get
 framework_version: 3.1.6
 serverless_language: ''
 polling_url: https://exchange-rates-trmnl.uezi.workers.dev/rates?pairs={{ pairs | url_encode }}&range={{ range }}&w=200&h=30
-polling_headers: 'Authorization: Bearer YOUR_TOKEN_HERE'
+polling_headers: ''
 polling_body: ''
 oauth_enabled: 'false'
 oauth_pkce_enabled: 'no'

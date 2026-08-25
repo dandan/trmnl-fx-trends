@@ -13,7 +13,6 @@ scaled to the requested box, so the plugin's Liquid is just
 
 ```
 GET /rates?pairs=GBP/AUD,EUR/USD&range=1Y&w=200&h=30
-Authorization: Bearer <API_TOKEN>
 ```
 
 | Param | Default | Notes |
@@ -60,11 +59,9 @@ Anything else returns `400`. See BUILD_PLAN §8.2 for the long-tail options.
 
 ```bash
 npm install
-cp .dev.vars.example .dev.vars     # then set a real token
 npm run dev                        # http://localhost:8787
 
-curl -H "Authorization: Bearer $(grep API_TOKEN .dev.vars | cut -d= -f2)" \
-  "http://localhost:8787/rates?pairs=GBP/AUD,USD/JPY&range=1Y"
+curl "http://localhost:8787/rates?pairs=GBP/AUD,USD/JPY&range=1Y"
 ```
 
 `wrangler dev` sets `CF-Connecting-IP` to loopback, which the allowlist treats as
@@ -72,17 +69,16 @@ curl -H "Authorization: Bearer $(grep API_TOKEN .dev.vars | cut -d= -f2)" \
 itself, send the header yourself (this fetches the real list from trmnl.com):
 
 ```bash
-T=$(grep API_TOKEN .dev.vars | cut -d= -f2)
-curl -so /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $T" \
-  -H "CF-Connecting-IP: 1.2.3.4"      "http://localhost:8787/rates?pairs=GBP/AUD"   # 403
-curl -so /dev/null -w '%{http_code}\n' -H "Authorization: Bearer $T" \
-  -H "CF-Connecting-IP: 78.46.130.97" "http://localhost:8787/rates?pairs=GBP/AUD"   # 200
+curl -so /dev/null -w '%{http_code}\n' -H "CF-Connecting-IP: 1.2.3.4" \
+  "http://localhost:8787/rates?pairs=GBP/AUD"   # 403
+curl -so /dev/null -w '%{http_code}\n' -H "CF-Connecting-IP: 78.46.130.97" \
+  "http://localhost:8787/rates?pairs=GBP/AUD"   # 200
 ```
 
 ## Tests
 
 ```bash
-npm test      # 61 unit + handler tests, fully offline
+npm test      # 60 unit + handler tests, fully offline
 npm run smoke # live checks against the real API
 ```
 
@@ -113,37 +109,26 @@ Measured CPU (excluding network), against the 10ms free-tier limit:
 ## Deploy
 
 ```bash
-npx wrangler login                       # first time only
-cp .prod.vars.example .prod.vars         # then: API_TOKEN=$(openssl rand -hex 32)
-./deploy.sh --set-secret                 # pushes the secret, then deploys
-./deploy.sh                              # subsequent deploys
+npx wrangler login    # first time only
+./deploy.sh           # tests, then deploys
 ```
 
-`.prod.vars` holds the **deployed** Worker's token, deliberately separate from
-`.dev.vars` — the latter is wrangler's local-development file and every key in
-it is injected into `wrangler dev`, so a production secret has no business
-there. Both this script (`--set-secret`) and `../trmnl-plugin/deploy.sh` read
-`.prod.vars`, so the value Cloudflare checks and the value in the plugin's
-polling header come from one source and cannot drift. When they do drift the
-only symptom is a silent `401` behind "Rates unavailable" on the device.
+No secrets to provision: the Worker fetches the allowlist itself at runtime, so
+there is nothing to keep in sync between here and the plugin's polling config.
 
 Endpoint: `https://exchange-rates-trmnl.<subdomain>.workers.dev/rates`.
 Logs: `npm run tail`.
 
-The token is not protecting a secret — the upstream is keyless — it guards this
-Worker's own quota so it can't be used as a general-purpose proxy.
-
 ## Access control
 
-`/rates` applies two independent checks; `/` (health) applies neither.
+`/rates` allows a request when its `CF-Connecting-IP` appears in TRMNL's
+published poller list ([`trmnl.com/api/ips`](https://trmnl.com/api/ips)); `/`
+(health) is unconditionally public. There is no bearer token — see below.
 
-1. **Source IP** must appear in TRMNL's published poller list
-   ([`trmnl.com/api/ips`](https://trmnl.com/api/ips)), compared against
-   `CF-Connecting-IP`. TRMNL does not sign its polling requests, so this is the
-   only property of a poll that cannot be forged. It proves *a* TRMNL server,
-   not *this* plugin instance — every TRMNL user polls from the same handful of
-   addresses — which is why it supplements the token rather than replacing it.
-2. **Bearer token**, as above.
+TRMNL does not sign its polling requests, so source IP is the only property of a
+poll that cannot be forged. It proves *a* TRMNL server, not *this* plugin
+instance: every TRMNL user polls from the same handful of addresses, so this is
+a coarse filter rather than per-tenant authentication.
 
 The list is fetched lazily on the request path and memoised in a module global
 for 24h, so a warm isolate serves thousands of requests per fetch. No KV binding
@@ -160,4 +145,20 @@ to a day, which is the failure the fail-open exists to prevent.
 this isolate, requests are allowed. The payload is public exchange-rate data,
 and a TRMNL API outage that also blanked the device would be a worse failure
 than briefly serving an unknown caller. `wrangler dev` and the unit tests see no
-`CF-Connecting-IP` and are likewise allowed.
+`CF-Connecting-IP` (or a loopback one) and are likewise allowed.
+
+### Why there is no bearer token
+
+There was one, removed when this became publishable. A token shipped inside a
+public plugin recipe is public by definition: every installer holds the same
+secret, so it secures nothing. What it guarded — this Worker's own quota — is
+now covered by the IP allowlist, plus the currency allowlist, the max-8-pairs
+cap and the `w`/`h` clamps that were always there.
+
+The cost is worth naming: while the allowlist is failing open, `/rates` is open
+to anyone. That is a quota exposure on public data, not a data one, which is why
+the fail-open stays.
+
+Existing installs are unaffected. They keep sending the old `Authorization`
+header and the Worker ignores it — an unread header is inert, not rejected. A
+regression test in `tests/worker.test.js` holds that line.

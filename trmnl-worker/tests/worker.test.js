@@ -11,16 +11,13 @@ import { _primeCache } from "../src/allowlist.js";
 const FIXTURE = JSON.parse(
   readFileSync(new URL("./fixtures/frankfurter-1y.json", import.meta.url)),
 );
-const TOKEN = "test-token-abc123";
-const ENV = { API_TOKEN: TOKEN };
 
 const upstream = async () => new Response(JSON.stringify(FIXTURE), {
   status: 200, headers: { "Content-Type": "application/json" },
 });
 
-function call(path, { token = TOKEN, env = ENV, fetchImpl = upstream, ip = null } = {}) {
-  const headers = token ? { Authorization: `Bearer ${token}` } : {};
-  if (ip) headers["CF-Connecting-IP"] = ip;
+function call(path, { env = {}, fetchImpl = upstream, ip = null } = {}) {
+  const headers = ip ? { "CF-Connecting-IP": ip } : {};
   const req = new Request(`https://worker.test${path}`, { headers });
   return worker.fetch(req, env, {}, fetchImpl);
 }
@@ -40,7 +37,7 @@ test("index.js exports only the default handler", async () => {
 });
 
 test("health endpoint is public and data-free", async () => {
-  const res = await call("/", { token: null });
+  const res = await call("/");
   assert.equal(res.status, 200);
   const b = await body(res);
   assert.equal(b.currencies, 30);
@@ -52,21 +49,10 @@ test("unknown paths 404", async () => {
   assert.equal((await call("/nope")).status, 404);
 });
 
-test("/rates requires a valid bearer token", async () => {
-  assert.equal((await call("/rates?pairs=GBP/AUD", { token: null })).status, 401);
-  assert.equal((await call("/rates?pairs=GBP/AUD", { token: "wrong" })).status, 401);
-});
-
-test("a missing API_TOKEN fails closed with a 500", async () => {
-  const res = await call("/rates?pairs=GBP/AUD", { env: {} });
-  assert.equal(res.status, 500);
-  assert.match((await body(res)).error, /misconfigured/i);
-});
-
-test("a caller outside the TRMNL IP list is refused before the token is read", async () => {
+test("a caller outside the TRMNL IP list is refused", async () => {
   _primeCache(["78.46.130.97", "2a01:4f8:120:52b6::2"]);
-  const res = await call("/rates?pairs=GBP/AUD", { ip: "1.2.3.4", token: null });
-  assert.equal(res.status, 403, "403, not 401: the origin decided this, not the token");
+  const res = await call("/rates?pairs=GBP/AUD", { ip: "1.2.3.4" });
+  assert.equal(res.status, 403);
   assert.equal((await body(res)).error, "Forbidden");
 
   assert.equal((await call("/rates?pairs=GBP/AUD", { ip: "78.46.130.97" })).status, 200);
@@ -74,9 +60,18 @@ test("a caller outside the TRMNL IP list is refused before the token is read", a
   _primeCache(null);
 });
 
+// Installs made while the Worker still required a token keep sending it. The
+// compatibility guarantee is that an unread header is inert, not rejected.
+test("a leftover Authorization header from an older install is ignored", async () => {
+  const req = new Request("https://worker.test/rates?pairs=GBP/AUD", {
+    headers: { Authorization: "Bearer some-retired-token" },
+  });
+  assert.equal((await worker.fetch(req, {}, {}, upstream)).status, 200);
+});
+
 test("the health endpoint stays reachable from any IP", async () => {
   _primeCache(["78.46.130.97"]);
-  assert.equal((await call("/", { ip: "1.2.3.4", token: null })).status, 200);
+  assert.equal((await call("/", { ip: "1.2.3.4" })).status, 200);
   _primeCache(null);
 });
 

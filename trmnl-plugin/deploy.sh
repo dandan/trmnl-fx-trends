@@ -28,8 +28,8 @@
 #
 # TRMNL_API_KEY is exported so it overrides ~/.config/trmnlp/config.yml, which
 # means switching accounts needs no `trmnlp login` and won't clobber the stored
-# key. The Worker is shared between accounts, so API_TOKEN is NOT part of a
-# profile — it comes from the environment or ../trmnl-worker/.prod.vars.
+# key. There is no Worker token to resolve: the Worker authenticates callers by
+# source IP, so nothing secret is injected into settings.yml.
 #
 # The Worker host in polling_url is committed in src/settings.yml. It is not a
 # secret, one Worker serves every account, and it only changes if the Worker is
@@ -41,8 +41,8 @@
 #
 # The plugin ID is not a secret, but it IS account-specific and `trmnlp push`
 # overwrites src/settings.yml with the server's copy — so the ID lives in the
-# profile, not in git. The bearer token IS a secret: it's injected into
-# src/settings.yml only for the upload, then reverted so it never lands in git.
+# profile, not in git — this script restores the committed settings.yml on exit
+# to keep the working tree account-agnostic.
 #
 set -euo pipefail
 cd "$(dirname "$0")"
@@ -117,49 +117,14 @@ else
   fi
 fi
 
-# --- Resolve the DEPLOYED Worker's bearer token (env wins, else .prod.vars) ---
-#
-# .prod.vars, not .dev.vars: the latter is wrangler's local-development file and
-# every key in it is injected into `wrangler dev`, so the production token does
-# not belong there. It is also not in .env.<profile>, because one Worker serves
-# every TRMNL account — the token is project-scoped, not account-scoped.
-#
-# The same file feeds `../trmnl-worker/deploy.sh --set-secret`, so the value
-# Cloudflare checks and the value in this polling header have one source.
-TOKEN_FILE="../trmnl-worker/.prod.vars"
-TOKEN="${API_TOKEN:-}"
-if [ -z "$TOKEN" ] && [ -f "$TOKEN_FILE" ]; then
-  TOKEN="$(grep -E '^API_TOKEN=' "$TOKEN_FILE" | head -1 | cut -d= -f2-)"
-fi
-if [ -z "$TOKEN" ] || [ "$TOKEN" = "replace-me" ]; then
-  echo "Error: no production API_TOKEN (checked \$API_TOKEN and $TOKEN_FILE)." >&2
-  echo "       cp ../trmnl-worker/.prod.vars.example ../trmnl-worker/.prod.vars" >&2
-  echo "       then set API_TOKEN=\$(openssl rand -hex 32) in it, and run" >&2
-  echo "       ../trmnl-worker/deploy.sh --set-secret to push it to Cloudflare." >&2
-  exit 1
-fi
-
 SETTINGS="src/settings.yml"
 
-# Restore the committed (placeholder) settings.yml no matter how we exit, so the
-# real token never persists in the working tree — even if push writes it back.
-# push also rewrites the file with the server's copy, including that account's
-# `id`, so this restore is what keeps the repo account-agnostic too.
+# `trmnlp push` rewrites settings.yml with the server's copy, including that
+# account's `id`. Restore the committed file on exit so the working tree stays
+# account-agnostic however the push turns out.
 BACKUP="$(mktemp)"
 cp "$SETTINGS" "$BACKUP"
 trap 'mv "$BACKUP" "$SETTINGS"' EXIT
-
-# Inject the real token into the polling_headers line (token only in the
-# replacement text, so no regex-escaping needed).
-#
-# Only the token is substituted here. polling_url is committed with the real
-# Worker host: it is not a secret, it is the same for every account (one Worker
-# serves them all), and it changes only if the Worker is renamed — so it lives
-# in settings.yml where it is used, not in a per-account profile.
-awk -v tok="$TOKEN" '
-  /^polling_headers:/ { print "polling_headers: \"Authorization: Bearer " tok "\""; next }
-  { print }
-' "$BACKUP" > "$SETTINGS"
 
 if [ "$CREATE" = true ]; then
   echo "==> Creating a new plugin on TRMNL account '${PROFILE}'..."

@@ -1,7 +1,10 @@
 // Cloudflare Worker: currency pairs -> plot-ready sparkline JSON for TRMNL.
 //
 //   GET /rates?pairs=GBP/AUD,EUR/USD&range=1Y&w=200&h=30
-//   Authorization: Bearer <API_TOKEN>
+//
+// Access control is the TRMNL IP allowlist alone (see allowlist.js). There is no
+// bearer token: this is a public plugin, so any token shipped in the recipe would
+// be public too, and a shared secret that everyone holds secures nothing.
 //
 // The device does no arithmetic: `points` is an SVG coordinate string already
 // scaled to the w x h box, so the Liquid is <polyline points="{{ row.points }}"/>.
@@ -29,37 +32,6 @@ function json(obj, status = 200, extraHeaders = {}) {
       ...extraHeaders,
     },
   });
-}
-
-// Constant-time comparison via SHA-256 digests, so a timing side-channel can't
-// reveal the token (digests are a fixed 32 bytes regardless of input length).
-async function timingSafeEqual(a, b) {
-  const enc = new TextEncoder();
-  const [ha, hb] = await Promise.all([
-    crypto.subtle.digest("SHA-256", enc.encode(a)),
-    crypto.subtle.digest("SHA-256", enc.encode(b)),
-  ]);
-  const va = new Uint8Array(ha);
-  const vb = new Uint8Array(hb);
-  let diff = 0;
-  for (let i = 0; i < va.length; i++) diff |= va[i] ^ vb[i];
-  return diff === 0;
-}
-
-// Returns null when authorized, or a Response to short-circuit.
-async function authorize(request, env) {
-  const expected = env?.API_TOKEN;
-  if (!expected) {
-    // Fail closed: refuse to serve if no token is configured.
-    return json({ error: "Server misconfigured: API_TOKEN is not set." }, 500);
-  }
-  const header = request.headers.get("Authorization") || "";
-  const match = header.match(/^Bearer\s+(.+)$/i);
-  const provided = match ? match[1].trim() : "";
-  if (!provided || !(await timingSafeEqual(provided, expected))) {
-    return json({ error: "Unauthorized" }, 401);
-  }
-  return null;
 }
 
 function clampInt(value, def, min, max) {
@@ -91,7 +63,7 @@ export default {
     if (url.pathname === "/" || url.pathname === "") {
       return json({
         service: "exchange-rates-trmnl-worker",
-        usage: "/rates?pairs=GBP/AUD,EUR/USD&range=1Y&w=200&h=30 (requires Bearer token)",
+        usage: "/rates?pairs=GBP/AUD,EUR/USD&range=1Y&w=200&h=30",
         ranges: Object.keys(RANGES),
         currencies: SUPPORTED.size,
       });
@@ -101,14 +73,9 @@ export default {
       return json({ error: "Not found" }, 404);
     }
 
-    // Network origin first: the bearer token proves a shared secret, this proves
-    // the caller is a TRMNL server. Neither is sufficient alone — see allowlist.js.
     if (!(await ipAllowed(request.headers.get("CF-Connecting-IP")))) {
       return json({ error: "Forbidden" }, 403);
     }
-
-    const denied = await authorize(request, env);
-    if (denied) return denied;
 
     try {
       const body = await handleRates(url, fetchImpl);

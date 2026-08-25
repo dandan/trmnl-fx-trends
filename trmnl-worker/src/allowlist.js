@@ -4,7 +4,8 @@
 // own — so source IP is the only thing about a poll that cannot be forged. The
 // published list at https://trmnl.com/api/ips is the whole of the available
 // evidence. It proves "some TRMNL server", not "this user's plugin", so it sits
-// alongside the bearer token rather than replacing it. See BUILD_PLAN.md §2.1.
+// a coarse filter rather than per-tenant authentication — and, since there is no
+// bearer token any more, the only guard on /rates. See BUILD_PLAN.md §4.3.
 //
 // FAIL OPEN, deliberately: if the list cannot be fetched we allow the request.
 // The payload is public exchange-rate data, and a TRMNL outage that also blanked

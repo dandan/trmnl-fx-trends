@@ -132,9 +132,9 @@ good render; a `curl` against `/rates` shows exactly what is wrong. Neither is
 possible inside a template render.
 
 **What it no longer earns:** secret-hiding. That was the original justification
-back when the data source needed a token, and it no longer applies. The bearer
-token in §4.3 now protects only the Worker's own quota — a real but much weaker
-reason.
+back when the data source needed a token, and it no longer applies — the Worker
+holds no secret at all now (§4.3). What survives is the IP allowlist, which
+needs a server to run on and could not live in a template either way.
 
 **Revisit this if** the range menu is capped at 1Y *and* the Liquid is stable —
 at that point deleting the Worker removes a deployment target for a modest
@@ -180,7 +180,6 @@ trmnl-exchange-rates/
 
 ```
 GET /rates?pairs=GBP/AUD,EUR/USD,USD/JPY&range=1Y&w=200&h=30
-Authorization: Bearer <token>
 ```
 
 | Param | Default | Notes |
@@ -211,10 +210,9 @@ Response:
 
 ### 4.2 Request pipeline
 
-0. **Origin** — `CF-Connecting-IP` against TRMNL's published poller list. Runs
-   before the token so a rejection is a `403`, not a `401`. See §4.3.
-1. **Auth** — bearer token, constant-time compare. Reuse `timingSafeEqual` from
-   `meetup_2026/trmnl-worker/src/index.js`; it's already correct.
+1. **Origin** — `CF-Connecting-IP` against TRMNL's published poller list; a
+   rejection is a `403`. See §4.3. There is no token step: it was removed when
+   this became publishable — a secret shipped in a public recipe is public.
 2. **Validate** — parse `pairs`, reject codes outside the hardcoded 30, cap at 8
    pairs, clamp `w`/`h`.
 3. **Date math** — `range` → `start` (today minus N) and `end` (today).
@@ -241,7 +239,7 @@ study; porting them to JS is mechanical.
   polling requests — no HMAC, no mTLS, no token of its own — so source IP is the
   only property of a poll that cannot be forged. It proves *a* TRMNL server, not
   *this* plugin instance (every TRMNL user polls from the same seven addresses),
-  which is why it supplements the token rather than replacing it.
+  so it is a coarse filter rather than per-tenant authentication.
 
   The list is fetched lazily on the request path and memoised in a module global
   for 24h — no KV binding, no cron trigger, since the refresh has no work to do
@@ -252,9 +250,12 @@ study; porting them to JS is mechanical.
   a poller IP added by TRMNL does not 403 until the TTL expires. Loopback counts
   as no origin: `wrangler dev` sets `CF-Connecting-IP` itself, and Cloudflare
   never sends loopback there.
-- **Bearer token** — `wrangler secret put API_TOKEN`. Fail closed if unset.
-  Note the upstream is keyless, so this guards the Worker's own quota rather than
-  any secret — see §2.1.
+- **No bearer token.** There was one, removed when this became publishable: a
+  token shipped inside a public plugin recipe is public by definition, so every
+  installer holds the same secret and it secures nothing. It had guarded the
+  Worker's own quota rather than any data — the upstream is keyless, see §2.1 —
+  and the allowlist plus the caps below now cover that. Existing installs keep
+  sending the header; the Worker ignores it, so nothing on a device breaks.
 - **Currency allowlist** — the 30 valid codes, hardcoded. Rejects typos early and
   stops the Worker being used as a general proxy.
 - **Max 8 pairs**, clamped `w`/`h` — caps response size and CPU per request.
@@ -269,7 +270,7 @@ study; porting them to JS is mechanical.
 ### 5.1 Worker skeleton — **done**
 - [x] `npm init`, wrangler dep, `wrangler.toml` (no bindings)
 - [x] `/` health endpoint, bearer auth, `/rates`
-- [x] `npm run dev` + curl with the token → 200, verified in workerd
+- [x] `npm run dev` + curl → 200, verified in workerd
 
 > **workerd constraint:** `src/index.js` must export *nothing but* the default
 > handler. Every named export of the entrypoint is treated as a service
@@ -325,8 +326,7 @@ directory:
 ```bash
 cd trmnl-worker
 npx wrangler login                  # first time only
-cp .prod.vars.example .prod.vars    # then: API_TOKEN=$(openssl rand -hex 32)
-./deploy.sh --set-secret            # pushes the secret, then deploys
+./deploy.sh                         # tests, then deploys
 
 cd ../trmnl-plugin
 cp .env.example .env.personal       # fill in TRMNL_API_KEY only
@@ -385,8 +385,9 @@ Port from `meetup_2026/trmnl-plugin/deploy.sh`, keeping:
   a new plugin instead of updating when the ID is missing.
 - **The `EXIT` trap** restoring `src/settings.yml`, because `push` overwrites it
   with the server's copy including that account's `id`.
-- **Bearer-token injection**, since the polling header carries `API_TOKEN` and it
-  must stay out of git.
+- **No secret injection** — `polling_headers` is empty. The Worker authenticates
+  callers by source IP, so there is nothing per-deploy to splice into
+  `settings.yml`.
 
 ### 6.3 Rendering rules
 
