@@ -76,15 +76,14 @@ VIEWS.each do |view, limit|
         "got #{count(out, /&rarr;/)}")
   check("#{view}: no slash-form pairs left", !out.include?("fx-slash"))
 
-  # Rates split into integer/fraction spans so the decimals line up.
-  check("#{view}: #{expected_rows} split rate cells",
-        count(out, /class="fx-int"/) == expected_rows &&
-        count(out, /class="fx-frac"/) == expected_rows)
-  # The int/frac halves must reassemble into exactly the source rate.
-  rendered = out.scan(%r{<span class="fx-int">([^<]*)</span><span class="fx-frac">([^<]*)</span>})
-                .map { |i, f| "#{i}#{f}" }
+  # One cell per rate, printed verbatim. The decimals are deliberately not
+  # aligned (see shared.liquid), so there is no split markup to reassemble —
+  # what matters is that the cell carries exactly what the Worker sent.
+  rendered = out.scan(%r{<div class="fx-rate">([^<]*)</div>}).flatten.map(&:strip)
   expected = SAMPLE["rows"].first(limit).map { |r| r["rate"].to_s }
-  check("#{view}: split cells reassemble to the original rates",
+  check("#{view}: #{expected_rows} rate cells", rendered.size == expected_rows,
+        "got #{rendered.size}")
+  check("#{view}: rate cells print the source rate unaltered",
         rendered == expected, "#{rendered.inspect} != #{expected.inspect}")
 
   # LO/HI are the sparkline's y-axis bounds, so HI must print above LO to match

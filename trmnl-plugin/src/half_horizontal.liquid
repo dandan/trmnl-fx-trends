@@ -34,8 +34,7 @@
       {% for row in rows limit: 3 %}
         <div class="fx-row">
           <div class="fx-pair">{{ row.from }}<span class="fx-arrow">&rarr;</span>{{ row.to }}</div>
-          {%- assign fx_rp = row.rate | split: "." -%}
-            <div class="fx-rate"><span class="fx-int">{{ fx_rp[0] }}</span><span class="fx-frac">{% if fx_rp[1] %}.{{ fx_rp[1] }}{% endif %}</span></div>
+            <div class="fx-rate">{{ row.rate }}</div>
           <div class="fx-chg">
             {% if row.change_pct >= 0 %}&#9650;{% else %}&#9660;{% endif %}
             {{ row.change_pct | abs }}%
