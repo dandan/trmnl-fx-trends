@@ -16,8 +16,12 @@
   and TREND out of line with the rows above it — and the header, being another
   grid, would drift too. The floor in each view's grid-template-columns is what
   keeps the tracks identical. It is sized to the widest string the column can
-  hold (a 5-figure sub-1 rate like 0.0051823, measured at that view's rate
-  font-size), so `auto` never has to grow and every row agrees.
+  hold (a 5-figure sub-1 rate like 0.0051823, measured at that view's font
+  size), so `auto` never has to grow and every row agrees.
+
+  The HI / LO track carries a floor for the same reason, and it matters more
+  there: that column sits after the 1fr sparkline, so a row whose bounds run
+  long steals width from its own trace and the traces stop being comparable.
 
   FRAMEWORK CAVEATS (carried over from meetup_2026, learned the hard way)
   - No `label--inverted`, and no bare `label label--small` for text that must be

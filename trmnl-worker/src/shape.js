@@ -5,15 +5,16 @@ import {
 } from "./series.js";
 import { HttpError, RANGES } from "./source.js";
 
-// The rate column shows a fixed number of SIGNIFICANT figures, not a fixed
-// number of decimals, because that is what the source carries. ECB reference
-// data is quoted to about five figures whatever the magnitude — JPY comes back
-// as 159.68 (2dp) and CHF as 0.80426 (5dp) — so a decimals-by-magnitude rule
-// either invents digits at the small end or discards them at the large end.
+// Every displayed figure — the rate and both bounds — carries a fixed number of
+// SIGNIFICANT figures rather than a fixed number of decimals, because that is
+// what the source carries. ECB reference data is quoted to about five figures
+// whatever the magnitude (JPY comes back as 159.68, CHF as 0.80426), so a
+// decimals-by-magnitude rule invents digits at the small end and discards them
+// at the large end.
 //
-// Returned as a STRING as well as a number: JSON cannot carry a trailing zero,
-// so 1.3450 would reach the device as 1.345 and render a character short of its
-// neighbours. The ragged edge that produces is the whole reason this exists.
+// Each is returned as a STRING as well as a number: JSON cannot carry a
+// trailing zero, so 1.3450 would reach the device as 1.345 and render a
+// character short of its neighbours. That ragged edge is why this exists.
 const SIG_FIGS = 5;
 
 export function sigFigs(v, sf = SIG_FIGS) {
@@ -28,16 +29,6 @@ export function sigFigs(v, sf = SIG_FIGS) {
   return rounded.toFixed(dp);
 }
 
-// Decimals follow magnitude: 158.34 wants 2, 1.1535 wants 4, 0.934701 wants 6.
-// Still used for lo/hi, which are set in smaller type beside the trace and are
-// read as bounds rather than compared digit by digit.
-export function sigRound(v) {
-  if (!Number.isFinite(v)) return null;
-  const a = Math.abs(v);
-  const dp = a >= 100 ? 2 : a >= 1 ? 4 : 6;
-  return Number(v.toFixed(dp));
-}
-
 const round2 = (v) => (Number.isFinite(v) ? Number(v.toFixed(2)) : null);
 
 export function buildRow(rates, { from, to }, { w, h, maxPoints = MAX_POINTS }) {
@@ -47,7 +38,11 @@ export function buildRow(rates, { from, to }, { w, h, maxPoints = MAX_POINTS }) 
   }
 
   const rateStr = sigFigs(full[full.length - 1][1]);
+  // plotPoints scales against the UNROUNDED extent: rounding the bounds first
+  // would move the trace by a fraction of a pixel for no gain.
   const { lo, hi } = extent(full);
+  const loStr = sigFigs(lo);
+  const hiStr = sigFigs(hi);
   const sampled = downsample(full, maxPoints);
 
   return {
@@ -58,8 +53,10 @@ export function buildRow(rates, { from, to }, { w, h, maxPoints = MAX_POINTS }) 
     // Pre-formatted so the device does no rounding — see BUILD_PLAN §2.1.
     rate_str: rateStr,
     change_pct: round2(changePct(full)),
-    lo: sigRound(lo),
-    hi: sigRound(hi),
+    lo: loStr === null ? null : Number(loStr),
+    hi: hiStr === null ? null : Number(hiStr),
+    lo_str: loStr,
+    hi_str: hiStr,
     points: plotPoints(sampled, { w, h, lo, hi }),
     n: sampled.length,
   };

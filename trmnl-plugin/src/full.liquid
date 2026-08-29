@@ -10,7 +10,7 @@
     empty space inside the last cell, stranding the numbers at the far edge.
   {% endcomment %}
   .fx--full .fx-row,
-  .fx--full .fx-head { grid-template-columns: 112px minmax(100px, auto) 92px 1fr auto; gap: 16px; }
+  .fx--full .fx-head { grid-template-columns: 112px minmax(100px, auto) 92px 1fr minmax(54px, auto); gap: 16px; }
   {% comment %} 15px pads 6 rows out to fill the panel above the title_bar. {% endcomment %}
   .fx--full .fx-row  { padding: 15px 0; }
   .fx--full .fx-pair { font-size: 19px; }
@@ -52,7 +52,7 @@
               <line x1="{{ fx_xy[0] }}" y1="{{ fx_xy[1] | minus: 3 }}" x2="{{ fx_xy[0] }}" y2="{{ fx_xy[1] | plus: 3 }}" vector-effect="non-scaling-stroke"/>
             </svg>
           </div>
-          <div class="fx-range"><span>{{ row.hi }}</span><span>{{ row.lo }}</span></div>
+          <div class="fx-range"><span>{{ row.hi_str }}</span><span>{{ row.lo_str }}</span></div>
         </div>
       {% endfor %}
     </div>

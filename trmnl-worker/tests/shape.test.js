@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { sigFigs, sigRound, buildRow, buildResponse } from "../src/shape.js";
+import { sigFigs, buildRow, buildResponse } from "../src/shape.js";
 import { HttpError } from "../src/source.js";
 
 const FIXTURE = JSON.parse(
@@ -35,26 +35,20 @@ test("sigFigs does not emit a sixth figure at a decade boundary", () => {
   assert.equal(sigFigs(1000), "1000.0");
 });
 
-test("sigRound picks decimals by magnitude", () => {
-  assert.equal(sigRound(158.3412), 158.34);      // >= 100 -> 2dp
-  assert.equal(sigRound(1.153512), 1.1535);      // >= 1   -> 4dp
-  assert.equal(sigRound(0.93470123), 0.934701);  // < 1    -> 6dp
-  assert.equal(sigRound(-158.3412), -158.34);    // magnitude, not sign
-  assert.equal(sigRound(NaN), null);
-  assert.equal(sigRound(Infinity), null);
-});
-
 test("buildRow produces the row shape the Liquid expects", () => {
   const row = buildRow(RATES, { from: "GBP", to: "AUD" }, BOX);
   assert.deepEqual(Object.keys(row).sort(),
-    ["change_pct", "from", "hi", "lo", "n", "pair", "points", "rate", "rate_str", "to"]);
+    ["change_pct", "from", "hi", "hi_str", "lo", "lo_str", "n", "pair",
+     "points", "rate", "rate_str", "to"].sort());
   assert.equal(row.pair, "GBP/AUD");
   assert.equal(row.rate, 1.9104);        // matches the live 1Y figure
   assert.equal(row.rate_str, "1.9104");  // what the views actually print
   assert.equal(row.change_pct, -7.24);
-  // lo/hi keep the magnitude rounding: >= 1 means 4dp.
+  // lo/hi go through the same five-figure rounding as the rate.
   assert.equal(row.lo, 1.8634);
   assert.equal(row.hi, 2.0799);
+  assert.equal(row.lo_str, "1.8634");
+  assert.equal(row.hi_str, "2.0799");
   assert.ok(row.lo <= row.rate && row.rate <= row.hi);
 });
 
