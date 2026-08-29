@@ -11,13 +11,14 @@
     on TRMNL OG, and the list now fills its container, so an overflow would
     push the last row under the title bar rather than leaving a gap.
   {% endcomment %}
+  .fx--halfh { --fx-top-pad: 8px; }
   .fx--halfh .fx-row  { padding: 11px 0; }
   .fx--halfh .fx-pair { font-size: 16px; }
   .fx--halfh .fx-rate { font-size: 19px; }
   .fx--halfh .fx-chg  { font-size: 12px; }
   .fx--halfh .fx-range{ font-size: 11px; }
   {% comment %} Half the panel height, 3 rows, 23px row padding. {% endcomment %}
-  .fx--halfh .fx-spark svg { height: calc((var(--screen-h) / 2 - 82px) / 3 - 23px); }
+  .fx--halfh .fx-spark svg { height: calc((var(--screen-h) / 2 - 82px - var(--fx-top-pad)) / 3 - 23px); }
 </style>
 
 <div class="layout layout--col layout--justify-start">

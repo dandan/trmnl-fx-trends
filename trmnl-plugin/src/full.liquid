@@ -12,6 +12,7 @@
   .fx--full .fx-row,
   .fx--full .fx-head { grid-template-columns: 112px minmax(100px, auto) 92px 1fr minmax(54px, auto); gap: 16px; }
   {% comment %} 15px pads 6 rows out to fill the panel above the title_bar. {% endcomment %}
+  .fx--full { --fx-top-pad: 10px; }
   .fx--full .fx-row  { padding: 15px 0; }
   .fx--full .fx-pair { font-size: 19px; }
   .fx--full .fx-rate { font-size: 23px; }
@@ -19,7 +20,7 @@
   .fx--full .fx-range{ font-size: 12px; }
   {% comment %} 11:1 is the shape the design was tuned to on TRMNL OG. {% endcomment %}
   {% comment %} 6 rows, ~82px of header+title_bar chrome, 31px row padding. {% endcomment %}
-  .fx--full .fx-spark svg { height: calc((var(--screen-h) - 82px) / 6 - 31px); }
+  .fx--full .fx-spark svg { height: calc((var(--screen-h) - 82px - var(--fx-top-pad)) / 6 - 31px); }
 </style>
 
 <div class="layout layout--col layout--justify-start">

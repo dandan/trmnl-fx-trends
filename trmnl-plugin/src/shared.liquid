@@ -62,8 +62,23 @@
     falls back to whatever sans the previewing machine has. Keep the generic
     sans-serif at the end of the stack so that fallback stays close.
   {% endcomment %}
+  {% comment %}
+    TOP INSET
+    The device case sits proud of the panel, so with light coming from above it
+    casts a shadow along the top edge of the screen. Whatever lands in that band
+    is physically hard to read, and here that is the header rule and its labels
+    — the smallest type on the panel.
+
+    Each view sets --fx-top-pad and subtracts the same value from its plot-height
+    chrome constant, so the inset comes out of the sparklines rather than
+    overflowing the panel. The shadow is a fixed physical depth, so the value
+    does not scale with the view; the half-height views take slightly less
+    because they may be placed in the LOWER half of a mashup, where the inset
+    buys nothing and the height is scarcer.
+  {% endcomment %}
   .fx-list {
     font-family: "Inter Variable", Inter, sans-serif;
+    padding-top: var(--fx-top-pad, 0px);
     display: flex;
     flex-direction: column;
     flex: 1;

@@ -14,6 +14,7 @@
   {% endcomment %}
   .fx--halfv .fx-row,
   .fx--halfv .fx-head { grid-template-columns: 96px minmax(70px, auto) 56px 1fr; gap: 8px; }
+  .fx--halfv { --fx-top-pad: 10px; }
   .fx--halfv .fx-row  { padding: 17px 0; }
   .fx--halfv .fx-pair { font-size: 14px; }
   .fx--halfv .fx-rate { font-size: 16px; }
@@ -21,7 +22,7 @@
   .fx--halfv .fx-head { font-size: 11px; letter-spacing: 0.08em; }
   {% comment %} Narrow plot, so a squatter shape than the wide views. {% endcomment %}
   {% comment %} Capped too: this column is narrow, so an unbounded height goes square. {% endcomment %}
-  .fx--halfv .fx-spark svg { height: calc((var(--screen-h) - 82px) / 6 - 35px);
+  .fx--halfv .fx-spark svg { height: calc((var(--screen-h) - 82px - var(--fx-top-pad)) / 6 - 35px);
                              max-height: calc(var(--screen-h) / 16); }
 </style>
 
