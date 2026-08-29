@@ -10,6 +10,15 @@
   width/height the view needs. `vector-effect="non-scaling-stroke"` keeps the
   line 2px regardless of how the box is squashed.
 
+  WHY THE RATE COLUMN HAS A PIXEL FLOOR
+  Every .fx-row is its own grid container, so a track sized `auto` is resolved
+  per row: the widest rate would set only its own row's column, pushing CHANGE
+  and TREND out of line with the rows above it — and the header, being another
+  grid, would drift too. The floor in each view's grid-template-columns is what
+  keeps the tracks identical. It is sized to the widest string the column can
+  hold (a 5-figure sub-1 rate like 0.0051823, measured at that view's rate
+  font-size), so `auto` never has to grow and every row agrees.
+
   FRAMEWORK CAVEATS (carried over from meetup_2026, learned the hard way)
   - No `label--inverted`, and no bare `label label--small` for text that must be
     readable. Framework 3.2.0 resolves those through --framework-slot-* vars
@@ -55,14 +64,15 @@
 
   {% comment %}
     Header alignment follows the data beneath it. Column 1 (the pair) has no
-    header at all. Columns 2 and 4 centre, because neither has an edge to align
-    to: the rate is decimal-aligned so both its outer edges are ragged, and the
-    sparkline is a trace spanning its whole track rather than text. Columns 3
-    and 5 sit above right-aligned numbers. Views with four columns simply have
-    no nth-child(5) to match.
+    header at all. Column 4 centres: a sparkline is a trace spanning its whole
+    track, with no edge to align to. Every other header sits above a
+    right-aligned number and right-aligns with it. LATEST used to centre, from
+    when the rate was decimal-aligned and had two ragged outer edges; now that
+    the column is right-aligned, centring left the word visibly off its
+    numbers. Views with four columns simply have no nth-child(5) to match.
   {% endcomment %}
-  .fx-head span:nth-child(2),
   .fx-head span:nth-child(4) { text-align: center; }
+  .fx-head span:nth-child(2),
   .fx-head span:nth-child(3),
   .fx-head span:nth-child(5) { text-align: right; }
 
