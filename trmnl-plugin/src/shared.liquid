@@ -19,6 +19,10 @@
   hold (a 5-figure sub-1 rate like 0.0051823, measured at that view's font
   size), so `auto` never has to grow and every row agrees.
 
+  The CHANGE track is sized by its HEADER, not its data: "CHANGE" in Inter is
+  wider than the widest figure it sits above once the header is legible, so the
+  narrow views spend a few px there that the sparkline would otherwise take.
+
   The HI / LO track carries a floor for the same reason, and it matters more
   there: that column sits after the 1fr sparkline, so a row whose bounds run
   long steals width from its own trace and the traces stop being comparable.
@@ -43,7 +47,23 @@
     rows and left the traces at 52px — tall rows with a thin chart floating in
     them. Sending it to the plots instead is what actually uses the panel.
   {% endcomment %}
+  {% comment %}
+    Inter is the framework's only true sans: the other bundled families
+    (NicoClean, NicoPups, TRMNL12/16/21) are bitmap faces drawn for exact pixel
+    sizes, and this type scale — 10 to 23px — matches almost none of them, so
+    they render smeared at our sizes.
+
+    Setting it here is not optional tidying. The framework only gives a family
+    to elements using ITS classes; it sets none on html, body or .screen, so
+    every .fx-* element inherited the browser default and rendered in Times.
+
+    The device fetches the font same-origin and gets Inter. A local preview
+    cannot: trmnl.com serves /fonts without CORS headers, so `trmnlp serve`
+    falls back to whatever sans the previewing machine has. Keep the generic
+    sans-serif at the end of the stack so that fallback stays close.
+  {% endcomment %}
   .fx-list {
+    font-family: "Inter Variable", Inter, sans-serif;
     display: flex;
     flex-direction: column;
     flex: 1;
@@ -57,10 +77,16 @@
   }
   .fx-row:last-child { border-bottom: 0; }
 
+  {% comment %}
+    12px, not the 10px this carried while it was a serif. Inter's caps read
+    cleanly small, but 10px Times at this tracking was mush on a 1-bit panel.
+    The tracking comes down with it: a serif needed 0.14em to read as small
+    caps, Inter holds together at 0.1em.
+  {% endcomment %}
   .fx-head {
     display: grid;
-    font-size: 10px;
-    letter-spacing: 0.14em;
+    font-size: 12px;
+    letter-spacing: 0.1em;
     font-weight: 700;
     border-bottom: 1.5px solid currentColor;
     padding-bottom: 4px;
