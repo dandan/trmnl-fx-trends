@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { sigRound, buildRow, buildResponse } from "../src/shape.js";
+import { sigFigs, sigRound, buildRow, buildResponse } from "../src/shape.js";
 import { HttpError } from "../src/source.js";
 
 const FIXTURE = JSON.parse(
@@ -9,6 +9,31 @@ const FIXTURE = JSON.parse(
 );
 const RATES = FIXTURE.rates;
 const BOX = { w: 200, h: 30 };
+
+test("sigFigs keeps five significant figures, as a string", () => {
+  assert.equal(sigFigs(158.3412), "158.34");
+  assert.equal(sigFigs(1.153512), "1.1535");
+  assert.equal(sigFigs(0.93470123), "0.93470");   // not 6 figures the source lacks
+  assert.equal(sigFigs(12564.07), "12564");
+  assert.equal(sigFigs(0.0051823), "0.0051823");  // leading zeros are not figures
+  assert.equal(sigFigs(NaN), null);
+  assert.equal(sigFigs(Infinity), null);
+});
+
+// The point of the string: JSON drops the trailing zero and the cell renders a
+// character short of its neighbours, which is the ragged edge this replaced.
+test("sigFigs keeps trailing zeros that a JSON number would drop", () => {
+  assert.equal(sigFigs(1.345), "1.3450");
+  assert.equal(sigFigs(1.166), "1.1660");
+  assert.equal(Number(sigFigs(1.345)), 1.345);
+});
+
+// Rounding before measuring the exponent: 999.9999 is 1000 at five figures, and
+// sizing the fraction against the pre-rounded magnitude would emit six.
+test("sigFigs does not emit a sixth figure at a decade boundary", () => {
+  assert.equal(sigFigs(999.9999), "1000.0");
+  assert.equal(sigFigs(1000), "1000.0");
+});
 
 test("sigRound picks decimals by magnitude", () => {
   assert.equal(sigRound(158.3412), 158.34);      // >= 100 -> 2dp
@@ -22,11 +47,12 @@ test("sigRound picks decimals by magnitude", () => {
 test("buildRow produces the row shape the Liquid expects", () => {
   const row = buildRow(RATES, { from: "GBP", to: "AUD" }, BOX);
   assert.deepEqual(Object.keys(row).sort(),
-    ["change_pct", "from", "hi", "lo", "n", "pair", "points", "rate", "to"]);
+    ["change_pct", "from", "hi", "lo", "n", "pair", "points", "rate", "rate_str", "to"]);
   assert.equal(row.pair, "GBP/AUD");
   assert.equal(row.rate, 1.9104);        // matches the live 1Y figure
+  assert.equal(row.rate_str, "1.9104");  // what the views actually print
   assert.equal(row.change_pct, -7.24);
-  // lo/hi go through the same magnitude rounding as `rate`: >= 1 means 4dp.
+  // lo/hi keep the magnitude rounding: >= 1 means 4dp.
   assert.equal(row.lo, 1.8634);
   assert.equal(row.hi, 2.0799);
   assert.ok(row.lo <= row.rate && row.rate <= row.hi);

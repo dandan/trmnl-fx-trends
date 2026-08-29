@@ -80,10 +80,10 @@ VIEWS.each do |view, limit|
   # aligned (see shared.liquid), so there is no split markup to reassemble —
   # what matters is that the cell carries exactly what the Worker sent.
   rendered = out.scan(%r{<div class="fx-rate">([^<]*)</div>}).flatten.map(&:strip)
-  expected = SAMPLE["rows"].first(limit).map { |r| r["rate"].to_s }
+  expected = SAMPLE["rows"].first(limit).map { |r| r["rate_str"] }
   check("#{view}: #{expected_rows} rate cells", rendered.size == expected_rows,
         "got #{rendered.size}")
-  check("#{view}: rate cells print the source rate unaltered",
+  check("#{view}: rate cells print rate_str unaltered",
         rendered == expected, "#{rendered.inspect} != #{expected.inspect}")
 
   # LO/HI are the sparkline's y-axis bounds, so HI must print above LO to match
