@@ -13,6 +13,7 @@ trmnl-plugin/
 ├── deploy.sh              # push to one account: ./deploy.sh <profile>
 ├── sample.json            # data snapshot (regenerate with refresh-sample.mjs)
 ├── refresh-sample.mjs     # rebuild sample.json + .trmnlp.yml from the Worker
+├── trmnlp-snap            # trmnlp wrapper for Ubuntu's snap Firefox
 ├── test-render.rb         # render assertions incl. the states a build can't reach
 └── src/
     ├── settings.yml       # polling config + form-field definitions
@@ -49,7 +50,14 @@ trmnlp build            # or: write static HTML to _build/ (git-ignored)
 ```
 
 Previews render from the sample baked into `.trmnlp.yml` (`variables:`), so they
-work offline with no token.
+work offline with no token. trmnlp still polls the Worker on startup and logs a
+`403 {"error": "Forbidden"}` — expected, since the Worker only answers TRMNL's
+own IPs (see `../trmnl-worker/src/allowlist.js`). It does not affect the render.
+
+On Ubuntu, `/usr/bin/firefox` is a shell wrapper around the snap, which
+geckodriver rejects with `binary is not a Firefox executable`, failing every
+screenshot. Run [`./trmnlp-snap`](trmnlp-snap) in place of `trmnlp` there — it
+is the same CLI with Selenium pointed at the snap's real binary.
 
 ### Refresh the sample data
 

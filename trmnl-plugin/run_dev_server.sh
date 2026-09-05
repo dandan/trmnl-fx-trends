@@ -1,0 +1,1 @@
+./trmnlp-snap serve
