@@ -147,6 +147,19 @@
   .fx-chg  { font-weight: 700; }
 
   {% comment %}
+    NO GLYPH FOR A FLAT PAIR
+    change_pct arrives rounded to 2dp (shape.js), so a printed 0% means the move
+    was under 0.005% — not that the rate is unchanged. Neither arrow can be
+    claimed for that, and every marker tried in the slot read as something else:
+    a bar or dash next to the figure reads as "minus 0%", and a filled square at
+    this size reads as a bullet or a cluster of dead pixels.
+
+    Leaving it empty costs nothing here because the column is right-aligned, so
+    the figure stays on the same edge as every other row and only the space
+    ahead of it opens up. Zero is the one value that needs no direction.
+  {% endcomment %}
+
+  {% comment %}
     No opacity here, deliberately. The panel is 1-bit: anything between black
     and white is dithered into a halftone, which at 10px turns small text into
     grey mush. Secondary information is made secondary by size, not by tone.

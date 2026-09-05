@@ -42,7 +42,7 @@
           <div class="fx-pair">{{ row.from }}<span class="fx-arrow">&rarr;</span>{{ row.to }}</div>
             <div class="fx-rate">{{ row.rate_str }}</div>
           <div class="fx-chg">
-            {% if row.change_pct >= 0 %}&#9650;{% else %}&#9660;{% endif %}
+            {% if row.change_pct > 0 %}&#9650;{% elsif row.change_pct < 0 %}&#9660;{% endif %}
             {{ row.change_pct | abs }}%
           </div>
           <div class="fx-spark">

@@ -146,12 +146,27 @@ VIEWS.each_key do |view|
   check("#{view}: renders one row", count(out, /class="fx-row"/) == 1, errors.join("; "))
 end
 
-# ------------------------------------------------------------- negative zero
+# ---------------------------------------------------------------- flat pairs
+# change_pct is rounded to 2dp upstream, so 0% means "moved less than 0.005%",
+# not "did not move". Neither arrow can be claimed for that, in any view.
 puts "\nWith an exactly-flat pair (change 0):"
 flat = SAMPLE["rows"].first.merge("change_pct" => 0, "points" => "0,15 100,15 200,15")
-out, = render("full", { "rows" => [flat], "range" => "1Y", "as_of" => SAMPLE["as_of"] })
-check("full: zero change renders as up-arrow, not a minus sign", out.include?("&#9650;") || out.include?("▲"))
-check("full: no negative-zero artefact", !out.include?("-0%"))
+VIEWS.each_key do |view|
+  out, = render(view, { "rows" => [flat], "range" => "1Y", "as_of" => SAMPLE["as_of"] })
+  check("#{view}: zero change carries no direction glyph",
+        !out.include?("&#9650;") && !out.include?("&#9660;") && !out.match?(/[\u25b2\u25bc]/))
+  # Nothing takes the arrow's place: a dash there reads as "minus 0%".
+  check("#{view}: the change cell holds the figure alone",
+        out[%r{<div class="fx-chg">(.*?)</div>}m, 1].to_s.strip == "0%",
+        out[%r{<div class="fx-chg">(.*?)</div>}m, 1].to_s.strip.inspect)
+  check("#{view}: no negative-zero artefact", !out.include?("-0%"))
+end
+
+# A rounded -0.00 arrives as the float -0.0, which is neither > 0 nor < 0, so it
+# takes the flat branch too rather than falling through to a down arrow.
+out, = render("full", { "rows" => [flat.merge("change_pct" => -0.0)],
+                        "range" => "1Y", "as_of" => SAMPLE["as_of"] })
+check("full: negative zero is flat, not a down arrow", !out.include?("&#9660;"))
 
 puts(($failures.zero? ? "\nAll render checks passed." : "\n#{$failures} render check(s) FAILED."))
 exit($failures.zero? ? 0 : 1)
