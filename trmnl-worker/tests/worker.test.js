@@ -87,6 +87,7 @@ test("happy path returns rows for every requested pair", async () => {
   assert.equal(b.as_of, "2026-08-07");
   assert.equal(b.rows[0].rate, 1.9104);
   assert.equal(b.rows[0].change_pct, -7.24);
+  assert.equal(b.rows[0].change_str, "7.24");
 });
 
 test("no row anywhere contains NaN or Infinity", async () => {

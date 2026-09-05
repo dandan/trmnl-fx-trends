@@ -79,6 +79,15 @@ VIEWS.each do |view, limit|
         "got #{count(out, /&rarr;/)}")
   check("#{view}: no slash-form pairs left", !out.include?("fx-slash"))
 
+  # The change is quoted to a fixed 2dp so the column lines up (see shape.js).
+  # The view must print change_str verbatim: `| abs` or `| round` here would drop
+  # the trailing zero the string exists to carry.
+  changes = out.scan(%r{<div class="fx-chg">(.*?)</div>}m).flatten.map(&:strip)
+  fig = /\A(?:&\#9650;|&\#9660;)?\s*(\d+\.\d{2})%\z/m
+  check("#{view}: every change is signless and 2dp",
+        changes.all? { |c| c.match?(fig) },
+        changes.reject { |c| c.match?(fig) }.inspect)
+
   # One cell per rate, printed verbatim. The decimals are deliberately not
   # aligned (see shared.liquid), so there is no split markup to reassemble —
   # what matters is that the cell carries exactly what the Worker sent.
@@ -97,7 +106,7 @@ VIEWS.each do |view, limit|
     check("#{view}: HI is printed above LO",
           pairs_hi_lo.all? { |hi, lo| Float(hi) >= Float(lo) },
           pairs_hi_lo.reject { |hi, lo| Float(hi) >= Float(lo) }.inspect)
-    expected_hi = SAMPLE["rows"].first(limit).map { |r| r["hi"].to_s }
+    expected_hi = SAMPLE["rows"].first(limit).map { |r| r["hi_str"] }
     check("#{view}: top value is the row's hi", pairs_hi_lo.map(&:first) == expected_hi)
     # The header must read in the same order the values are stacked, or it
     # implies the top number is the low.
@@ -150,14 +159,15 @@ end
 # change_pct is rounded to 2dp upstream, so 0% means "moved less than 0.005%",
 # not "did not move". Neither arrow can be claimed for that, in any view.
 puts "\nWith an exactly-flat pair (change 0):"
-flat = SAMPLE["rows"].first.merge("change_pct" => 0, "points" => "0,15 100,15 200,15")
+flat = SAMPLE["rows"].first.merge("change_pct" => 0, "change_str" => "0.00",
+                                  "points" => "0,15 100,15 200,15")
 VIEWS.each_key do |view|
   out, = render(view, { "rows" => [flat], "range" => "1Y", "as_of" => SAMPLE["as_of"] })
   check("#{view}: zero change carries no direction glyph",
         !out.include?("&#9650;") && !out.include?("&#9660;") && !out.match?(/[\u25b2\u25bc]/))
   # Nothing takes the arrow's place: a dash there reads as "minus 0%".
   check("#{view}: the change cell holds the figure alone",
-        out[%r{<div class="fx-chg">(.*?)</div>}m, 1].to_s.strip == "0%",
+        out[%r{<div class="fx-chg">(.*?)</div>}m, 1].to_s.strip == "0.00%",
         out[%r{<div class="fx-chg">(.*?)</div>}m, 1].to_s.strip.inspect)
   check("#{view}: no negative-zero artefact", !out.include?("-0%"))
 end

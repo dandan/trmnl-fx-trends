@@ -31,6 +31,17 @@ export function sigFigs(v, sf = SIG_FIGS) {
 
 const round2 = (v) => (Number.isFinite(v) ? Number(v.toFixed(2)) : null);
 
+// The change is the one figure quoted in fixed DECIMALS rather than significant
+// figures: it is a percentage, so its magnitude carries no information about the
+// precision available — 8.4% and 0.13% are both good to the same 2dp. Fixing the
+// decimals is what lets the column line up, since JSON would otherwise drop the
+// trailing zero and print 8.4% a character short of 0.13%.
+//
+// Unsigned, because the row states direction with a glyph beside it (and for a
+// change that rounds to zero, with no glyph at all). Math.abs also folds -0 in,
+// so a hair-negative move cannot reach the panel as "-0.00%".
+const changeStr = (v) => (v === null ? null : Math.abs(v).toFixed(2));
+
 export function buildRow(rates, { from, to }, { w, h, maxPoints = MAX_POINTS }) {
   const full = crossSeries(rates, from, to);
   if (full.length === 0) {
@@ -44,6 +55,7 @@ export function buildRow(rates, { from, to }, { w, h, maxPoints = MAX_POINTS }) 
   const loStr = sigFigs(lo);
   const hiStr = sigFigs(hi);
   const sampled = downsample(full, maxPoints);
+  const change = round2(changePct(full));
 
   return {
     pair: `${from}/${to}`,
@@ -52,7 +64,9 @@ export function buildRow(rates, { from, to }, { w, h, maxPoints = MAX_POINTS }) 
     rate: rateStr === null ? null : Number(rateStr),
     // Pre-formatted so the device does no rounding — see BUILD_PLAN §2.1.
     rate_str: rateStr,
-    change_pct: round2(changePct(full)),
+    change_pct: change,
+    // Pre-formatted for the same reason as rate_str above.
+    change_str: changeStr(change),
     lo: loStr === null ? null : Number(loStr),
     hi: hiStr === null ? null : Number(hiStr),
     lo_str: loStr,

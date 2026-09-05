@@ -38,12 +38,15 @@ test("sigFigs does not emit a sixth figure at a decade boundary", () => {
 test("buildRow produces the row shape the Liquid expects", () => {
   const row = buildRow(RATES, { from: "GBP", to: "AUD" }, BOX);
   assert.deepEqual(Object.keys(row).sort(),
-    ["change_pct", "from", "hi", "hi_str", "lo", "lo_str", "n", "pair",
-     "points", "rate", "rate_str", "to"].sort());
+    ["change_pct", "change_str", "from", "hi", "hi_str", "lo", "lo_str", "n",
+     "pair", "points", "rate", "rate_str", "to"].sort());
   assert.equal(row.pair, "GBP/AUD");
   assert.equal(row.rate, 1.9104);        // matches the live 1Y figure
   assert.equal(row.rate_str, "1.9104");  // what the views actually print
   assert.equal(row.change_pct, -7.24);
+  // Unsigned and always 2dp: the glyph carries the sign, and a fixed width is
+  // what keeps the column aligned.
+  assert.equal(row.change_str, "7.24");
   // lo/hi go through the same five-figure rounding as the rate.
   assert.equal(row.lo, 1.8634);
   assert.equal(row.hi, 2.0799);
@@ -78,7 +81,20 @@ test("an identical pair is flat rather than broken", () => {
   const row = buildRow(RATES, { from: "EUR", to: "EUR" }, BOX);
   assert.equal(row.rate, 1);
   assert.equal(row.change_pct, 0);
+  assert.equal(row.change_str, "0.00");
   assert.ok(!/NaN/.test(row.points));
+});
+
+// JSON cannot carry a trailing zero, so a change of 8.4 would reach the device
+// as "8.4%" and sit a character short of the "0.13%" above it. The whole point
+// of the string is that every cell is the same width.
+test("change_str keeps a trailing zero and never prints a sign", () => {
+  for (const { from, to } of [{ from: "GBP", to: "AUD" }, { from: "AUD", to: "GBP" },
+                              { from: "USD", to: "JPY" }, { from: "EUR", to: "EUR" }]) {
+    const row = buildRow(RATES, { from, to }, BOX);
+    assert.match(row.change_str, /^\d+\.\d{2}$/, `${row.pair}: ${row.change_str}`);
+    assert.equal(Number(row.change_str), Math.abs(row.change_pct));
+  }
 });
 
 test("buildRow rejects a pair with no usable data", () => {

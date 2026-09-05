@@ -49,7 +49,7 @@
             <div class="fx-rate">{{ row.rate_str }}</div>
           <div class="fx-chg">
             {% if row.change_pct > 0 %}&#9650;{% elsif row.change_pct < 0 %}&#9660;{% endif %}
-            {{ row.change_pct | abs }}%
+            {{ row.change_str }}%
           </div>
           <div class="fx-spark">
             {% comment %} Endpoint marker: last coordinate of the polyline. {% endcomment %}
