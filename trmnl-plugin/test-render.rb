@@ -63,12 +63,15 @@ VIEWS.each do |view, limit|
   check("#{view}: no time-claim the data can't back",
         !out.match?(/>\s*(TODAY|CURRENT|LIVE)\b/i))
   # Headers name their column; the window governs change, trend AND hi/lo, so
-  # it is stated once in the title bar instead of pinned to one of them.
+  # it is stated once, on TREND, and nowhere else.
   check("#{view}: change column is labelled CHANGE", out.include?(">CHANGE<"))
   check("#{view}: no bare range code in the header row",
         !out.match?(/>\s*\d[MY]\s*</))
-  check("#{view}: title bar states the window",
-        out.include?(SAMPLE["range_label"]), "expected #{SAMPLE['range_label'].inspect}")
+  check("#{view}: TREND header states the window",
+        out.include?(">#{SAMPLE['range_label']} TREND<"),
+        "expected \">#{SAMPLE['range_label']} TREND<\"")
+  check("#{view}: the window is stated once", count(out, /#{SAMPLE['range_label']}/) == 1,
+        "got #{count(out, /#{SAMPLE['range_label']}/)}")
   check("#{view}: no unresolved Liquid", !out.include?("{{") && !out.include?("{%"))
   # Direction is stated explicitly: "GBP -> AUD" reads as "1 GBP buys N AUD".
   # The slash form relies on knowing which currency is being quoted.

@@ -34,7 +34,7 @@
   {% else %}
     <div class="fx-list fx--halfv">
       <div class="fx-head">
-        <span></span><span>LATEST</span><span>CHANGE</span><span>TREND</span>
+        <span></span><span>LATEST</span><span>CHANGE</span><span>{% if range_label %}{{ range_label }} {% endif %}TREND</span>
       </div>
 
       {% for row in rows limit: 6 %}
@@ -58,5 +58,5 @@
 
 <div class="title_bar">
   <span class="title">Exchange Rates</span>
-  <span class="instance">{% if fx_failed %}No data{% else %}{{ range_label }} &middot; {{ as_of }}{% endif %}</span>
+  <span class="instance">{% if fx_failed %}No data{% else %}{{ as_of }}{% endif %}</span>
 </div>

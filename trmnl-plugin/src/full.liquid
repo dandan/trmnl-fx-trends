@@ -33,8 +33,14 @@
     </div>
   {% else %}
     <div class="fx-list fx--full">
+      {% comment %}
+        The window names the TREND column but governs three of them — the change
+        figure, the sparkline and hi/lo are all measured over it. It sits here
+        rather than in the title bar because a column header is read with the
+        numbers, which is what keeps CHANGE from being taken for a daily move.
+      {% endcomment %}
       <div class="fx-head">
-        <span></span><span>LATEST</span><span>CHANGE</span><span>TREND</span><span>HI / LO</span>
+        <span></span><span>LATEST</span><span>CHANGE</span><span>{% if range_label %}{{ range_label }} {% endif %}TREND</span><span>HI / LO</span>
       </div>
 
       {% for row in rows limit: 6 %}
@@ -68,11 +74,6 @@
 <div class="title_bar">
   <span class="title">Exchange Rates</span>
   <span class="instance">
-    {% comment %}
-      The window leads, because it governs three of the four columns — the
-      change figure, the sparkline and lo/hi are all measured over it. Stating
-      it once here is what keeps CHANGE from being read as a daily move.
-    {% endcomment %}
-    {% if fx_failed %}No data{% else %}{{ range_label }} &middot; {{ rows | size }} pairs &middot; ECB {{ as_of }}{% endif %}
+    {% if fx_failed %}No data{% else %}{{ rows | size }} pairs &middot; ECB {{ as_of }}{% endif %}
   </span>
 </div>
