@@ -56,6 +56,10 @@ VIEWS.each do |view, limit|
         "got #{count(out, /class="fx-row"/)}")
   check("#{view}: no NaN/Infinity", !out.match?(/NaN|Infinity/))
   check("#{view}: title_bar present", out.include?("title_bar"))
+  # The footer states the window the data covers, first business day to last.
+  check("#{view}: title bar spans start_date to as_of",
+        out.include?("#{SAMPLE['start_date']} &rarr; #{SAMPLE['as_of']}"),
+        out[%r{<span class="instance">(.*?)</span>}m, 1].to_s.gsub(/\s+/, " ").strip)
   # "LATEST", never "TODAY"/"CURRENT": ECB publishes once per working day around
   # 16:00 CET, so the newest figure is yesterday's or Friday's for roughly three
   # quarters of the week. Only "latest" is true in every case.
@@ -75,8 +79,9 @@ VIEWS.each do |view, limit|
   check("#{view}: no unresolved Liquid", !out.include?("{{") && !out.include?("{%"))
   # Direction is stated explicitly: "GBP -> AUD" reads as "1 GBP buys N AUD".
   # The slash form relies on knowing which currency is being quoted.
-  check("#{view}: pairs use the direction arrow", count(out, /&rarr;/) == expected_rows,
-        "got #{count(out, /&rarr;/)}")
+  check("#{view}: pairs use the direction arrow",
+        count(out, /class="fx-arrow"/) == expected_rows,
+        "got #{count(out, /class=\"fx-arrow\"/)}")
   check("#{view}: no slash-form pairs left", !out.include?("fx-slash"))
 
   # The change is quoted to a fixed 2dp so the column lines up (see shape.js).
@@ -125,6 +130,20 @@ VIEWS.each do |view, limit|
   end
 end
 
+# A response can carry a single day (a fresh 1M window over a holiday week), and
+# an older Worker sends no start_date at all. Neither may print a dangling arrow.
+puts "\nWith one date, and with no start_date:"
+VIEWS.each_key do |view|
+  same = SAMPLE.merge("start_date" => SAMPLE["as_of"])
+  out, = render(view, same)
+  check("#{view}: a single-day window prints one date",
+        out.include?(SAMPLE["as_of"]) && !out.include?("&rarr; #{SAMPLE['as_of']}"))
+
+  out, = render(view, SAMPLE.reject { |k, _| k == "start_date" })
+  check("#{view}: a missing start_date prints one date",
+        out.include?(SAMPLE["as_of"]) && !out.include?("&rarr; #{SAMPLE['as_of']}"))
+end
+
 # ---------------------------------------------------------------- error state
 puts "\nWith a Worker error response:"
 error_vars = { "error" => "Frankfurter returned HTTP 503" }
@@ -134,10 +153,13 @@ VIEWS.each_key do |view|
   check("#{view}: shows the unavailable state", out.include?("Rates unavailable"))
   check("#{view}: no rows", count(out, /class="fx-row"/).zero?)
   check("#{view}: no NaN", !out.match?(/NaN/))
-  # With no data there is no window or date to report, so the title bar must not
-  # leave dangling separators behind ("· ECB").
+  # With no data there is no date to report, so the title bar must not leave a
+  # separator stranded at either end of the cell ("· ECB", or a leading dot).
   check("#{view}: title bar degrades cleanly", out.include?("No data"))
-  check("#{view}: no orphaned separator", !out.match?(/&middot;\s*(ECB)?\s*<\/span>/))
+  instance = out[%r{<span class="instance">(.*?)</span>}m, 1].to_s.strip
+  check("#{view}: no orphaned separator",
+        !instance.match?(/\A&middot;/) && !instance.match?(/&middot;\s*(ECB)?\z/),
+        instance)
 end
 
 # ---------------------------------------------------------------- empty rows

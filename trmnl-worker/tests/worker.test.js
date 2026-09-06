@@ -85,6 +85,7 @@ test("happy path returns rows for every requested pair", async () => {
   assert.equal(b.range, "1Y");
   assert.equal(b.range_label, "1 YEAR");
   assert.equal(b.as_of, "2026-08-07");
+  assert.ok(b.start_date < b.as_of, `${b.start_date} .. ${b.as_of}`);
   assert.equal(b.rows[0].rate, 1.9104);
   assert.equal(b.rows[0].change_pct, -7.24);
   assert.equal(b.rows[0].change_str, "7.24");

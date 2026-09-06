@@ -111,7 +111,8 @@ These are constraints of the panel, not preferences:
   yesterday's or Friday's for roughly three quarters of the week — a "today"
   label would be wrong most of the time, and "current" implies a live market
   quote rather than a daily reference fixing. The header answers *which* rate;
-  the title bar's `as_of` answers *as of when*.
+  the title bar's `start_date &rarr; as_of` answers *over what window*, and its
+  last date is the same "as of when" the rate carries.
 - **Rates and bounds carry five significant figures, not a fixed number of
   decimals.** That is what the source carries: ECB quotes to about five figures
   whatever the magnitude (`159.68` for JPY, `0.80426` for CHF), so a

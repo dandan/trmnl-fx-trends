@@ -85,6 +85,11 @@ export function buildResponse(rates, pairs, { range, w, h }) {
     // sparkline and lo/hi alike, so the plugin states it once for the whole
     // table rather than labelling any single column with it.
     range_label: RANGES[range]?.label ?? range,
+    // The window the data actually covers, first business day to last. The
+    // requested range is a calendar span, but ECB publishes weekdays only, so
+    // the first date returned is not `today minus 365` — quoting the real
+    // endpoints is what makes the footer agree with the trace above it.
+    start_date: dates.length ? dates[0] : null,
     as_of: dates.length ? dates[dates.length - 1] : null,
     generated_at: new Date().toISOString(),
   };

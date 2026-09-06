@@ -111,6 +111,8 @@ test("buildResponse assembles rows and metadata", () => {
   assert.equal(res.range, "1Y");
   assert.equal(res.range_label, "1 YEAR");
   assert.equal(res.as_of, "2026-08-07");   // last date in the fixture
+  assert.equal(res.start_date, Object.keys(RATES)[0]);  // first date in the fixture
+  assert.ok(res.start_date < res.as_of);
   assert.ok(!Number.isNaN(Date.parse(res.generated_at)));
 });
 
