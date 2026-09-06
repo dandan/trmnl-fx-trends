@@ -39,12 +39,12 @@ each view rescales with `viewBox`:
 
 `non-scaling-stroke` keeps the line 2px however much the box is squashed.
 
-The wide views mark the latest value with a short vertical `<line>`, not a
-`<circle>`: `preserveAspectRatio="none"` scales x and y independently, so a
-circle renders as a visible ellipse, while a vertical line stays vertical under
-any horizontal stretch. `half_vertical` and `quadrant` drop the marker
-altogether — at ~110px their traces are compressed enough that it reads as a
-kink in the line rather than as an endpoint.
+Each trace is a bare `<polyline>` with no endpoint marker. The wide views once
+ended in a short vertical bar — a `<line>` rather than a `<circle>`, since
+`preserveAspectRatio="none"` scales x and y independently and a circle renders
+as a visible ellipse — but it read as a rendering artefact rather than as a
+marker, and the row already says where the trace ends and what value it ends
+at.
 
 ## Local preview
 

@@ -125,6 +125,9 @@ VIEWS.each do |view, limit|
     pts = out.scan(/points="([^"]*)"/).flatten
     ok = pts.all? { |p| p.split(" ").all? { |xy| xy.split(",").size == 2 && xy.split(",").all? { |n| Float(n, exception: false) } } }
     check("#{view}: all points parse as coordinates", ok)
+    # The trace carries no endpoint marker: it read as an artefact, and LATEST
+    # already states the value the line ends at.
+    check("#{view}: sparkline is a bare polyline", !out.include?("<line"))
   else
     check("#{view}: no sparkline (by design)", count(out, /<polyline/).zero?)
   end

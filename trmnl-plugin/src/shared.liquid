@@ -230,16 +230,13 @@
     stroke-linecap: round;
   }
   {% comment %}
-    "Latest value" marker. A <circle> cannot be used once the sparkline stretches
-    to fill its track: preserveAspectRatio="none" scales x and y independently,
-    so a circle renders as a visible ellipse. A vertical line stays vertical
-    under any horizontal stretch, and non-scaling-stroke keeps it 2px wide.
+    No endpoint marker. The trace used to end in a short vertical bar — a
+    <line> rather than a <circle>, because preserveAspectRatio="none" scales x
+    and y independently and a circle renders as a visible ellipse. It read as a
+    rendering artefact rather than as "you are here", and it was answering a
+    question the row already answers: the trace ends where it ends, and LATEST
+    states the value it ends at.
   {% endcomment %}
-  .fx-spark line {
-    stroke: currentColor;
-    stroke-width: 2;
-    stroke-linecap: butt;
-  }
 
   {% comment %} Shown instead of the list when the Worker returns an error. {% endcomment %}
   .fx-error {

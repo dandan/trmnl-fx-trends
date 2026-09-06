@@ -41,10 +41,8 @@
             {{ row.change_str }}%
           </div>
           <div class="fx-spark">
-            {%- assign fx_xy = row.points | split: " " | last | split: "," -%}
             <svg viewBox="0 0 200 30" width="100%" height="26" preserveAspectRatio="none">
               <polyline points="{{ row.points }}" vector-effect="non-scaling-stroke"/>
-              <line x1="{{ fx_xy[0] }}" y1="{{ fx_xy[1] | minus: 3 }}" x2="{{ fx_xy[0] }}" y2="{{ fx_xy[1] | plus: 3 }}" vector-effect="non-scaling-stroke"/>
             </svg>
           </div>
           <div class="fx-range"><span>{{ row.hi_str }}</span><span>{{ row.lo_str }}</span></div>
