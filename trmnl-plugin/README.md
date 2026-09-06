@@ -38,8 +38,13 @@ each view rescales with `viewBox`:
 ```
 
 `non-scaling-stroke` keeps the line 2px however much the box is squashed.
-`half_vertical` drops the endpoint dot because at 110px wide the x-axis is
-compressed ~0.55× and a `<circle>` would render as a visible ellipse.
+
+The wide views mark the latest value with a short vertical `<line>`, not a
+`<circle>`: `preserveAspectRatio="none"` scales x and y independently, so a
+circle renders as a visible ellipse, while a vertical line stays vertical under
+any horizontal stretch. `half_vertical` and `quadrant` drop the marker
+altogether — at ~110px their traces are compressed enough that it reads as a
+kink in the line rather than as an endpoint.
 
 ## Local preview
 
@@ -78,8 +83,10 @@ ruby test-render.rb
 
 `trmnlp build` proves the templates compile against real data. `test-render.rb`
 covers what a build cannot reach: the Worker returning an error, an empty `rows`
-array, fewer pairs than a view has room for, and a perfectly flat series. It also
-asserts every `points` attribute parses as finite coordinate pairs.
+array, fewer pairs than a view has room for, and a perfectly flat series (both
+`0` and a rounded `-0.0`). It also asserts every `points` attribute parses as
+finite coordinate pairs, and that each view prints the Worker's pre-formatted
+strings unaltered — a change cell that is not signless and 2dp fails the run.
 
 ## Design rules
 
@@ -105,16 +112,40 @@ These are constraints of the panel, not preferences:
   label would be wrong most of the time, and "current" implies a live market
   quote rather than a daily reference fixing. The header answers *which* rate;
   the title bar's `as_of` answers *as of when*.
-- **Decimals follow magnitude** (2 / 4 / 6dp, decided in the Worker).
-- **Rates are decimal-aligned, sized to the data.** The cell splits into an
-  integer and a fraction span with `ch` widths, measured from the rows actually
-  on screen. A fixed worst-case allocation would need `12ch` (widest integer is
-  `AUD→IDR = 12564.07`, widest fraction `AUD→CAD = 0.986342`) to show strings
-  never longer than 8ch; measuring instead costs `10ch` for a set of majors and
-  only widens when a pair needs it. The rate track is `minmax(…, auto)` so it
-  grows rather than overflowing into TREND.
-  Note this aligns decimals but leaves *both* outer edges ragged — that is
-  inherent to decimal alignment, not a bug.
+- **Rates and bounds carry five significant figures, not a fixed number of
+  decimals.** That is what the source carries: ECB quotes to about five figures
+  whatever the magnitude (`159.68` for JPY, `0.80426` for CHF), so a
+  decimals-by-magnitude rule invents digits at the small end and discards them at
+  the large end. Decided in the Worker (`sigFigs` in `shape.js`).
+- **Every displayed figure arrives pre-formatted as a string** — `rate_str`,
+  `lo_str`, `hi_str`, `change_str` — alongside its numeric form. JSON cannot
+  carry a trailing zero, so `1.3450` would reach the device as `1.345` and render
+  a character short of its neighbours. The views print the string verbatim; any
+  `| round` or `| abs` in a template puts the ragged edge back.
+- **Rates are right-aligned, and their decimal points deliberately do not line
+  up.** Rates from different pairs are not a comparable series — `159.68`
+  JPY-per-USD and `1.8782` AUD-per-GBP measure different things — so there is
+  nothing to gain by scanning down the point, and the fixed-width spans that
+  decimal alignment needs cost real width in the narrow views. Tabular figures
+  keep the digits from shifting between refreshes.
+- **Each column track carries a pixel floor** (see each view's
+  `grid-template-columns`). Every row is its own grid, so an `auto` track is
+  resolved per row: the widest rate would set only its own row's column and push
+  CHANGE and TREND out of line with the rows above. The floor is sized to the
+  widest string the column can hold, so `auto` never has to grow.
+- **The change is the exception: fixed 2dp, always** (`change_str`). It is a
+  percentage, so its magnitude says nothing about the precision available —
+  `8.79%` and `0.64%` are good to the same 2dp — and a fixed width is what lets
+  the column line up.
+- **A change that rounds to zero gets no glyph at all.** `change_pct` is rounded
+  to 2dp upstream, so `0.00%` means "moved less than 0.005%", not "did not move";
+  neither arrow can be claimed for it. Nothing takes the arrow's place — a dash
+  or bar beside the figure reads as *minus* 0.00%. The column is right-aligned,
+  so the figure stays on the same edge and only the space ahead of it opens up.
+- **The window is stated once, on the TREND header** (`1 YEAR TREND`). It governs
+  three of the columns — the change figure, the sparkline and HI / LO are all
+  measured over it — and a column header is read together with the numbers,
+  which is what keeps CHANGE from being taken for a daily move.
 
 ### Framework caveats
 
