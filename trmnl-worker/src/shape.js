@@ -37,10 +37,16 @@ const round2 = (v) => (Number.isFinite(v) ? Number(v.toFixed(2)) : null);
 // decimals is what lets the column line up, since JSON would otherwise drop the
 // trailing zero and print 8.4% a character short of 0.13%.
 //
-// Unsigned, because the row states direction with a glyph beside it (and for a
-// change that rounds to zero, with no glyph at all). Math.abs also folds -0 in,
-// so a hair-negative move cannot reach the panel as "-0.00%".
-const changeStr = (v) => (v === null ? null : Math.abs(v).toFixed(2));
+// Signed, and explicitly so on the way up: the row also states direction with a
+// glyph, but a triangle alone is read as decoration at this size, while "+" and
+// "-" are read as arithmetic. A change that rounds to zero takes neither — it is
+// not a rise, and `v === 0` catches the -0 that round2 can produce, so a
+// hair-negative move cannot reach the panel as "-0.00%".
+const changeStr = (v) => {
+  if (v === null) return null;
+  if (v === 0) return "0.00";
+  return `${v > 0 ? "+" : "-"}${Math.abs(v).toFixed(2)}`;
+};
 
 export function buildRow(rates, { from, to }, { w, h, maxPoints = MAX_POINTS }) {
   const full = crossSeries(rates, from, to);

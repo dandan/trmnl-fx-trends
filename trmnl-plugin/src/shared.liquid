@@ -22,6 +22,9 @@
   The CHANGE track is sized by its HEADER, not its data: "CHANGE" in Inter is
   wider than the widest figure it sits above once the header is legible, so the
   narrow views spend a few px there that the sparkline would otherwise take.
+  That held with a ▲/▼ glyph in the cell only by 1-2px, and the wrap it caused
+  was invisible; the floor is width the sparkline gives up, so re-measure it
+  (scrollWidth of .fx-chg) rather than padding it by eye.
 
   The HI / LO track carries a floor for the same reason, and it matters more
   there: that column sits after the 1fr sparkline, so a row whose bounds run
@@ -35,7 +38,8 @@
     anything below that must be readable sets its colour explicitly.
   - `.title_bar` must be a SIBLING of `.layout`, placed after it, or it renders
     inline instead of pinning to the bottom.
-  - Direction is a glyph, never a colour: the panel is 1-bit.
+  - Direction is stated in the figure itself (a signed change), never a colour:
+    the panel is 1-bit and every tone between black and white is a halftone.
 {% endcomment %}
 
 <style>
@@ -144,19 +148,25 @@
   .fx-pair .fx-arrow { font-weight: 400; padding: 0 0.15em; }
 
   .fx-rate { font-weight: 700; letter-spacing: -0.01em; }
-  .fx-chg  { font-weight: 700; }
+  {% comment %}
+    nowrap: the cell is only as wide as its figure by design, and a track a few
+    px short should overflow visibly rather than restack its contents — which is
+    how a ▲/▼ glyph once ended up on its own line above the number, looking
+    deliberate while hiding that the column needed widening.
+  {% endcomment %}
+  .fx-chg  { font-weight: 700; white-space: nowrap; }
 
   {% comment %}
-    NO GLYPH FOR A FLAT PAIR
-    change_pct arrives rounded to 2dp (shape.js), so a printed 0% means the move
-    was under 0.005% — not that the rate is unchanged. Neither arrow can be
-    claimed for that, and every marker tried in the slot read as something else:
-    a bar or dash next to the figure reads as "minus 0%", and a filled square at
-    this size reads as a bullet or a cluster of dead pixels.
+    THE CHANGE CARRIES ITS OWN DIRECTION
+    The figure is signed (`+0.38%`, `-8.79%`), and that is the only direction
+    marker in the row. It used to be a ▲/▼ glyph, alone and then alongside the
+    sign; a triangle at this size reads as decoration where a sign reads as
+    arithmetic, and once the sign was there the glyph was a second mark saying
+    the same thing — for ~10px of sparkline in the narrow views.
 
-    Leaving it empty costs nothing here because the column is right-aligned, so
-    the figure stays on the same edge as every other row and only the space
-    ahead of it opens up. Zero is the one value that needs no direction.
+    A change that rounds to zero prints `0.00%` with no sign at all. change_pct
+    is rounded to 2dp upstream, so that means "moved less than 0.005%", not "did
+    not move", and neither direction can be claimed for it.
   {% endcomment %}
 
   {% comment %}

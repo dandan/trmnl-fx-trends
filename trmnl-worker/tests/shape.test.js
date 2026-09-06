@@ -44,9 +44,9 @@ test("buildRow produces the row shape the Liquid expects", () => {
   assert.equal(row.rate, 1.9104);        // matches the live 1Y figure
   assert.equal(row.rate_str, "1.9104");  // what the views actually print
   assert.equal(row.change_pct, -7.24);
-  // Unsigned and always 2dp: the glyph carries the sign, and a fixed width is
-  // what keeps the column aligned.
-  assert.equal(row.change_str, "7.24");
+  // Signed and always 2dp: the sign states direction in words the glyph cannot,
+  // and the fixed decimals are what keep the column aligned.
+  assert.equal(row.change_str, "-7.24");
   // lo/hi go through the same five-figure rounding as the rate.
   assert.equal(row.lo, 1.8634);
   assert.equal(row.hi, 2.0799);
@@ -88,12 +88,15 @@ test("an identical pair is flat rather than broken", () => {
 // JSON cannot carry a trailing zero, so a change of 8.4 would reach the device
 // as "8.4%" and sit a character short of the "0.13%" above it. The whole point
 // of the string is that every cell is the same width.
-test("change_str keeps a trailing zero and never prints a sign", () => {
+test("change_str keeps a trailing zero and carries its own sign", () => {
   for (const { from, to } of [{ from: "GBP", to: "AUD" }, { from: "AUD", to: "GBP" },
                               { from: "USD", to: "JPY" }, { from: "EUR", to: "EUR" }]) {
     const row = buildRow(RATES, { from, to }, BOX);
-    assert.match(row.change_str, /^\d+\.\d{2}$/, `${row.pair}: ${row.change_str}`);
-    assert.equal(Number(row.change_str), Math.abs(row.change_pct));
+    assert.match(row.change_str, /^[+-]?\d+\.\d{2}$/, `${row.pair}: ${row.change_str}`);
+    assert.equal(Number(row.change_str), row.change_pct);
+    // A rise is marked, a fall is marked, and a flat pair is neither.
+    const sign = row.change_pct > 0 ? "+" : row.change_pct < 0 ? "-" : "";
+    assert.ok(row.change_str.startsWith(sign || "0"), `${row.pair}: ${row.change_str}`);
   }
 });
 

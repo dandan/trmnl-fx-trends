@@ -92,7 +92,11 @@ strings unaltered — a change cell that is not signless and 2dp fails the run.
 
 These are constraints of the panel, not preferences:
 
-- **Direction is a glyph (▲/▼), never colour.** The display is 1-bit.
+- **Direction is the sign on the figure (`+0.38%`, `-8.79%`), never colour.**
+  The display is 1-bit, so any tone between black and white is a halftone. A
+  ▲/▼ glyph did this job first: alone it read as decoration rather than as a
+  direction, and beside the sign it said the same thing twice for ~10px of
+  sparkline in the narrow views.
 - **Pairs read `GBP → AUD`, not `GBP/AUD`, and the column has no header.** The
   slash form relies on knowing that the second currency is the one being quoted
   — misread, `1.9104` is wrong by a factor of ~3.6, and a wall display offers no
@@ -134,15 +138,16 @@ These are constraints of the panel, not preferences:
   resolved per row: the widest rate would set only its own row's column and push
   CHANGE and TREND out of line with the rows above. The floor is sized to the
   widest string the column can hold, so `auto` never has to grow.
-- **The change is the exception: fixed 2dp, always** (`change_str`). It is a
-  percentage, so its magnitude says nothing about the precision available —
+- **The change is the exception: signed, fixed 2dp, always** (`change_str`). It
+  is a percentage, so its magnitude says nothing about the precision available —
   `8.79%` and `0.64%` are good to the same 2dp — and a fixed width is what lets
-  the column line up.
-- **A change that rounds to zero gets no glyph at all.** `change_pct` is rounded
-  to 2dp upstream, so `0.00%` means "moved less than 0.005%", not "did not move";
-  neither arrow can be claimed for it. Nothing takes the arrow's place — a dash
-  or bar beside the figure reads as *minus* 0.00%. The column is right-aligned,
-  so the figure stays on the same edge and only the space ahead of it opens up.
+  the column line up. The sign is set in the Worker, so the views print it
+  verbatim like every other figure.
+- **A change that rounds to zero takes no sign.** `change_pct` is rounded to 2dp
+  upstream, so `0.00%` means "moved less than 0.005%", not "did not move";
+  neither direction can be claimed for it. Nothing marks it either — a dash or
+  bar beside the figure reads as *minus* 0.00%. The column is right-aligned, so
+  the figure stays on the same edge and only the space ahead of it opens up.
 - **The window is stated once, on the TREND header** (`1 YEAR TREND`). It governs
   three of the columns — the change figure, the sparkline and HI / LO are all
   measured over it — and a column header is read together with the numbers,

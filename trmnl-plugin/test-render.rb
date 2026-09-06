@@ -84,14 +84,18 @@ VIEWS.each do |view, limit|
         "got #{count(out, /class=\"fx-arrow\"/)}")
   check("#{view}: no slash-form pairs left", !out.include?("fx-slash"))
 
-  # The change is quoted to a fixed 2dp so the column lines up (see shape.js).
-  # The view must print change_str verbatim: `| abs` or `| round` here would drop
-  # the trailing zero the string exists to carry.
+  # The change is quoted signed, to a fixed 2dp, so the column lines up and reads
+  # as arithmetic (see shape.js). The view must print change_str verbatim: `| abs`
+  # or `| round` here would drop the sign, or the trailing zero it carries.
   changes = out.scan(%r{<div class="fx-chg">(.*?)</div>}m).flatten.map(&:strip)
-  fig = /\A(?:&\#9650;|&\#9660;)?\s*(\d+\.\d{2})%\z/m
-  check("#{view}: every change is signless and 2dp",
+  fig = /\A([+-]?\d+\.\d{2})%\z/m
+  check("#{view}: every change is signed and 2dp",
         changes.all? { |c| c.match?(fig) },
         changes.reject { |c| c.match?(fig) }.inspect)
+  # The sign is the only direction marker: a ▲/▼ beside it would say the same
+  # thing twice, in a mark that reads as decoration at this size.
+  check("#{view}: no direction glyph beside the figure",
+        !out.include?("&#9650;") && !out.include?("&#9660;") && !out.match?(/[\u25b2\u25bc]/))
 
   # One cell per rate, printed verbatim. The decimals are deliberately not
   # aligned (see shared.liquid), so there is no split markup to reassemble —
@@ -188,10 +192,10 @@ flat = SAMPLE["rows"].first.merge("change_pct" => 0, "change_str" => "0.00",
                                   "points" => "0,15 100,15 200,15")
 VIEWS.each_key do |view|
   out, = render(view, { "rows" => [flat], "range" => "1Y", "as_of" => SAMPLE["as_of"] })
-  check("#{view}: zero change carries no direction glyph",
-        !out.include?("&#9650;") && !out.include?("&#9660;") && !out.match?(/[\u25b2\u25bc]/))
+  check("#{view}: zero change carries no sign",
+        !out[%r{<div class="fx-chg">(.*?)</div>}m, 1].to_s.match?(/[+-]/))
   # Nothing takes the arrow's place: a dash there reads as "minus 0%".
-  check("#{view}: the change cell holds the figure alone",
+  check("#{view}: the change cell holds an unsigned figure alone",
         out[%r{<div class="fx-chg">(.*?)</div>}m, 1].to_s.strip == "0.00%",
         out[%r{<div class="fx-chg">(.*?)</div>}m, 1].to_s.strip.inspect)
   check("#{view}: no negative-zero artefact", !out.include?("-0%"))
@@ -201,7 +205,7 @@ end
 # takes the flat branch too rather than falling through to a down arrow.
 out, = render("full", { "rows" => [flat.merge("change_pct" => -0.0)],
                         "range" => "1Y", "as_of" => SAMPLE["as_of"] })
-check("full: negative zero is flat, not a down arrow", !out.include?("&#9660;"))
+check("full: negative zero is flat, not a negative", !out.include?("-0.00"))
 
 puts(($failures.zero? ? "\nAll render checks passed." : "\n#{$failures} render check(s) FAILED."))
 exit($failures.zero? ? 0 : 1)
