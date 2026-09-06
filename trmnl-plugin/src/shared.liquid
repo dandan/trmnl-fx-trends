@@ -238,6 +238,27 @@
     states the value it ends at.
   {% endcomment %}
 
+  {% comment %}
+    THE TITLE BAR'S INSTANCE CELL IS SECONDARY TEXT ON A GREYSCALE PANEL
+    The framework colours .instance from the primary text slot on a plain
+    screen, but under `.screen--2bit` / `.screen--4bit` a separate rule points
+    the same cell at --framework-semantic-text-secondary-* — grey (#555). A
+    1-bit panel thresholds that back to black; a greyscale one renders it as it
+    is, leaving the whole footer washed out beside its own title.
+
+    Only the dates are lifted out of that. They are the panel's second real
+    fact — the rest of the cell is provenance, and grey is the right weight for
+    it — so the dates get their own class and the source keeps the framework's
+    tone, whatever the palette makes it.
+
+    Colouring the span rather than the cell also sidesteps a specificity trap:
+    the framework rules are `.trmnl .title_bar .instance` and `.trmnl
+    .screen--Nbit .title_bar .instance`, so a rule on the CELL needs to match
+    that shape to win, while a rule on a child inside it beats the inherited
+    value outright.
+  {% endcomment %}
+  .fx-dates { color: #000; }
+
   {% comment %} Shown instead of the list when the Worker returns an error. {% endcomment %}
   .fx-error {
     display: flex;

@@ -54,5 +54,5 @@
 
 <div class="title_bar">
   <span class="title">Exchange Rates</span>
-  <span class="instance">{% if fx_failed %}No data{% else %}{% if start_date and start_date != as_of %}{{ start_date }} &rarr; {% endif %}{{ as_of }}{% endif %}</span>
+  <span class="instance">{% if fx_failed %}No data{% else %}<span class="fx-dates">{% if start_date and start_date != as_of %}{{ start_date }} &rarr; {% endif %}{{ as_of }}</span>{% endif %}</span>
 </div>
