@@ -11,6 +11,7 @@
 # same here.
 require "liquid"
 require "json"
+require "date"
 
 HERE = __dir__
 VIEWS = {
@@ -43,6 +44,11 @@ def count(haystack, needle)
   haystack.scan(needle).size
 end
 
+# The footer's date form: day without leading zero, three-letter month, year.
+def fmt(iso, year: true)
+  Date.parse(iso).strftime(year ? "%-d %b %Y" : "%-d %b")
+end
+
 puts "Rendering #{VIEWS.size} views\n\n"
 
 # ---------------------------------------------------------------- happy path
@@ -56,10 +62,13 @@ VIEWS.each do |view, limit|
         "got #{count(out, /class="fx-row"/)}")
   check("#{view}: no NaN/Infinity", !out.match?(/NaN|Infinity/))
   check("#{view}: title_bar present", out.include?("title_bar"))
-  # The footer states the window the data covers, first business day to last.
+  # The footer states the window the data covers, first business day to last,
+  # printed as `5 Sep 2025 -> 4 Sep 2026`: month names rather than ISO, since
+  # numeric day-month is the one form readers disagree on. The data stays ISO.
   check("#{view}: title bar spans start_date to as_of",
-        out.include?("#{SAMPLE['start_date']} &rarr; #{SAMPLE['as_of']}"),
+        out.include?("#{fmt(SAMPLE['start_date'])} &rarr; #{fmt(SAMPLE['as_of'])}"),
         out[%r{<span class="instance">(.*?)</span>}m, 1].to_s.gsub(/\s+/, " ").strip)
+  check("#{view}: footer carries no raw ISO date", !out.match?(/\d{4}-\d{2}-\d{2}/))
   # "LATEST", never "TODAY"/"CURRENT": ECB publishes once per working day around
   # 16:00 CET, so the newest figure is yesterday's or Friday's for roughly three
   # quarters of the week. Only "latest" is true in every case.
@@ -167,15 +176,27 @@ end
 # A response can carry a single day (a fresh 1M window over a holiday week), and
 # an older Worker sends no start_date at all. Neither may print a dangling arrow.
 puts "\nWith one date, and with no start_date:"
+as_of = fmt(SAMPLE["as_of"])
 VIEWS.each_key do |view|
   same = SAMPLE.merge("start_date" => SAMPLE["as_of"])
   out, = render(view, same)
   check("#{view}: a single-day window prints one date",
-        out.include?(SAMPLE["as_of"]) && !out.include?("&rarr; #{SAMPLE['as_of']}"))
+        out.include?(as_of) && !out.include?("&rarr; #{as_of}"))
 
   out, = render(view, SAMPLE.reject { |k, _| k == "start_date" })
   check("#{view}: a missing start_date prints one date",
-        out.include?(SAMPLE["as_of"]) && !out.include?("&rarr; #{SAMPLE['as_of']}"))
+        out.include?(as_of) && !out.include?("&rarr; #{as_of}"))
+end
+
+# A window inside one year prints the year once, on the end date: a 1M window
+# reads `5 Aug -> 4 Sep 2026`, not `5 Aug 2026 -> 4 Sep 2026`.
+puts "\nWith a window inside one year:"
+VIEWS.each_key do |view|
+  one_month = SAMPLE.merge("start_date" => "2026-08-05")
+  out, = render(view, one_month)
+  check("#{view}: same-year window prints the year once",
+        out.include?("#{fmt('2026-08-05', year: false)} &rarr; #{as_of}") &&
+        !out.include?("#{fmt('2026-08-05')} &rarr;"))
 end
 
 # ---------------------------------------------------------------- error state

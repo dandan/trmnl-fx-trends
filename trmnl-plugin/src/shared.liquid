@@ -354,3 +354,20 @@
 {% endcomment %}
 {% assign fx_failed = false %}
 {% if error or rows == nil or rows == empty %}{% assign fx_failed = true %}{% endif %}
+
+{% comment %}
+  THE FOOTER DATES
+  The Worker sends ISO dates (2026-09-04) and keeps them that way: they are
+  machine-readable, sortable, and what the tests assert on. The panel prints
+  them as `4 Sep 2026`. ISO on a wall reads as a database field, and numeric
+  day-month is the one form readers in different countries genuinely disagree
+  on; a three-letter month is understood everywhere and sits well in the pixel
+  font. No leading zero on the day, for the same reason nobody writes "04 Sep".
+
+  The range prints as `5 Sep 2025 → 4 Sep 2026`. When both ends fall in one
+  year — the usual case for a 1M or 3M window — the start drops its year:
+  `5 Aug → 4 Sep 2026`, which reads as one span rather than two dates. A
+  single-day window, or a start_date an older Worker did not send, prints the
+  one date with no dangling arrow.
+{% endcomment %}
+{% capture fx_dates %}{% if start_date and start_date != as_of %}{% assign fx_start_year = start_date | date: "%Y" %}{% assign fx_end_year = as_of | date: "%Y" %}{% if fx_start_year == fx_end_year %}{{ start_date | date: "%-d %b" }}{% else %}{{ start_date | date: "%-d %b %Y" }}{% endif %} &rarr; {% endif %}{{ as_of | date: "%-d %b %Y" }}{% endcapture %}
