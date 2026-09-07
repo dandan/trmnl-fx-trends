@@ -115,7 +115,10 @@ These are constraints of the panel, not preferences:
   It is the one derived number in a row of quoted ones, and the box marks it as
   such. The fill is the glance-level cue — from across the room the heavy marks
   are the pairs that dropped — and the sign inside stays as the fact. A change
-  that rounds to zero is outlined, since no fall can be claimed for it.
+  that rounds to zero is outlined, since no fall can be claimed for it. The
+  fill uses the framework's strong-fill and canvas tokens rather than literal
+  black and white, so it inverts with the panel in dark mode; the footer dates
+  follow the title's colour token for the same reason.
 - **Pairs read `GBP → AUD`, not `GBP/AUD`.** The slash form relies on knowing
   that the second currency is the one being quoted — misread, `1.9104` is wrong
   by a factor of ~3.6, and a wall display offers no way to check. The arrow

@@ -180,6 +180,12 @@
     no fall can be claimed for it. The border is drawn on both so the two
     pills are the same size and the column stays aligned. Each view sets the
     padding to its type size.
+
+    The fill and its type are the framework's own "strong fill" and "canvas"
+    tokens, not #000 and #fff: in dark mode the framework swaps them (white
+    fill on a black panel), and a literal black pill vanished into the black
+    ground with its white figure floating alone. The fallbacks are the light
+    values, for a renderer without the tokens.
   {% endcomment %}
   .fx-pill {
     display: inline-block;
@@ -187,7 +193,11 @@
     border-radius: 5px;
     line-height: 1;
   }
-  .fx-pill--down { background: #000; color: #fff; border-color: #000; }
+  .fx-pill--down {
+    background: var(--framework-semantic-fill-strong-bg-color, #000);
+    border-color: var(--framework-semantic-fill-strong-bg-color, #000);
+    color: var(--framework-semantic-canvas-bg-color, #fff);
+  }
 
   {% comment %}
     THE CHANGE CARRIES ITS OWN DIRECTION
@@ -318,8 +328,19 @@
     .screen--Nbit .title_bar .instance`, so a rule on the CELL needs to match
     that shape to win, while a rule on a child inside it beats the inherited
     value outright.
+
+    The colour is the TITLE's colour, taken from the same token chain the
+    framework resolves `.title_bar .title` through, not a literal black. A
+    literal was unreadable in dark mode: the framework paints the panel black
+    and lifts its text to white through these tokens, and #000 sat on #000.
+    Following the title keeps the dates as legible as the word beside them
+    under every palette and mode the framework knows.
   {% endcomment %}
-  .fx-dates { color: #000; }
+  .fx-dates {
+    color: var(--framework-slot-title-bar-text-color,
+           var(--framework-semantic-text-primary-text-color,
+           var(--framework-text-primary, currentColor)));
+  }
 
   {% comment %} Shown instead of the list when the Worker returns an error. {% endcomment %}
   .fx-error {
