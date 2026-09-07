@@ -39,12 +39,18 @@ each view rescales with `viewBox`:
 
 `non-scaling-stroke` keeps the line 2px however much the box is squashed.
 
-Each trace is a bare `<polyline>` with no endpoint marker. The wide views once
-ended in a short vertical bar — a `<line>` rather than a `<circle>`, since
-`preserveAspectRatio="none"` scales x and y independently and a circle renders
-as a visible ellipse — but it read as a rendering artefact rather than as a
-marker, and the row already says where the trace ends and what value it ends
-at.
+Each trace ends in a round dot marking where LATEST sits on it. The dot is a
+positioned `<span>` over the svg, not a `<circle>` inside it:
+`preserveAspectRatio="none"` scales x and y independently, so anything drawn in
+the svg squashes with it (an earlier `<line>` marker read as a rendering
+artefact for that reason). The view places it from the `points` string itself —
+x is always 100%, and y is the last point's y over the 30px box:
+
+```liquid
+{% assign fx_end = row.points | split: " " | last | split: "," %}
+{% assign fx_end_y = fx_end[1] | times: 100.0 | divided_by: 30 %}
+<span class="fx-dot" style="top: {{ fx_end_y }}%"></span>
+```
 
 ## Local preview
 
@@ -63,6 +69,14 @@ On Ubuntu, `/usr/bin/firefox` is a shell wrapper around the snap, which
 geckodriver rejects with `binary is not a Firefox executable`, failing every
 screenshot. Run [`./trmnlp-snap`](trmnlp-snap) in place of `trmnlp` there — it
 is the same CLI with Selenium pointed at the snap's real binary.
+
+The wrapper also fixes trmnlp's PNG mode, which is worth using regardless of
+Firefox flavour: stock trmnlp 0.7.1 quantises the screenshot with its alpha
+channel still on, which paints faint grey ellipses onto the white ground (only
+in PNG mode — the HTML preview is unaffected) and logs `convert: Cannot write
+image with defined png:bit-depth or png:color-type`. The wrapper drops the alpha
+channel before the dither, which clears both. If you see the blobs, you are
+running plain `trmnlp`.
 
 ### Refresh the sample data
 
@@ -97,12 +111,21 @@ These are constraints of the panel, not preferences:
   ▲/▼ glyph did this job first: alone it read as decoration rather than as a
   direction, and beside the sign it said the same thing twice for ~10px of
   sparkline in the narrow views.
-- **Pairs read `GBP → AUD`, not `GBP/AUD`, and the column has no header.** The
-  slash form relies on knowing that the second currency is the one being quoted
-  — misread, `1.9104` is wrong by a factor of ~3.6, and a wall display offers no
-  way to check. The arrow says "1 GBP buys this many AUD" outright, which also
-  makes a "PAIR" header redundant. Every pair is exactly `XXX → XXX`, so the
-  column width is fixed and can be declared rather than left to overflow.
+- **The change sits in a pill: filled black for a fall, outlined for a rise.**
+  It is the one derived number in a row of quoted ones, and the box marks it as
+  such. The fill is the glance-level cue — from across the room the heavy marks
+  are the pairs that dropped — and the sign inside stays as the fact. A change
+  that rounds to zero is outlined, since no fall can be claimed for it.
+- **Pairs read `GBP → AUD`, not `GBP/AUD`.** The slash form relies on knowing
+  that the second currency is the one being quoted — misread, `1.9104` is wrong
+  by a factor of ~3.6, and a wall display offers no way to check. The arrow
+  says "1 GBP buys this many AUD" outright. The column is headed `PAIR` like
+  every other; without it the header row reads as starting at LATEST. Every
+  pair is exactly `XXX → XXX`, so the column width is fixed and can be declared
+  rather than left to overflow.
+- **Rules are solid, never dotted.** A 1px dotted line is a row of single
+  pixels, which the panel's dither treats as noise and half of which vanish.
+  The header rule is 2px so the header reads as a header, not a seventh row.
 - **No opacity, no grey text.** Anything between black and white is dithered into
   a halftone, which turns 10px text into mush. Secondary information is made
   secondary by *size*.
@@ -110,6 +133,11 @@ These are constraints of the panel, not preferences:
   and a 7.12% mover both read clearly. Row shapes are therefore **not**
   comparable to each other — the LO/HI column is what keeps that honest, so
   don't drop it from the wide views.
+- **The full view's type is scaled to the rate: 34px, with the pair at 26px.**
+  The rate is the number the panel exists to show. The cost is sparkline width
+  — the column floors are measured to these sizes, so the TREND track on TRMNL
+  OG is 260px where the previous 23/19px scale left it 358px — and the row
+  height, which is budgeted to the rate's line box at `line-height: 1`.
 - **The rate column is headed `LATEST`, never `TODAY` or `CURRENT`.** The ECB
   publishes once per working day around 16:00 CET, so the newest figure is
   yesterday's or Friday's for roughly three quarters of the week — a "today"

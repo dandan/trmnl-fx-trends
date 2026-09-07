@@ -63,6 +63,8 @@ VIEWS.each do |view, limit|
   # "LATEST", never "TODAY"/"CURRENT": ECB publishes once per working day around
   # 16:00 CET, so the newest figure is yesterday's or Friday's for roughly three
   # quarters of the week. Only "latest" is true in every case.
+  # The pair column is headed too, so the header row starts where the data does.
+  check("#{view}: pair column is labelled PAIR", out.include?(">PAIR<"))
   check("#{view}: rate column is labelled LATEST", out.include?(">LATEST<"))
   check("#{view}: no time-claim the data can't back",
         !out.match?(/>\s*(TODAY|CURRENT|LIVE)\b/i))
@@ -87,7 +89,16 @@ VIEWS.each do |view, limit|
   # The change is quoted signed, to a fixed 2dp, so the column lines up and reads
   # as arithmetic (see shape.js). The view must print change_str verbatim: `| abs`
   # or `| round` here would drop the sign, or the trailing zero it carries.
-  changes = out.scan(%r{<div class="fx-chg">(.*?)</div>}m).flatten.map(&:strip)
+  # The figure sits in a .fx-pill (filled or outlined); the pill is styling, so it is
+  # stripped here and the text inside it is what has to match.
+  cells = out.scan(%r{<div class="fx-chg">(.*?)</div>}m).flatten
+  check("#{view}: every change sits in a pill",
+        cells.all? { |c| c.match?(%r{\A\s*<span class="fx-pill[^"]*">[^<]*</span>\s*\z}) })
+  changes = cells.map { |c| c.gsub(/<[^>]+>/, "").strip }
+  # A fall is a filled pill, a rise an outlined one; the sign decides, so the
+  # two never disagree.
+  check("#{view}: falls are filled and rises outlined",
+        cells.zip(changes).all? { |c, f| c.include?("fx-pill--down") == f.start_with?("-") })
   fig = /\A([+-]?\d+\.\d{2})%\z/m
   check("#{view}: every change is signed and 2dp",
         changes.all? { |c| c.match?(fig) },
@@ -129,9 +140,20 @@ VIEWS.each do |view, limit|
     pts = out.scan(/points="([^"]*)"/).flatten
     ok = pts.all? { |p| p.split(" ").all? { |xy| xy.split(",").size == 2 && xy.split(",").all? { |n| Float(n, exception: false) } } }
     check("#{view}: all points parse as coordinates", ok)
-    # The trace carries no endpoint marker: it read as an artefact, and LATEST
-    # already states the value the line ends at.
-    check("#{view}: sparkline is a bare polyline", !out.include?("<line"))
+    # The end dot is positioned HTML, never an svg shape: a <circle> or <line>
+    # inside a preserveAspectRatio="none" box is squashed with it.
+    check("#{view}: no marker drawn inside the svg",
+          !out.include?("<line") && !out.include?("<circle"))
+    check("#{view}: one end dot per row", count(out, /class="fx-dot"/) == expected_rows)
+    # The dot's y is the last point's y as a percentage of the 30px box; the
+    # Worker pads the box by 2px, so every value lands strictly inside 0..100.
+    tops = out.scan(/class="fx-dot" style="top: ([^"%]*)%"/).flatten
+    check("#{view}: every dot lands inside the plot",
+          tops.size == expected_rows && tops.all? { |t| (v = Float(t, exception: false)) && v > 0 && v < 100 },
+          tops.inspect)
+    last_ys = pts.map { |p| p.split(" ").last.split(",").last.to_f }
+    check("#{view}: each dot sits on its trace's last point",
+          tops.map(&:to_f).zip(last_ys).all? { |t, y| (t - y / 30 * 100).abs < 0.05 })
   else
     check("#{view}: no sparkline (by design)", count(out, /<polyline/).zero?)
   end
@@ -192,12 +214,12 @@ flat = SAMPLE["rows"].first.merge("change_pct" => 0, "change_str" => "0.00",
                                   "points" => "0,15 100,15 200,15")
 VIEWS.each_key do |view|
   out, = render(view, { "rows" => [flat], "range" => "1Y", "as_of" => SAMPLE["as_of"] })
-  check("#{view}: zero change carries no sign",
-        !out[%r{<div class="fx-chg">(.*?)</div>}m, 1].to_s.match?(/[+-]/))
+  cell = out[%r{<div class="fx-chg">(.*?)</div>}m, 1].to_s.gsub(/<[^>]+>/, "").strip
+  check("#{view}: zero change carries no sign", !cell.match?(/[+-]/))
+  check("#{view}: zero change is outlined, not filled", !out.include?("class=\"fx-pill fx-pill--down\""))
   # Nothing takes the arrow's place: a dash there reads as "minus 0%".
   check("#{view}: the change cell holds an unsigned figure alone",
-        out[%r{<div class="fx-chg">(.*?)</div>}m, 1].to_s.strip == "0.00%",
-        out[%r{<div class="fx-chg">(.*?)</div>}m, 1].to_s.strip.inspect)
+        cell == "0.00%", cell.inspect)
   check("#{view}: no negative-zero artefact", !out.include?("-0%"))
 end
 

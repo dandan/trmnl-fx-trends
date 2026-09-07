@@ -10,17 +10,37 @@
     empty space inside the last cell, stranding the numbers at the far edge.
   {% endcomment %}
   .fx--full .fx-row,
-  .fx--full .fx-head { grid-template-columns: 112px minmax(100px, auto) 92px 1fr minmax(54px, auto); gap: 16px; }
-  {% comment %} 15px pads 6 rows out to fill the panel above the title_bar. {% endcomment %}
+  .fx--full .fx-head { grid-template-columns: 140px minmax(164px, auto) 86px 1fr minmax(70px, auto); gap: 20px; }
+  {% comment %}
+    THE TYPE SCALE
+    The rate is the number the panel exists to show, so it is the largest thing
+    on it: 34px, with the pair at 26px beside it, the two sizes a clear step
+    apart so the row reads pair-then-rate rather than as one line of bold. The
+    change and the bounds step down again. This is the scale of the v2 design
+    critique, adopted at the cost of sparkline width: the floors below are
+    measured to these sizes (see shared.liquid on why they are floors), and the
+    TREND track is what is left — 260px on TRMNL OG, down from 358px at the
+    previous 23/19px scale.
+
+    The 34px rate is what the row height is budgeted to. Its line box is
+    line-height 1 (set in shared.liquid), so 6 rows x (34px + 2 x 14px + 1px
+    rule) fits the panel above the title bar; a 15px pad overflowed by 2px.
+  {% endcomment %}
   .fx--full { --fx-top-pad: 10px; }
-  .fx--full .fx-row  { padding: 15px 0; }
-  .fx--full .fx-pair { font-size: 19px; }
-  .fx--full .fx-rate { font-size: 23px; }
-  .fx--full .fx-chg  { font-size: 14px; }
-  .fx--full .fx-range{ font-size: 12px; }
-  {% comment %} 11:1 is the shape the design was tuned to on TRMNL OG. {% endcomment %}
-  {% comment %} 6 rows, ~82px of header+title_bar chrome, 31px row padding. {% endcomment %}
-  .fx--full .fx-spark svg { height: calc((var(--screen-h) - 82px - var(--fx-top-pad)) / 6 - 31px); }
+  .fx--full .fx-row  { padding: 14px 0; }
+  .fx--full .fx-pair { font-size: 26px; }
+  .fx--full .fx-rate { font-size: 34px; }
+  .fx--full .fx-chg  { font-size: 17px; }
+  .fx--full .fx-pill { padding: 5px 8px; }
+  .fx--full .fx-dot  { width: 9px; height: 9px; }
+  .fx--full .fx-range{ font-size: 14px; }
+  .fx--full .fx-head { font-size: 14px; letter-spacing: 0.08em; }
+  {% comment %}
+    6 rows, ~85px of header+title_bar chrome (the header is 14px here, with a
+    2px rule), 29px row padding. The result matches the rate's 34px line box
+    to within 2px, so the plot and the type set the row height together.
+  {% endcomment %}
+  .fx--full .fx-spark svg { height: calc((var(--screen-h) - 85px - var(--fx-top-pad)) / 6 - 29px); }
 </style>
 
 <div class="layout layout--col layout--justify-start">
@@ -40,20 +60,23 @@
         numbers, which is what keeps CHANGE from being taken for a daily move.
       {% endcomment %}
       <div class="fx-head">
-        <span></span><span>LATEST</span><span>CHANGE</span><span>{% if range_label %}{{ range_label }} {% endif %}TREND</span><span>HI / LO</span>
+        <span>PAIR</span><span>LATEST</span><span>CHANGE</span><span>{% if range_label %}{{ range_label }} {% endif %}TREND</span><span>HI / LO</span>
       </div>
 
       {% for row in rows limit: 6 %}
         <div class="fx-row">
           <div class="fx-pair">{{ row.from }}<span class="fx-arrow">&rarr;</span>{{ row.to }}</div>
             <div class="fx-rate">{{ row.rate_str }}</div>
-          <div class="fx-chg">
-            {{ row.change_str }}%
-          </div>
+          <div class="fx-chg"><span class="fx-pill{% if row.change_pct < 0 %} fx-pill--down{% endif %}">{{ row.change_str }}%</span></div>
+          {% assign fx_end = row.points | split: " " | last | split: "," %}
+          {% assign fx_end_y = fx_end[1] | times: 100.0 | divided_by: 30 %}
           <div class="fx-spark">
-            <svg viewBox="0 0 200 30" width="100%" height="30" preserveAspectRatio="none">
-              <polyline points="{{ row.points }}" vector-effect="non-scaling-stroke"/>
-            </svg>
+            <div class="fx-plot">
+              <svg viewBox="0 0 200 30" width="100%" height="30" preserveAspectRatio="none">
+                <polyline points="{{ row.points }}" vector-effect="non-scaling-stroke"/>
+              </svg>
+              <span class="fx-dot" style="top: {{ fx_end_y }}%"></span>
+            </div>
           </div>
           <div class="fx-range"><span>{{ row.hi_str }}</span><span>{{ row.lo_str }}</span></div>
         </div>

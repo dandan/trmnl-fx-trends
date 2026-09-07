@@ -1,9 +1,9 @@
 {% comment %}
   Half vertical — 400x480. Width is the constraint here, not height: the panel
   is as tall as the full view, so all six rows still fit. What has to go is the
-  LO/HI column, and the endpoint dot — at 110px the viewBox squashes x by ~0.55
-  and a <circle> would render as a visible ellipse. The line itself is immune
-  thanks to non-scaling-stroke.
+  LO/HI column. The end dot stays: it is positioned HTML, not an svg <circle>,
+  so the viewBox squashing x by ~0.55 cannot turn it into an ellipse (see
+  shared.liquid).
 {% endcomment %}
 
 <style>
@@ -13,12 +13,16 @@
     text overflow a narrower track into the gap.
   {% endcomment %}
   .fx--halfv .fx-row,
-  .fx--halfv .fx-head { grid-template-columns: 96px minmax(70px, auto) 56px 1fr; gap: 8px; }
+  .fx--halfv .fx-head { grid-template-columns: 96px minmax(70px, auto) 58px 1fr; gap: 8px; }
   .fx--halfv { --fx-top-pad: 10px; }
   .fx--halfv .fx-row  { padding: 17px 0; }
   .fx--halfv .fx-pair { font-size: 14px; }
   .fx--halfv .fx-rate { font-size: 16px; }
   .fx--halfv .fx-chg  { font-size: 11px; }
+  .fx--halfv .fx-pill { padding: 3px 5px; }
+  .fx--halfv .fx-dot  { width: 6px; height: 6px; }
+  {% comment %} TREND is the last column here, so keep the dot's overhang inside it. {% endcomment %}
+  .fx--halfv .fx-spark { padding-right: 3px; }
   .fx--halfv .fx-head { font-size: 11px; letter-spacing: 0.08em; }
   {% comment %} Narrow plot, so a squatter shape than the wide views. {% endcomment %}
   {% comment %} Capped too: this column is narrow, so an unbounded height goes square. {% endcomment %}
@@ -34,20 +38,23 @@
   {% else %}
     <div class="fx-list fx--halfv">
       <div class="fx-head">
-        <span></span><span>LATEST</span><span>CHANGE</span><span>{% if range_label %}{{ range_label }} {% endif %}TREND</span>
+        <span>PAIR</span><span>LATEST</span><span>CHANGE</span><span>{% if range_label %}{{ range_label }} {% endif %}TREND</span>
       </div>
 
       {% for row in rows limit: 6 %}
         <div class="fx-row">
           <div class="fx-pair">{{ row.from }}<span class="fx-arrow">&rarr;</span>{{ row.to }}</div>
             <div class="fx-rate">{{ row.rate_str }}</div>
-          <div class="fx-chg">
-            {{ row.change_str }}%
-          </div>
+          <div class="fx-chg"><span class="fx-pill{% if row.change_pct < 0 %} fx-pill--down{% endif %}">{{ row.change_str }}%</span></div>
+          {% assign fx_end = row.points | split: " " | last | split: "," %}
+          {% assign fx_end_y = fx_end[1] | times: 100.0 | divided_by: 30 %}
           <div class="fx-spark">
-            <svg viewBox="0 0 200 30" width="110" height="24" preserveAspectRatio="none">
-              <polyline points="{{ row.points }}" vector-effect="non-scaling-stroke"/>
-            </svg>
+            <div class="fx-plot">
+              <svg viewBox="0 0 200 30" width="100%" height="24" preserveAspectRatio="none">
+                <polyline points="{{ row.points }}" vector-effect="non-scaling-stroke"/>
+              </svg>
+              <span class="fx-dot" style="top: {{ fx_end_y }}%"></span>
+            </div>
           </div>
         </div>
       {% endfor %}

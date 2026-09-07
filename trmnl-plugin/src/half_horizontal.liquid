@@ -5,7 +5,7 @@
 <style>
   {% comment %} TREND takes the free width; HI / LO sizes to content. See full.liquid. {% endcomment %}
   .fx--halfh .fx-row,
-  .fx--halfh .fx-head { grid-template-columns: 100px minmax(84px, auto) 82px 1fr minmax(50px, auto); gap: 14px; }
+  .fx--halfh .fx-head { grid-template-columns: 100px minmax(84px, auto) 64px 1fr minmax(50px, auto); gap: 14px; }
   {% comment %}
     11px, not 14: three rows plus the header and title_bar only just fit 240px
     on TRMNL OG, and the list now fills its container, so an overflow would
@@ -16,6 +16,8 @@
   .fx--halfh .fx-pair { font-size: 16px; }
   .fx--halfh .fx-rate { font-size: 19px; }
   .fx--halfh .fx-chg  { font-size: 12px; }
+  .fx--halfh .fx-pill { padding: 4px 6px; }
+  .fx--halfh .fx-dot  { width: 7px; height: 7px; }
   .fx--halfh .fx-range{ font-size: 11px; }
   {% comment %} Half the panel height, 3 rows, 23px row padding. {% endcomment %}
   .fx--halfh .fx-spark svg { height: calc((var(--screen-h) / 2 - 82px - var(--fx-top-pad)) / 3 - 23px); }
@@ -29,20 +31,23 @@
   {% else %}
     <div class="fx-list fx--halfh">
       <div class="fx-head">
-        <span></span><span>LATEST</span><span>CHANGE</span><span>{% if range_label %}{{ range_label }} {% endif %}TREND</span><span>HI / LO</span>
+        <span>PAIR</span><span>LATEST</span><span>CHANGE</span><span>{% if range_label %}{{ range_label }} {% endif %}TREND</span><span>HI / LO</span>
       </div>
 
       {% for row in rows limit: 3 %}
         <div class="fx-row">
           <div class="fx-pair">{{ row.from }}<span class="fx-arrow">&rarr;</span>{{ row.to }}</div>
             <div class="fx-rate">{{ row.rate_str }}</div>
-          <div class="fx-chg">
-            {{ row.change_str }}%
-          </div>
+          <div class="fx-chg"><span class="fx-pill{% if row.change_pct < 0 %} fx-pill--down{% endif %}">{{ row.change_str }}%</span></div>
+          {% assign fx_end = row.points | split: " " | last | split: "," %}
+          {% assign fx_end_y = fx_end[1] | times: 100.0 | divided_by: 30 %}
           <div class="fx-spark">
-            <svg viewBox="0 0 200 30" width="100%" height="26" preserveAspectRatio="none">
-              <polyline points="{{ row.points }}" vector-effect="non-scaling-stroke"/>
-            </svg>
+            <div class="fx-plot">
+              <svg viewBox="0 0 200 30" width="100%" height="26" preserveAspectRatio="none">
+                <polyline points="{{ row.points }}" vector-effect="non-scaling-stroke"/>
+              </svg>
+              <span class="fx-dot" style="top: {{ fx_end_y }}%"></span>
+            </div>
           </div>
           <div class="fx-range"><span>{{ row.hi_str }}</span><span>{{ row.lo_str }}</span></div>
         </div>

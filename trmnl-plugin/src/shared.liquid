@@ -89,10 +89,16 @@
     width: 100%;
   }
 
+  {% comment %}
+    Solid rules, not dotted. A 1px dotted line is a row of single pixels, which
+    the panel's dither treats as noise and half of which disappear; a solid line
+    survives thresholding intact. The header rule is heavier than the row rules
+    so the header reads as a header and not as a seventh row.
+  {% endcomment %}
   .fx-row {
     display: grid;
     align-items: center;
-    border-bottom: 1px dotted currentColor;
+    border-bottom: 1px solid currentColor;
   }
   .fx-row:last-child { border-bottom: 0; }
 
@@ -107,13 +113,13 @@
     font-size: 12px;
     letter-spacing: 0.1em;
     font-weight: 700;
-    border-bottom: 1.5px solid currentColor;
+    border-bottom: 2px solid currentColor;
     padding-bottom: 4px;
   }
 
   {% comment %}
-    Header alignment follows the data beneath it. Column 1 (the pair) has no
-    header at all. Column 4 centres: a sparkline is a trace spanning its whole
+    Header alignment follows the data beneath it. Column 1 (PAIR) is text and
+    left-aligns with it. Column 4 centres: a sparkline is a trace spanning its whole
     track, with no edge to align to. Every other header sits above a
     right-aligned number and right-aligns with it. LATEST used to centre, from
     when the rate was decimal-aligned and had two ragged outer edges; now that
@@ -142,19 +148,46 @@
     The arrow states the direction of conversion: GBP -> AUD reads as "1 GBP
     buys this many AUD". The slash form relies on knowing that the second
     currency is the one being quoted, which is not universal knowledge and is
-    wrong by a large factor if misread. The column needs no header as a result.
+    wrong by a large factor if misread. The column is headed PAIR all the same:
+    the label costs nothing (every other column has one, so the row is there)
+    and without it the header reads as starting at LATEST, one column in.
   {% endcomment %}
-  .fx-pair { font-weight: 800; letter-spacing: -0.01em; white-space: nowrap; }
+  {% comment %}
+    line-height 1 on the two large cells: the full view budgets its row height
+    to the 34px rate, and the default ~1.2 line box would add 7px to every row
+    and push the last one under the title bar.
+  {% endcomment %}
+  .fx-pair { font-weight: 800; letter-spacing: -0.01em; white-space: nowrap; line-height: 1; }
   .fx-pair .fx-arrow { font-weight: 400; padding: 0 0.15em; }
 
-  .fx-rate { font-weight: 700; letter-spacing: -0.01em; }
+  .fx-rate { font-weight: 700; letter-spacing: -0.01em; line-height: 1; }
   {% comment %}
     nowrap: the cell is only as wide as its figure by design, and a track a few
     px short should overflow visibly rather than restack its contents — which is
     how a ▲/▼ glyph once ended up on its own line above the number, looking
     deliberate while hiding that the column needed widening.
   {% endcomment %}
-  .fx-chg  { font-weight: 700; white-space: nowrap; }
+  .fx-chg  { font-weight: 700; white-space: nowrap; display: flex; justify-content: flex-end; }
+
+  {% comment %}
+    THE CHANGE SITS IN A PILL: FILLED FOR A FALL, OUTLINED FOR A RISE
+    The figure is boxed so it reads as a badge, the one derived number in a row
+    of quoted ones. A fall is a filled black pill with white type, a rise an
+    outline of the same shape, so the panel can be read from across the room:
+    the heavy marks are the pairs that dropped. The sign stays on the figure
+    inside either pill — the fill is a glance-level cue, the sign is the fact,
+    and a rounded-to-zero change (no sign, see above) takes the outline since
+    no fall can be claimed for it. The border is drawn on both so the two
+    pills are the same size and the column stays aligned. Each view sets the
+    padding to its type size.
+  {% endcomment %}
+  .fx-pill {
+    display: inline-block;
+    border: 1.5px solid currentColor;
+    border-radius: 5px;
+    line-height: 1;
+  }
+  .fx-pill--down { background: #000; color: #fff; border-color: #000; }
 
   {% comment %}
     THE CHANGE CARRIES ITS OWN DIRECTION
@@ -231,6 +264,13 @@
     align-self: stretch;
     width: 100%;
   }
+  {% comment %}
+    .fx-plot wraps the svg so the end dot has a box to be positioned in that is
+    exactly the plot: the svg's own height (set per view) and the full track
+    width. .fx-spark itself stretches to the row, which is taller than the plot
+    wherever the type is, so a dot placed against it would land off the trace.
+  {% endcomment %}
+  .fx-plot { position: relative; width: 100%; line-height: 0; }
   .fx-spark svg { display: block; width: 100%; height: 100%; }
   .fx-spark polyline {
     fill: none;
@@ -240,13 +280,25 @@
     stroke-linecap: round;
   }
   {% comment %}
-    No endpoint marker. The trace used to end in a short vertical bar — a
-    <line> rather than a <circle>, because preserveAspectRatio="none" scales x
-    and y independently and a circle renders as a visible ellipse. It read as a
-    rendering artefact rather than as "you are here", and it was answering a
-    question the row already answers: the trace ends where it ends, and LATEST
-    states the value it ends at.
+    THE END DOT IS HTML, NOT SVG
+    The trace ends in a round dot: it marks where LATEST sits on the trace and
+    gives the eye a place to land after reading the row's numbers. It is a
+    positioned <span>, not a <circle>, because preserveAspectRatio="none"
+    scales x and y independently and anything drawn inside the svg squashes
+    with it — an earlier <line> marker read as a rendering artefact for the
+    same reason. The span is placed by percentage: x is always 100% (the Worker
+    keeps the last sample, at x = w), and y is the last point's y over the 30px
+    box height, so it lands on the trace at any width and height the view gives
+    the plot. Each view sets the diameter to its plot size; an 8px dot on a
+    24px-tall plot is a blob.
   {% endcomment %}
+  .fx-dot {
+    position: absolute;
+    left: 100%;
+    border-radius: 50%;
+    background: currentColor;
+    transform: translate(-50%, -50%);
+  }
 
   {% comment %}
     THE TITLE BAR'S INSTANCE CELL IS SECONDARY TEXT ON A GREYSCALE PANEL

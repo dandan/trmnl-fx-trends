@@ -16,6 +16,9 @@
   .fx--quad .fx-pair { font-size: 13px; }
   .fx--quad .fx-rate { font-size: 15px; }
   .fx--quad .fx-chg  { font-size: 10px; }
+  .fx--quad .fx-pill { padding: 3px 4px; }
+  .fx--quad .fx-dot  { width: 5px; height: 5px; }
+  .fx--quad .fx-spark { padding-right: 3px; }
   .fx--quad .fx-head { font-size: 10px; letter-spacing: 0.06em; }
   {% comment %} Half the panel height, 3 rows, 19px row padding; capped like half_vertical. {% endcomment %}
   .fx--quad .fx-spark svg { height: calc((var(--screen-h) / 2 - 70px - var(--fx-top-pad)) / 3 - 19px);
@@ -30,20 +33,23 @@
   {% else %}
     <div class="fx-list fx--quad">
       <div class="fx-head">
-        <span></span><span>LATEST</span><span>CHANGE</span><span>{% if range_label %}{{ range_label }} {% endif %}TREND</span>
+        <span>PAIR</span><span>LATEST</span><span>CHANGE</span><span>{% if range_label %}{{ range_label }} {% endif %}TREND</span>
       </div>
 
       {% for row in rows limit: 3 %}
         <div class="fx-row">
           <div class="fx-pair">{{ row.from }}<span class="fx-arrow">&rarr;</span>{{ row.to }}</div>
           <div class="fx-rate">{{ row.rate_str }}</div>
-          <div class="fx-chg">
-            {{ row.change_str }}%
-          </div>
+          <div class="fx-chg"><span class="fx-pill{% if row.change_pct < 0 %} fx-pill--down{% endif %}">{{ row.change_str }}%</span></div>
+          {% assign fx_end = row.points | split: " " | last | split: "," %}
+          {% assign fx_end_y = fx_end[1] | times: 100.0 | divided_by: 30 %}
           <div class="fx-spark">
-            <svg viewBox="0 0 200 30" width="100%" height="24" preserveAspectRatio="none">
-              <polyline points="{{ row.points }}" vector-effect="non-scaling-stroke"/>
-            </svg>
+            <div class="fx-plot">
+              <svg viewBox="0 0 200 30" width="100%" height="24" preserveAspectRatio="none">
+                <polyline points="{{ row.points }}" vector-effect="non-scaling-stroke"/>
+              </svg>
+              <span class="fx-dot" style="top: {{ fx_end_y }}%"></span>
+            </div>
           </div>
         </div>
       {% endfor %}
