@@ -40,4 +40,30 @@ if File.executable?(SNAP_FIREFOX) &&
   end
 end
 
+# PNG previews grew faint grey ellipses on the white ground — invisible in the
+# HTML preview, plain in PNG mode — alongside ImageMagick warning "Cannot write
+# image with defined png:bit-depth or png:color-type". Both have one cause: the
+# Selenium screenshot is RGBA, and trmnlp quantises it (-dither FloydSteinberg
+# -posterize N -colors N) with the alpha channel still on. With the alpha
+# plane present the colour quantiser and the dither between them paint soft
+# blobs of the next grey down onto pure-white areas (the raw screenshot is
+# clean; dropping either the dither or -colors also clears them), and the
+# output is 8-bit gray+alpha, which is what the bit-depth define then refuses.
+# Dropping the alpha channel before quantising fixes both; the device render is
+# 1-bit or greyscale with no alpha anyway. trmnlp 0.7.1 exposes no hook for the
+# convert pipeline, so this wraps the block the pipeline yields to.
+require "trmnlp/screen_generator"
+
+module TRMNLP
+  module OpaqueBeforeQuantise
+    def convert_with_mini_magick(img, depth)
+      super(img, depth) do |m, d, levels|
+        m.alpha "off"
+        yield(m, d, levels)
+      end
+    end
+  end
+  ScreenGenerator.prepend(OpaqueBeforeQuantise)
+end
+
 load Gem.bin_path("trmnl_preview", "trmnlp")
