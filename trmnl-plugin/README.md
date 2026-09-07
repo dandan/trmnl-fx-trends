@@ -120,8 +120,8 @@ These are constraints of the panel, not preferences:
   literal colours, so it inverts with the panel in dark mode; the footer dates
   carry `text--default` for the same reason. Colour goes through the
   framework's utility classes, never its `--framework-*` variables: those are
-  undocumented, and the theme docs say plugins should reach colour through the
-  utilities.
+  undocumented, and the [theme docs](https://trmnl.com/framework/docs/3.3/theme_slots)
+  say plugins should reach colour through the utilities.
 - **Pairs read `GBP → AUD`, not `GBP/AUD`.** The slash form relies on knowing
   that the second currency is the one being quoted — misread, `1.9104` is wrong
   by a factor of ~3.6, and a wall display offers no way to check. The arrow
@@ -188,6 +188,13 @@ These are constraints of the panel, not preferences:
   which is what keeps CHANGE from being taken for a daily move.
 
 ### Framework caveats
+
+The markup targets the [TRMNL Framework 3.3](https://trmnl.com/framework/docs/3.3)
+design system; its [TRMNL X guide](https://trmnl.com/framework/docs/3.3/trmnl_x_guide)
+covers the larger 4-bit panel the v2 design was drawn for, and the
+[Screen](https://trmnl.com/framework/docs/3.3/screen) and
+[Title Bar](https://trmnl.com/framework/docs/3.3/title_bar) pages document the
+classes and variables the views lean on.
 
 Carried over from `meetup_2026`, learned the hard way there:
 
