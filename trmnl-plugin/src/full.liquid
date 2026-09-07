@@ -47,7 +47,7 @@
   {% if fx_failed %}
     <div class="fx-error">
       <span class="title">Rates unavailable</span>
-      <span class="label label--gray-out" style="margin-top:6px;">
+      <span class="label label--gray" style="margin-top:6px;">
         {{ error | default: "No data returned" }}
       </span>
     </div>
@@ -67,7 +67,7 @@
         <div class="fx-row">
           <div class="fx-pair">{{ row.from }}<span class="fx-arrow">&rarr;</span>{{ row.to }}</div>
             <div class="fx-rate">{{ row.rate_str }}</div>
-          <div class="fx-chg"><span class="fx-pill{% if row.change_pct < 0 %} fx-pill--down{% endif %}">{{ row.change_str }}%</span></div>
+          <div class="fx-chg"><span class="fx-pill rounded--xsmall{% if row.change_pct < 0 %} fx-pill--down bg--black text--white{% endif %}">{{ row.change_str }}%</span></div>
           {% assign fx_end = row.points | split: " " | last | split: "," %}
           {% assign fx_end_y = fx_end[1] | times: 100.0 | divided_by: 30 %}
           <div class="fx-spark">
@@ -93,6 +93,6 @@
 <div class="title_bar">
   <span class="title">Exchange Rates</span>
   <span class="instance">
-    {% if fx_failed %}No data{% else %}<span class="fx-dates">{% if start_date and start_date != as_of %}{{ start_date }} &rarr; {% endif %}{{ as_of }}</span> &middot; ECB{% endif %}
+    {% if fx_failed %}No data{% else %}<span class="fx-dates text--default">{% if start_date and start_date != as_of %}{{ start_date }} &rarr; {% endif %}{{ as_of }}</span> &middot; ECB{% endif %}
   </span>
 </div>

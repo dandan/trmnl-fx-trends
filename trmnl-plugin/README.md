@@ -116,9 +116,12 @@ These are constraints of the panel, not preferences:
   such. The fill is the glance-level cue — from across the room the heavy marks
   are the pairs that dropped — and the sign inside stays as the fact. A change
   that rounds to zero is outlined, since no fall can be claimed for it. The
-  fill uses the framework's strong-fill and canvas tokens rather than literal
-  black and white, so it inverts with the panel in dark mode; the footer dates
-  follow the title's colour token for the same reason.
+  fill is the framework's `bg--black text--white` utilities rather than
+  literal colours, so it inverts with the panel in dark mode; the footer dates
+  carry `text--default` for the same reason. Colour goes through the
+  framework's utility classes, never its `--framework-*` variables: those are
+  undocumented, and the theme docs say plugins should reach colour through the
+  utilities.
 - **Pairs read `GBP → AUD`, not `GBP/AUD`.** The slash form relies on knowing
   that the second currency is the one being quoted — misread, `1.9104` is wrong
   by a factor of ~3.6, and a wall display offers no way to check. The arrow
@@ -195,9 +198,10 @@ Carried over from `meetup_2026`, learned the hard way there:
   invisibly.
 - **`.title_bar` must be a sibling of `.layout`, placed after it**, or it renders
   inline instead of pinning to the bottom.
-- `src/settings.yml` pins `framework_version: 3.1.6`, but **don't rely on it** —
-  the markup is written to render on any version, and that is what actually
-  protects the plugin. `trmnlp serve` always loads `css/latest` regardless.
+- `src/settings.yml` pins `framework_version: 3.3.1`, which is what
+  `css/latest` served when it was set, so the device and `trmnlp serve` render
+  the same CSS. **Don't rely on it** — the markup is written to render on any
+  3.x version, and that is what actually protects the plugin.
 
 > When previewing locally, the grey background is TRMNL's own
 > `.environment { background-color: gray }` preview chrome, not the plugin. The

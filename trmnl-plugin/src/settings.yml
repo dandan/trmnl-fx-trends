@@ -4,7 +4,7 @@ no_screen_padding: 'no'
 dark_mode: 'no'
 static_data: ''
 polling_verb: get
-framework_version: 3.1.6
+framework_version: 3.3.1
 serverless_language: ''
 polling_url: https://exchange-rates-trmnl.uezi.workers.dev/rates?pairs={{ pairs | url_encode }}&range={{ range }}&w=200&h=30
 polling_headers: ''

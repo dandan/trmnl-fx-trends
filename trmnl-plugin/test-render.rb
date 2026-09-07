@@ -99,6 +99,11 @@ VIEWS.each do |view, limit|
   # two never disagree.
   check("#{view}: falls are filled and rises outlined",
         cells.zip(changes).all? { |c, f| c.include?("fx-pill--down") == f.start_with?("-") })
+  # The fill is the framework's own black/white utilities, which dark mode
+  # swaps; a literal colour here would not follow it.
+  check("#{view}: filled pills use the framework's bg/text utilities",
+        cells.all? { |c| !c.include?("fx-pill--down") || (c.include?("bg--black") && c.include?("text--white")) })
+  check("#{view}: dates use text--default", out.include?('class="fx-dates text--default"'))
   fig = /\A([+-]?\d+\.\d{2})%\z/m
   check("#{view}: every change is signed and 2dp",
         changes.all? { |c| c.match?(fig) },
@@ -216,7 +221,7 @@ VIEWS.each_key do |view|
   out, = render(view, { "rows" => [flat], "range" => "1Y", "as_of" => SAMPLE["as_of"] })
   cell = out[%r{<div class="fx-chg">(.*?)</div>}m, 1].to_s.gsub(/<[^>]+>/, "").strip
   check("#{view}: zero change carries no sign", !cell.match?(/[+-]/))
-  check("#{view}: zero change is outlined, not filled", !out.include?("class=\"fx-pill fx-pill--down\""))
+  check("#{view}: zero change is outlined, not filled", !out.match?(/class="fx-pill[^"]*fx-pill--down/))
   # Nothing takes the arrow's place: a dash there reads as "minus 0%".
   check("#{view}: the change cell holds an unsigned figure alone",
         cell == "0.00%", cell.inspect)

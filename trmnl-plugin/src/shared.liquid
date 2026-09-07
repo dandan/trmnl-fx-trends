@@ -181,23 +181,22 @@
     pills are the same size and the column stays aligned. Each view sets the
     padding to its type size.
 
-    The fill and its type are the framework's own "strong fill" and "canvas"
-    tokens, not #000 and #fff: in dark mode the framework swaps them (white
-    fill on a black panel), and a literal black pill vanished into the black
-    ground with its white figure floating alone. The fallbacks are the light
-    values, for a renderer without the tokens.
+    The fill and its type come from the framework's own utilities, `bg--black`
+    and `text--white` on the span, not from #000 and #fff here: in dark mode
+    the framework swaps black and white, and a literal black pill vanished
+    into the black ground with its white figure floating alone. Black and
+    white are "real colours" in the framework's terms, so unlike the label
+    variants they never resolve to transparent under a palette. The radius is
+    `rounded--xsmall` (5px), a framework step rather than a literal. The
+    filled pill's border goes transparent: the background paints under it, so
+    both pills keep the same size and the column stays aligned.
   {% endcomment %}
   .fx-pill {
     display: inline-block;
     border: 1.5px solid currentColor;
-    border-radius: 5px;
     line-height: 1;
   }
-  .fx-pill--down {
-    background: var(--framework-semantic-fill-strong-bg-color, #000);
-    border-color: var(--framework-semantic-fill-strong-bg-color, #000);
-    color: var(--framework-semantic-canvas-bg-color, #fff);
-  }
+  .fx-pill--down { border-color: transparent; }
 
   {% comment %}
     THE CHANGE CARRIES ITS OWN DIRECTION
@@ -329,18 +328,15 @@
     that shape to win, while a rule on a child inside it beats the inherited
     value outright.
 
-    The colour is the TITLE's colour, taken from the same token chain the
-    framework resolves `.title_bar .title` through, not a literal black. A
-    literal was unreadable in dark mode: the framework paints the panel black
-    and lifts its text to white through these tokens, and #000 sat on #000.
-    Following the title keeps the dates as legible as the word beside them
-    under every palette and mode the framework knows.
+    The colour is the framework's `text--default` utility on the span, "the
+    text colour the screen itself uses", which is the title's colour. Not a
+    literal black: that was unreadable in dark mode, where the framework
+    paints the panel black and lifts its text to white, and #000 sat on #000.
+    Not a framework variable either: the token names are undocumented and the
+    theme docs say plugin CSS should reach colour through the utilities, which
+    follow themes and dark mode without edits. So there is no rule here; the
+    class name stays for the tests and for anyone reading the markup.
   {% endcomment %}
-  .fx-dates {
-    color: var(--framework-slot-title-bar-text-color,
-           var(--framework-semantic-text-primary-text-color,
-           var(--framework-text-primary, currentColor)));
-  }
 
   {% comment %} Shown instead of the list when the Worker returns an error. {% endcomment %}
   .fx-error {
