@@ -149,14 +149,15 @@ These are constraints of the panel, not preferences:
   yesterday's or Friday's for roughly three quarters of the week — a "today"
   label would be wrong most of the time, and "current" implies a live market
   quote rather than a daily reference fixing. The header answers *which* rate;
-  the title bar's `5 Sep 2025 → 4 Sep 2026` answers *over what window*, and its
+  the title bar's `5 Sep 2025 – 4 Sep 2026` answers *over what window*, and its
   last date is the same "as of when" the rate carries.
 - **Footer dates print as `4 Sep 2026`, from ISO data.** The Worker sends
   `start_date` and `as_of` as `YYYY-MM-DD` and they stay that way in the JSON;
   the template formats them. ISO on a wall reads as a database field, and
   numeric day-month is the one form readers in different countries disagree
-  on, so the month is a name. A window inside one year prints the year once:
-  `5 Aug → 4 Sep 2026`.
+  on, so the month is a name. The ends are joined by an en dash, not the arrow,
+  which already means "converts to" in the pair column. A window inside one
+  year prints the year once: `5 Aug – 4 Sep 2026`.
 - **Rates and bounds carry five significant figures, not a fixed number of
   decimals.** That is what the source carries: ECB quotes to about five figures
   whatever the magnitude (`159.68` for JPY, `0.80426` for CHF), so a
