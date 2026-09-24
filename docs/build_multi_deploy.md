@@ -105,6 +105,14 @@ The committed host is matched literally (`exchange-rates-trmnl.uezi.workers.dev`
 not by pattern, so a typo in the profile fails loudly rather than pushing a
 half-substituted URL.
 
+### 4.2a The plugin name
+
+`settings.yml` also carries `name:`, and the push overwrites the server's copy
+with it — so the first QA push renamed the clone back to the master's name and
+the dashboard showed two identical "Exchange Rates - Sparklines". The QA
+profile sets `PLUGIN_NAME_SUFFIX=" (QA)"`, appended to the name in the same
+swap window as the host. Optional, unset on prod and other accounts.
+
 ### 4.3 Profiles
 
 ```

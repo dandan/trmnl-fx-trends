@@ -30,6 +30,7 @@
 #   TRMNL_API_KEY     that account's trmnlp key, from https://trmnl.com/account
 #   TRMNL_PLUGIN_ID   that account's plugin settings ID (filled in by --create)
 #   WORKER_HOST       the Worker this instance polls (QA or production)
+#   PLUGIN_NAME_SUFFIX  optional; " (QA)" keeps the clone told apart in the dashboard
 #
 # TRMNL_API_KEY is exported so it overrides ~/.config/trmnlp/config.yml, which
 # means switching accounts needs no `trmnlp login` and won't clobber the stored
@@ -148,6 +149,19 @@ if ! grep -q "polling_url: https://${COMMITTED_HOST}/" "$SETTINGS"; then
 fi
 sed -i "s|https://${COMMITTED_HOST}/|https://${WORKER_HOST}/|" "$SETTINGS"
 echo "==> polling_url -> https://${WORKER_HOST}/ (for this upload only)"
+
+# settings.yml also carries the plugin's NAME, and the push overwrites the
+# server's copy with it — which is how the QA clone lost its "(QA)" and became
+# a twin of the Recipe Master in the dashboard. A profile may append a suffix
+# for the upload, in the same window and restored by the same trap.
+if [ -n "${PLUGIN_NAME_SUFFIX:-}" ]; then
+  if ! grep -q "^name: " "$SETTINGS"; then
+    echo "Error: $SETTINGS has no top-level name: line to suffix." >&2
+    exit 1
+  fi
+  sed -i "s|^name: \(.*\)$|name: \1${PLUGIN_NAME_SUFFIX}|" "$SETTINGS"
+  echo "==> name -> $(grep '^name: ' "$SETTINGS" | cut -d' ' -f2-) (for this upload only)"
+fi
 
 if [ "$CREATE" = true ]; then
   echo "==> Creating a new plugin on TRMNL account '${PROFILE}'..."

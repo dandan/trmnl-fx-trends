@@ -281,6 +281,7 @@ recipe ships. Three values are held out of git, in `.env.<profile>`:
 | `TRMNL_API_KEY` | A secret, and per account. |
 | `TRMNL_PLUGIN_ID` | Per instance, *and* `trmnlp push` overwrites `settings.yml` with the server's copy including its `id`. |
 | `WORKER_HOST` | Per instance: the QA clone polls the QA Worker. `deploy.sh` swaps it into `polling_url` for the upload only, inside the same backup/restore that already protects `settings.yml`, and refuses to run without it. |
+| `PLUGIN_NAME_SUFFIX` | Optional. `settings.yml` carries the plugin's `name:` and the push overwrites the server's copy with it, so the QA clone became a twin of the master in the dashboard. The QA profile sets `" (QA)"`, applied for the upload only. |
 
 > **The one step that stays manual** is adding the plugin to a device playlist —
 > trmnlp has no API for it. The script prints the link when it finishes.
