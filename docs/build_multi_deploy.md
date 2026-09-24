@@ -173,7 +173,20 @@ up there as a blank sparkline before it can show up for anyone else.
    marketplace preview, and the "Chef" linter's checks (see the recipe
    publishing checklist on the TRMNL blog).
 
-## 7. Not doing
+## 7. The title says which environment it is
+
+The QA Worker sets `DEPLOY_ENV = "qa"` (`[env.qa.vars]` in `wrangler.toml`)
+and stamps it into every `/rates` response as `env`. The four views print it
+after the title: `Exchange Rates (QA)`. Production sets nothing, the field is
+absent, and the recipe's title is bare — so the same templates serve both
+instances, which is what the additive rule requires.
+
+It is also the proof of the wiring: the suffix can only appear if the
+device's request reached the QA Worker. A form field could not do this (TRMNL
+has no hidden field type, and the recipe ships every field), and patching the
+title at push time would mean editing four files on top of the host swap.
+
+## 8. Not doing
 
 - **A second TRMNL account for qa.** The clone gives the same isolation, the
   profile mechanism already exists, and a second account means a second device

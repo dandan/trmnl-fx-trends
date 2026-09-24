@@ -164,3 +164,10 @@ test("parsePairs throws HttpError 400 on bad input", () => {
   assert.throws(() => parsePairs("GBP/AUD/EUR"),
     (e) => e instanceof HttpError && e.status === 400);
 });
+
+test("names its environment only when DEPLOY_ENV is set", async () => {
+  const prod = await (await call("/rates?pairs=GBP/AUD&range=1M")).json();
+  assert.equal("env" in prod, false, "production response must carry no env field");
+  const qa = await (await call("/rates?pairs=GBP/AUD&range=1M", { env: { DEPLOY_ENV: "qa" } })).json();
+  assert.equal(qa.env, "qa");
+});

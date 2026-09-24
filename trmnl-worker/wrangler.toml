@@ -31,3 +31,10 @@ enabled = true
 #   ./deploy.sh prod  ->  wrangler deploy
 [env.qa]
 name = "exchange-rates-trmnl-qa"
+
+# Stamped into every /rates response as `env`, which the plugin prints in its
+# title bar ("Exchange Rates (QA)"). Production sets nothing, so the field is
+# absent there and the title is bare. Seeing the suffix on the panel is the
+# proof that the device's request reached this Worker and not production.
+[env.qa.vars]
+DEPLOY_ENV = "qa"

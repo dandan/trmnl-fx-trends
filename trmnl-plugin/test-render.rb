@@ -89,6 +89,11 @@ VIEWS.each do |view, limit|
   check("#{view}: the window is stated once", count(out, /#{SAMPLE['range_label']}/) == 1,
         "got #{count(out, /#{SAMPLE['range_label']}/)}")
   check("#{view}: no unresolved Liquid", !out.include?("{{") && !out.include?("{%"))
+  # The title names the environment only when the Worker names itself (the QA
+  # deployment does, production does not), so the recipe's title stays bare.
+  check("#{view}: production title is bare", out.include?('<span class="title">Exchange Rates</span>'))
+  qa_out, = render(view, SAMPLE.merge("env" => "qa"))
+  check("#{view}: QA title carries the suffix", qa_out.include?('<span class="title">Exchange Rates (QA)</span>'))
   # Direction is stated explicitly: "GBP -> AUD" reads as "1 GBP buys N AUD".
   # The slash form relies on knowing which currency is being quoted.
   check("#{view}: pairs use the direction arrow",

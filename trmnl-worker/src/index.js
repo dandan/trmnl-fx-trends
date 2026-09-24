@@ -79,6 +79,9 @@ export default {
 
     try {
       const body = await handleRates(url, fetchImpl);
+      // Only a non-production environment names itself (see wrangler.toml), so
+      // the field is absent from what installers of the recipe receive.
+      if (env?.DEPLOY_ENV) body.env = env.DEPLOY_ENV;
       return json(body, 200, { "Cache-Control": "public, max-age=3600" });
     } catch (err) {
       const status = err instanceof HttpError ? err.status : 500;

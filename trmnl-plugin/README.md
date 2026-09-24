@@ -242,6 +242,10 @@ the Worker changes too, it goes first, in the same order:
 ./deploy.sh prod --force
 ```
 
+The QA Worker names itself in its response (`env: "qa"`) and the title bar
+prints it — `Exchange Rates (QA)` — so a glance at the device says which
+Worker it is polling. Production sends no such field and the title is bare.
+
 The clone was made once in the TRMNL UI with the copy icon (trmnlp has no
 clone call, and `--create` makes an empty plugin, not a copy); its ID is in
 `.env.qa`. The reasoning, and the rule that Worker changes must be additive
