@@ -30,6 +30,16 @@ oauth_expiry_field_name: ''
 oauth_expiry_strategy: ''
 oauth_fixed_expiry_ms: ''
 custom_fields:
+- keyname: about
+  field_type: author_bio
+  name: About this plugin
+  description: 'Exchange rates for your chosen currency pairs, each as a sparkline
+    with the latest rate and percentage change. Show several pairs over a period
+    between one month and five years. Daily ECB reference rates via <a
+    href="https://frankfurter.dev">Frankfurter</a>; no account or key needed.<br/>By
+    Daniel Laeng &mdash; <a href="https://github.com/dandan/trmnl-exchange-rates">source
+    and issues on GitHub</a>.'
+  category: finance
 - keyname: pairs
   field_type: string
   name: Currency pairs
