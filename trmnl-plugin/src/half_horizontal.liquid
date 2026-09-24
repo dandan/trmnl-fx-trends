@@ -57,6 +57,7 @@
 </div>
 
 <div class="title_bar">
+  {{ fx_icon }}
   <span class="title">Exchange Rates{% if env %} ({{ env | upcase }}){% endif %}</span>
   <span class="instance">{% if fx_failed %}No data{% else %}<span class="fx-dates text--default">{{ fx_dates }}</span> &middot; ECB{% endif %}</span>
 </div>

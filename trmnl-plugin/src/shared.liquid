@@ -372,4 +372,18 @@
   span rather than two dates. A single-day window, or a start_date an older
   Worker did not send, prints the one date with no dangling dash.
 {% endcomment %}
+{% comment %}
+  THE TITLE BAR ICON
+  The recipe checklist asks for an image in the title bar in place of the
+  default logo, inline rather than hosted. "FX" says what the plugin is; a
+  sparkline mark was tried first and just repeated what six rows already
+  show. The letters are paths, not <text>, so the icon needs no font and is
+  identical on every device. Filled in currentColor, it takes the title's
+  colour in every mode and palette. 28px is the framework's
+  --title-bar-image-height; the strokes are heavy enough to survive a 1-bit
+  threshold at that size. The directory-card icon is a separate PNG with its
+  own style; this one is only for the panel.
+{% endcomment %}
+{% capture fx_icon %}<svg class="image" viewBox="0 0 28 28" width="28" height="28" aria-hidden="true"><path fill="currentColor" d="M2 4h10.5v4H6.5v4.2h5.5v4H6.5V24H2zM13.2 4h5l2.9 5.6L24 4h4.4l-5.3 9.6L28.8 24h-5l-3.2-6.2L17.3 24h-4.7l5.7-10.4z"/></svg>{% endcapture %}
+
 {% capture fx_dates %}{% if start_date and start_date != as_of %}{% assign fx_start_year = start_date | date: "%Y" %}{% assign fx_end_year = as_of | date: "%Y" %}{% if fx_start_year == fx_end_year %}{{ start_date | date: "%-d %b" }}{% else %}{{ start_date | date: "%-d %b %Y" }}{% endif %} &ndash; {% endif %}{{ as_of | date: "%-d %b %Y" }}{% endcapture %}

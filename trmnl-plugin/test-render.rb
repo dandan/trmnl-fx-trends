@@ -62,6 +62,8 @@ VIEWS.each do |view, limit|
         "got #{count(out, /class="fx-row"/)}")
   check("#{view}: no NaN/Infinity", !out.match?(/NaN|Infinity/))
   check("#{view}: title_bar present", out.include?("title_bar"))
+  check("#{view}: title bar carries the inline icon",
+        out.match?(%r{<div class="title_bar">\s*<svg class="image"}))
   # The footer states the window the data covers, first business day to last,
   # printed as `5 Sep 2025 - 4 Sep 2026`: month names rather than ISO, since
   # numeric day-month is the one form readers disagree on, and an en dash, since
@@ -162,8 +164,9 @@ VIEWS.each do |view, limit|
     check("#{view}: all points parse as coordinates", ok)
     # The end dot is positioned HTML, never an svg shape: a <circle> or <line>
     # inside a preserveAspectRatio="none" box is squashed with it.
-    check("#{view}: no marker drawn inside the svg",
-          !out.include?("<line") && !out.include?("<circle"))
+    sparks = out.scan(%r{<div class="fx-plot">.*?</svg>}m).join
+    check("#{view}: no marker drawn inside the sparkline svg",
+          !sparks.include?("<line") && !sparks.include?("<circle"))
     check("#{view}: one end dot per row", count(out, /class="fx-dot"/) == expected_rows)
     # The dot's y is the last point's y as a percentage of the 30px box; the
     # Worker pads the box by 2px, so every value lands strictly inside 0..100.
