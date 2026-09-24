@@ -221,19 +221,46 @@ Carried over from `meetup_2026`, learned the hard way there:
 > `.environment { background-color: gray }` preview chrome, not the plugin. The
 > panel itself is white.
 
+## QA and production
+
+Two plugin instances live on my account. The **Recipe Master** is what every
+installer of the published recipe runs; the **QA clone** is what my device
+runs. Each has a deploy profile, and each polls its own Worker:
+
+| Profile | Instance | Polls |
+|---|---|---|
+| `qa` | the clone, on my device | `exchange-rates-trmnl-qa.uezi.workers.dev` |
+| `prod` | the Recipe Master, everyone else | `exchange-rates-trmnl.uezi.workers.dev` |
+
+A change goes to `qa`, gets checked on the device, then goes to `prod`. When
+the Worker changes too, it goes first, in the same order:
+
+```bash
+(cd ../trmnl-worker && ./deploy.sh qa)
+./deploy.sh qa --force            # then check the device
+(cd ../trmnl-worker && ./deploy.sh prod)
+./deploy.sh prod --force
+```
+
+The clone was made once in the TRMNL UI with the copy icon (trmnlp has no
+clone call, and `--create` makes an empty plugin, not a copy); its ID is in
+`.env.qa`. The reasoning, and the rule that Worker changes must be additive
+so old templates keep rendering between the two prod deploys, are in
+[`../docs/build_multi_deploy.md`](../docs/build_multi_deploy.md).
+
 ## First-time setup on a new account
 
 ```bash
-cp .env.example .env.personal   # fill in TRMNL_API_KEY only
-./deploy.sh personal --create
+cp .env.example .env.thomas     # fill in TRMNL_API_KEY and WORKER_HOST
+./deploy.sh thomas --create
 ```
 
 That's the whole setup. `trmnlp push` with no plugin ID POSTs
 `/api/plugin_settings` to create a private plugin, then uploads `src/` as a zip
-— so `settings.yml` carries the strategy, polling URL, bearer header and form
-fields, and `src/*.liquid` carries the markup for all four views. Nothing is
-pasted into the web UI. The new plugin ID is written back into
-`.env.personal`, so every subsequent deploy is just `./deploy.sh personal`.
+— so `settings.yml` carries the strategy, polling URL and form fields, and
+`src/*.liquid` carries the markup for all four views. Nothing is pasted into
+the web UI. The new plugin ID is written back into `.env.thomas`, so every
+subsequent deploy is just `./deploy.sh thomas`.
 
 `--create` refuses to run if the profile already has a `TRMNL_PLUGIN_ID`, since
 that would leave a duplicate plugin on the account. It is the mirror of the
@@ -241,26 +268,15 @@ existing guard that refuses to push *without* one.
 
 ### What is and isn't parameterised
 
-`polling_url` carries the real Worker host and is committed in
-[`src/settings.yml`](src/settings.yml). It is not a secret, one Worker serves
-every account, and it only changes if the Worker is renamed — so it lives where
-it is used rather than being injected at deploy time.
+`polling_url` is committed in [`src/settings.yml`](src/settings.yml) with the
+**production** Worker host, because the committed file is what the published
+recipe ships. Three values are held out of git, in `.env.<profile>`:
 
-Only two values are held out of git, and each for a specific reason:
-
-| Value | Where it lives | Why |
-|---|---|---|
-| `API_TOKEN` | `../trmnl-worker/.prod.vars` | A secret. Injected into `settings.yml` for the upload, reverted by an `EXIT` trap. |
-| `TRMNL_PLUGIN_ID` | `.env.<profile>` | Account-specific, *and* `trmnlp push` overwrites `settings.yml` with the server's copy including its `id`. |
-
-The token is read from `.prod.vars` rather than `.dev.vars` because the latter
-is wrangler's local-development file — every key in it is injected into
-`wrangler dev`. And not from `.env.<profile>`, because one Worker serves every
-TRMNL account, so the token is project-scoped rather than account-scoped.
-
-`../trmnl-worker/deploy.sh --set-secret` reads the same file to provision
-Cloudflare, so the token the Worker checks and the token in this polling header
-cannot drift apart.
+| Value | Why |
+|---|---|
+| `TRMNL_API_KEY` | A secret, and per account. |
+| `TRMNL_PLUGIN_ID` | Per instance, *and* `trmnlp push` overwrites `settings.yml` with the server's copy including its `id`. |
+| `WORKER_HOST` | Per instance: the QA clone polls the QA Worker. `deploy.sh` swaps it into `polling_url` for the upload only, inside the same backup/restore that already protects `settings.yml`, and refuses to run without it. |
 
 > **The one step that stays manual** is adding the plugin to a device playlist —
 > trmnlp has no API for it. The script prints the link when it finishes.
@@ -271,11 +287,12 @@ failed `--create` doesn't leave an orphan behind.
 ## Deploy
 
 ```bash
-./deploy.sh personal            # uploads settings.yml + all src/*.liquid
+./deploy.sh qa --force          # uploads settings.yml + all src/*.liquid
 ```
 
-The script injects the Worker's bearer token into `settings.yml` only for the
-upload and restores the placeholder via an `EXIT` trap, so the token never lands
-in git. It refuses to run without a `TRMNL_PLUGIN_ID`, because `trmnlp push`
-silently *creates* a new plugin when the ID is missing rather than updating the
-intended one.
+The script swaps the profile's `WORKER_HOST` into `settings.yml` only for the
+upload and restores the committed file via an `EXIT` trap, so the QA host never
+lands in git. It refuses to run without a `TRMNL_PLUGIN_ID`, because `trmnlp
+push` silently *creates* a new plugin when the ID is missing rather than
+updating the intended one. Pass `--force` to skip trmnlp's "overwrite?" prompt,
+which is required when there is no terminal.

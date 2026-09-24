@@ -110,14 +110,26 @@ Measured CPU (excluding network), against the 10ms free-tier limit:
 
 ```bash
 npx wrangler login    # first time only
-./deploy.sh           # tests, then deploys
+./deploy.sh qa        # tests, then deploys the QA Worker
+./deploy.sh prod      # tests, then deploys production
 ```
+
+Two deployments of the same code, from one `wrangler.toml`: `[env.qa]` sets a
+second name, and the name sets the URL. My device's plugin (the QA clone) polls
+QA; the published recipe polls production, so a production deploy is live for
+every installer at once. A change therefore goes to QA first, is checked on
+the device, then goes to production — and it must be **additive**, because the
+recipe's templates are updated in a separate step and old Liquid meets the new
+response in between. Details in
+[`../docs/build_multi_deploy.md`](../docs/build_multi_deploy.md).
 
 No secrets to provision: the Worker fetches the allowlist itself at runtime, so
 there is nothing to keep in sync between here and the plugin's polling config.
 
-Endpoint: `https://exchange-rates-trmnl.<subdomain>.workers.dev/rates`.
-Logs: `npm run tail`.
+| | URL | Logs |
+|---|---|---|
+| QA | `https://exchange-rates-trmnl-qa.<subdomain>.workers.dev/rates` | `npm run tail:qa` |
+| Production | `https://exchange-rates-trmnl.<subdomain>.workers.dev/rates` | `npm run tail` |
 
 ## Access control
 

@@ -21,3 +21,13 @@ workers_dev = true
 
 [observability]
 enabled = true
+
+# QA environment: a second deployment at
+#   https://exchange-rates-trmnl-qa.<your-subdomain>.workers.dev
+# My device's plugin (the QA clone) polls this one; the published recipe polls
+# the top-level Worker. Everything but the name is inherited from above, and
+# the name is what sets the URL. See docs/build_multi_deploy.md.
+#   ./deploy.sh qa    ->  wrangler deploy --env qa
+#   ./deploy.sh prod  ->  wrangler deploy
+[env.qa]
+name = "exchange-rates-trmnl-qa"
