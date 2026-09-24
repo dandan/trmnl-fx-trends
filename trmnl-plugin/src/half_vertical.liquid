@@ -28,6 +28,13 @@
   {% comment %} Capped too: this column is narrow, so an unbounded height goes square. {% endcomment %}
   .fx--halfv .fx-spark svg { height: calc((var(--screen-h) - 82px - var(--fx-top-pad)) / 6 - 35px);
                              max-height: calc(var(--screen-h) / 16); }
+  {% comment %}
+    Portrait: the cap above guards against the column widening in landscape
+    on a big panel, but in portrait this column is as narrow as on OG and the
+    panel is twice as tall, so the cap left the lower third empty. The plain
+    height calc (123px in 390px, ~3:1) is the right shape here.
+  {% endcomment %}
+  .screen--portrait .fx--halfv .fx-spark svg { max-height: none; }
 </style>
 
 <div class="layout layout--col layout--justify-start">

@@ -23,6 +23,8 @@
   {% comment %} Half the panel height, 3 rows, 19px row padding; capped like half_vertical. {% endcomment %}
   .fx--quad .fx-spark svg { height: calc((var(--screen-h) / 2 - 70px - var(--fx-top-pad)) / 3 - 19px);
                             max-height: calc(var(--screen-h) / 16); }
+  {% comment %} Portrait: no cap, for the reason given in half_vertical. {% endcomment %}
+  .screen--portrait .fx--quad .fx-spark svg { max-height: none; }
 </style>
 
 <div class="layout layout--col layout--justify-start">
