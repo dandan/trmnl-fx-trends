@@ -145,7 +145,7 @@ fragility cost. That trade is defensible; it is just not the one being made here
 ## 3. Repo layout
 
 ```
-trmnl-exchange-rates/
+trmnl-fx-trends/
 ├── BUILD_PLAN.md
 ├── README.md
 ├── trmnl-worker/

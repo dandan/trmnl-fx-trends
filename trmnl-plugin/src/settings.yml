@@ -36,7 +36,7 @@ custom_fields:
   description: 'Up to 8 currency pairs, each with a sparkline, latest rate and
     percentage change, over 1 month to 5 years. Daily rates from the European Central
     Bank via <a href="https://frankfurter.dev">Frankfurter</a>, no API key needed.<br/>By
-    Daniel Laeng &mdash; <a href="https://github.com/dandan/trmnl-exchange-rates">source
+    Daniel Laeng &mdash; <a href="https://github.com/dandan/trmnl-fx-trends">source
     code on GitHub</a>.'
   category: finance
 - keyname: pairs

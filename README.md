@@ -1,4 +1,4 @@
-# TRMNL Exchange Rates
+# TRMNL FX Trends
 
 A [TRMNL](https://usetrmnl.com) plugin that shows exchange rates for the
 currency pairs you choose, each as a sparkline with the latest rate and the
