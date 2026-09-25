@@ -33,12 +33,11 @@ custom_fields:
 - keyname: about
   field_type: author_bio
   name: About this plugin
-  description: 'Exchange rates for your chosen currency pairs, each as a sparkline
-    with the latest rate and percentage change. Show several pairs over a period
-    between one month and five years. Daily ECB reference rates via <a
-    href="https://frankfurter.dev">Frankfurter</a>; no account or key needed.<br/>By
+  description: 'Up to 8 currency pairs, each with a sparkline, latest rate and
+    percentage change, over 1 month to 5 years. Daily rates from the European Central
+    Bank via <a href="https://frankfurter.dev">Frankfurter</a>, no API key needed.<br/>By
     Daniel Laeng &mdash; <a href="https://github.com/dandan/trmnl-exchange-rates">source
-    and issues on GitHub</a>.'
+    code on GitHub</a>.'
   category: finance
 - keyname: pairs
   field_type: string
@@ -60,6 +59,6 @@ custom_fields:
   - 2Y
   - 5Y
   default: 1Y
-name: Exchange Rates - Sparklines
-description: Show multiple exchange rate charts
+name: FX Trends
+description: "Exchange rates with sparklines: up to 8 currency pairs, 1 month to 5 years"
 refresh_interval: 3600
