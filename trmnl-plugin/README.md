@@ -283,8 +283,12 @@ recipe ships. Three values are held out of git, in `.env.<profile>`:
 | `WORKER_HOST` | Per instance: the QA clone polls the QA Worker. `deploy.sh` swaps it into `polling_url` for the upload only, inside the same backup/restore that already protects `settings.yml`, and refuses to run without it. |
 | `PLUGIN_NAME_SUFFIX` | Optional. `settings.yml` carries the plugin's `name:` and the push overwrites the server's copy with it, so the QA clone became a twin of the master in the dashboard. The QA profile sets `" (QA)"`, applied for the upload only. |
 
-> **The one step that stays manual** is adding the plugin to a device playlist —
-> trmnlp has no API for it. The script prints the link when it finishes.
+> **Two steps stay manual**, since trmnlp has no API for either: adding the
+> plugin to a device playlist (the script prints the link when it finishes),
+> and uploading the recipe's directory-card icon on the plugin's settings page.
+> The icon lives in [`assets/`](assets/): `fx-trends-icon.svg` is the source,
+> `fx-trends-icon.png` the 512px upload. Re-render with
+> `inkscape fx-trends-icon.svg -w 512 -h 512 -o fx-trends-icon.png`.
 
 If the upload fails partway, trmnlp deletes the plugin it just created, so a
 failed `--create` doesn't leave an orphan behind.
