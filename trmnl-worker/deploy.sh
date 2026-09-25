@@ -9,7 +9,7 @@
 #
 # The environment is required: a bare `./deploy.sh` used to mean production,
 # and once the plugin is a published recipe that is the one deploy every
-# installer sees. QA is a wrangler environment (see wrangler.toml); my device
+# installer sees. QA is a wrangler environment (see wrangler.toml); your device
 # polls it, nobody else does. Promotion order is in docs/build_multi_deploy.md.
 #
 # Prereqs:

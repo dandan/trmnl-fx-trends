@@ -1,8 +1,8 @@
 # Build plan — QA and production deploys
 
-A way to see a change on my own device before every installer of the recipe
-sees it. Today there is one Worker and one plugin instance, and once the plugin
-is published as a recipe both are live for everyone the moment they deploy.
+A way to see a change on the device before every installer of the recipe sees
+it. Today there is one Worker and one plugin instance, and once the plugin is
+published as a recipe both are live for everyone the moment they deploy.
 
 Status: built 2026-09-24. Sections 3–4 describe what is in place; §5 is the
 working rule; §6 is kept as the record of how it was set up.
@@ -23,7 +23,7 @@ So there are two things to stage, and they need different mechanisms:
 
 | Thing | Isolation today | Isolation needed |
 |---|---|---|
-| Plugin (Liquid + settings) | one instance per account, chosen by `.env.<profile>` | a second instance on my account: the clone |
+| Plugin (Liquid + settings) | one instance per account, chosen by `.env.<profile>` | a second instance on your account: the clone |
 | Worker | one deployment | a second deployment: a wrangler environment |
 
 ## 2. Environments
@@ -35,9 +35,9 @@ already the local loop, and this is the step after that.
 |---|---|---|
 | Worker name | `exchange-rates-trmnl-qa` | `exchange-rates-trmnl` (unchanged) |
 | Worker URL | `exchange-rates-trmnl-qa.uezi.workers.dev` | `exchange-rates-trmnl.uezi.workers.dev` (unchanged) |
-| Plugin instance | the clone, on my device's playlist | the Recipe Master |
+| Plugin instance | the clone, on your device's playlist | the Recipe Master |
 | Plugin profile | `.env.qa` | `.env.prod` (today's `.env.personal`, renamed) |
-| Who sees it | my device | every installer |
+| Who sees it | your device | every installer |
 
 `thomas` stays a separate profile pointing at prod's Worker; it is another
 account's install, not an environment.

@@ -223,13 +223,13 @@ Carried over from `meetup_2026`, learned the hard way there:
 
 ## QA and production
 
-Two plugin instances live on my account. The **Recipe Master** is what every
-installer of the published recipe runs; the **QA clone** is what my device
+Two plugin instances live on your account. The **Recipe Master** is what every
+installer of the published recipe runs; the **QA clone** is what your device
 runs. Each has a deploy profile, and each polls its own Worker:
 
 | Profile | Instance | Polls |
 |---|---|---|
-| `qa` | the clone, on my device | `exchange-rates-trmnl-qa.uezi.workers.dev` |
+| `qa` | the clone, on your device | `exchange-rates-trmnl-qa.uezi.workers.dev` |
 | `prod` | the Recipe Master, everyone else | `exchange-rates-trmnl.uezi.workers.dev` |
 
 A change goes to `qa`, gets checked on the device, then goes to `prod`. When

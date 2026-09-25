@@ -7,7 +7,7 @@
 #   ./deploy.sh <profile> [trmnlp push args...]
 #   ./deploy.sh <profile> --create        # first time on an account
 #
-#   ./deploy.sh qa                  # push to the QA clone on my device
+#   ./deploy.sh qa                  # push to the QA clone on your device
 #   ./deploy.sh prod                # push to the Recipe Master (everyone)
 #   ./deploy.sh thomas --create     # create the plugin on another account
 #   ./deploy.sh prod --force        # extra args pass through to `trmnlp push`
