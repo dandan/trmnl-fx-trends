@@ -60,5 +60,5 @@ custom_fields:
   - 5Y
   default: 1Y
 name: FX Trends
-description: "Exchange rates with sparklines: up to 8 currency pairs, 1 month to 5 years"
+description: Exchange rate sparklines, 1M-5Y
 refresh_interval: 3600
