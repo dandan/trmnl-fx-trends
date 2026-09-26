@@ -194,7 +194,39 @@ device's request reached the QA Worker. A form field could not do this (TRMNL
 has no hidden field type, and the recipe ships every field), and patching the
 title at push time would mean editing four files on top of the host swap.
 
-## 8. Not doing
+## 8. Versioning
+
+One version for the whole repo, since the Worker and the plugin ship together
+in a fixed order and the additive rule keeps them compatible: the tag is the
+version of the pair.
+
+**Tag on promotion, not on commit.** Most commits go to QA and get revised; a
+version means "this reached everyone". So: promote to prod, then tag that
+commit, annotated, with the tag message as the changelog for the release:
+
+```
+git tag -a v1.1.0 -m "Add the refresh floor and recipe overview"
+git push origin v1.1.0
+```
+
+**Numbering** is semantic, loosely. `v1.0.0` when the recipe is published;
+patch for a fix; minor for anything an installer would notice, such as a new
+setting or a layout change; major only for a change that breaks the Worker's
+response for old templates. The additive rule means that should never
+happen, so a major bump is a deliberate flag that it did.
+
+**The Worker is stamped.** `trmnl-worker/deploy.sh` passes `git describe
+--tags --dirty` in as `VERSION`, and `/` reports it with the environment, so
+"what is production running?" is a curl. A `-dirty` or `-3-gabc1234` suffix
+on production means something was deployed that was not a clean tag, which
+is the signal to go and tag it. Before the first tag it reports the bare
+commit hash.
+
+**Nothing installer-facing.** No version in the footer, the plugin name or
+the overview: none of the popular recipes shows one, the directory has no
+slot for it, and updates simply propagate from the Recipe Master.
+
+## 9. Not doing
 
 - **A second TRMNL account for qa.** The clone gives the same isolation, the
   profile mechanism already exists, and a second account means a second device

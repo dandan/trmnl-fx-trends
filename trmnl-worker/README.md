@@ -131,6 +131,11 @@ there is nothing to keep in sync between here and the plugin's polling config.
 | QA | `https://exchange-rates-trmnl-qa.<subdomain>.workers.dev/rates` | `npm run tail:qa` |
 | Production | `https://exchange-rates-trmnl.<subdomain>.workers.dev/rates` | `npm run tail` |
 
+Each deploy is stamped with `git describe --tags`, and `/` reports it as
+`version` alongside `env`, so either environment can be asked what it is
+running. Versioning is one annotated tag per production promotion, described
+in [`../docs/build_multi_deploy.md`](../docs/build_multi_deploy.md).
+
 ## Access control
 
 `/rates` allows a request when its `CF-Connecting-IP` appears in TRMNL's

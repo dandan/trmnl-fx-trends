@@ -22,6 +22,13 @@
 # Tests run first: the Worker has no staging environment, and a broken deploy
 # shows up as a blank sparkline on the device rather than an error.
 #
+# The deploy is stamped with `git describe --tags --dirty` (e.g. v1.0.0,
+# v1.0.0-3-gabc1234, or v1.0.0-dirty) and the Worker reports it at `/`, so
+# "what is production running?" is a curl:
+#   curl https://exchange-rates-trmnl.<subdomain>.workers.dev/ | grep version
+# Before the first tag it reports the bare commit hash. Versioning is one tag
+# per production promotion; see docs/build_multi_deploy.md §8.
+#
 set -euo pipefail
 cd "$(dirname "$0")"
 
@@ -35,8 +42,10 @@ case "$ENV" in
 esac
 shift
 
+VERSION="$(git describe --tags --dirty --always)"
+
 echo "==> Running tests..."
 npm test
 
-echo "==> Deploying Worker to Cloudflare (${ENV})..."
-npm run "$DEPLOY" -- "$@"
+echo "==> Deploying Worker to Cloudflare (${ENV}, ${VERSION})..."
+npm run "$DEPLOY" -- --var "VERSION:${VERSION}" "$@"

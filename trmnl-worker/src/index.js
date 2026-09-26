@@ -63,6 +63,9 @@ export default {
     if (url.pathname === "/" || url.pathname === "") {
       return json({
         service: "exchange-rates-trmnl-worker",
+        // Stamped by deploy.sh from `git describe`; absent under `wrangler dev`.
+        version: env?.VERSION ?? "dev",
+        env: env?.DEPLOY_ENV ?? "prod",
         usage: "/rates?pairs=GBP/AUD,EUR/USD&range=1Y&w=200&h=30",
         ranges: Object.keys(RANGES),
         currencies: SUPPORTED.size,

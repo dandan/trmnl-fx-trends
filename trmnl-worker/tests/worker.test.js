@@ -171,3 +171,12 @@ test("names its environment only when DEPLOY_ENV is set", async () => {
   const qa = await (await call("/rates?pairs=GBP/AUD&range=1M", { env: { DEPLOY_ENV: "qa" } })).json();
   assert.equal(qa.env, "qa");
 });
+
+test("the health endpoint reports the deploy's version and environment", async () => {
+  const bare = await (await call("/")).json();
+  assert.equal(bare.version, "dev");
+  assert.equal(bare.env, "prod");
+  const stamped = await (await call("/", { env: { VERSION: "v1.2.3", DEPLOY_ENV: "qa" } })).json();
+  assert.equal(stamped.version, "v1.2.3");
+  assert.equal(stamped.env, "qa");
+});
