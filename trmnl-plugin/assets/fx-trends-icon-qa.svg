@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- QA variant of fx-trends-icon.svg, for the QA clone's directory card so
+       it cannot be mistaken for the Recipe Master in the dashboard. Same marks,
+       with the trace in amber and a solid amber "QA" badge in the empty corner,
+       which stays legible at the 64px the dashboard shows.
+       Render the PNG with:
+       inkscape fx-trends-icon-qa.svg -w 512 -h 512 -o fx-trends-icon-qa.png -->
+  <g transform="translate(17 1) scale(1.05)"><path fill="#111" d="M2 4h10.5v4H6.5v4.2h5.5v4H6.5V24H2zM13.2 4h5l2.9 5.6L24 4h4.4l-5.3 9.6L28.8 24h-5l-3.2-6.2L17.3 24h-4.7l5.7-10.4z"/></g>
+  <polyline points="6,54 15,42 22,48 31,36 38,46 47,35 57,32" fill="none" stroke="#f59e0b" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="57" cy="32" r="3.5" fill="#f59e0b"/>
+  <rect x="41" y="48" width="21" height="14" rx="3" fill="#f59e0b"/>
+  <text x="51.5" y="59" text-anchor="middle" font-family="Inter, Helvetica, Arial, sans-serif" font-weight="800" font-size="11" fill="#111" letter-spacing="0.3">QA</text>
+</svg>
