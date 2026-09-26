@@ -115,8 +115,8 @@ npx wrangler login    # first time only
 ```
 
 Two deployments of the same code, from one `wrangler.toml`: `[env.qa]` sets a
-second name, and the name sets the URL. My device's plugin (the QA clone) polls
-QA; the published recipe polls production, so a production deploy is live for
+second name, and the name sets the URL. Your device's plugin (the QA clone)
+polls QA; the published recipe polls production, so a production deploy is live for
 every installer at once. A change therefore goes to QA first, is checked on
 the device, then goes to production — and it must be **additive**, because the
 recipe's templates are updated in a separate step and old Liquid meets the new

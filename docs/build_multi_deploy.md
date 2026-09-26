@@ -134,16 +134,20 @@ too. Nothing local changes.
 
 ## 5. Promotion order
 
-A change touching both halves goes out in this order, and the order is the
-whole versioning scheme:
+A change touching both halves goes out in this order:
 
 1. `trmnl-worker/deploy.sh qa`
 2. `trmnl-plugin/deploy.sh qa --force` — check the device (allow one refresh
    interval, or force a refresh from the playlist)
-3. `trmnl-worker/deploy.sh prod`
-4. `trmnl-plugin/deploy.sh prod --force`
+3. Commit, then `git tag -a vX.Y.Z -m "<what changed>"` on that commit
+4. `trmnl-worker/deploy.sh prod`
+5. `trmnl-plugin/deploy.sh prod --force` (and `thomas`, for that install)
+6. `git push origin vX.Y.Z` — or `git tag -d vX.Y.Z` if a deploy failed
 
-`--force` skips trmnlp's "overwrite?" prompt, which needs a terminal.
+`--force` skips trmnlp's "overwrite?" prompt, which needs a terminal. The tag
+comes before the prod pushes because both deploys read it (§8), and is pushed
+only after they succeed so that a published tag always means "this reached
+everyone".
 
 Between steps 3 and 4 — and for any installer whose device polls before its
 template is refreshed — old Liquid runs against the new Worker response. So:
@@ -156,7 +160,7 @@ later release. `test-render.rb` already renders the templates against
 against the current sample would make this rule mechanical, and is worth
 adding when the first non-trivial Worker change comes.
 
-Plugin-only changes skip steps 1 and 3. Worker-only changes skip 2 and 4 but
+Plugin-only changes skip steps 1 and 4. Worker-only changes skip 2 and 5 but
 still go through qa first: the device is polling qa, so a broken Worker shows
 up there as a blank sparkline before it can show up for anyone else.
 

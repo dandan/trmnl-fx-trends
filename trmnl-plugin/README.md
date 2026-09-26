@@ -232,15 +232,22 @@ runs. Each has a deploy profile, and each polls its own Worker:
 | `qa` | the clone, on your device | `exchange-rates-trmnl-qa.uezi.workers.dev` |
 | `prod` | the Recipe Master, everyone else | `exchange-rates-trmnl.uezi.workers.dev` |
 
-A change goes to `qa`, gets checked on the device, then goes to `prod`. When
-the Worker changes too, it goes first, in the same order:
+A change goes to `qa`, gets checked on the device, is committed and tagged,
+then goes to `prod`. When the Worker changes too, it goes first each time:
 
 ```bash
 (cd ../trmnl-worker && ./deploy.sh qa)
 ./deploy.sh qa --force            # then check the device
+git tag -a v1.2.0 -m "What changed"
 (cd ../trmnl-worker && ./deploy.sh prod)
 ./deploy.sh prod --force
+git push origin v1.2.0            # only once both prod deploys succeeded
 ```
+
+Both deploys stamp themselves from the tag: the Worker reports it at `/`,
+and the plugin's "About this plugin" text ends with it, so the dashboard
+says which build each instance runs. Tag before the prod pushes, or they
+read a bare commit hash.
 
 The QA Worker names itself in its response (`env: "qa"`) and the title bar
 prints it — `Exchange Rates (QA)` — so a glance at the device says which
