@@ -60,6 +60,22 @@ custom_fields:
   - 5Y
   default: 1Y
 name: FX Trends
+# Shown on the recipe's page in the directory. TRMNL asks for at least 100
+# words for the recipe to appear in search. Kept here, like the refresh floor,
+# because a push replaces the server's copy and a value typed into the
+# dashboard is lost on the next deploy.
+recipe_overview: |
+  FX Trends shows exchange rates for multiple currencies of your choice. Each
+  pair is shown with its latest rate, the percentage change over your chosen
+  window, and a sparkline chart, so you can see at a glance whether a currency
+  is drifting, spiking or settling.
+
+  Choose up to eight currency pairs from thirty currencies, such as GBP to AUD
+  or USD to JPY, and a window from one month to five years. Rates are the
+  European Central Bank's daily reference rates, published every working day, so
+  the newest figure is usually yesterday's; the footer shows the exact dates
+  covered. No account or API key is needed. All four layouts are supported, on
+  the original TRMNL and the TRMNL X, in landscape and portrait.
 description: Exchange rate sparklines, 1M-5Y
 # Minutes; allowed: 15 | 60 | 360 | 720 | 1440. The ECB publishes once per
 # working day around 16:00 CET and the Worker caches for an hour, so hourly is
