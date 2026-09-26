@@ -132,6 +132,11 @@ fi
 
 SETTINGS="src/settings.yml"
 
+# Read the version BEFORE touching settings.yml: the host and name swaps below
+# dirty the tree, and `--dirty` would report a clean, tagged checkout as
+# v1.0.0-dirty on every QA push.
+VERSION="$(git describe --tags --dirty --always)"
+
 # `trmnlp push` rewrites settings.yml with the server's copy, including that
 # account's `id`. Restore the committed file on exit so the working tree stays
 # account-agnostic however the push turns out.
@@ -156,7 +161,6 @@ echo "==> polling_url -> https://${WORKER_HOST}/ (for this upload only)"
 # v1.0.0-2-gabc1234-dirty on a QA push from an uncommitted tree. Tags are the
 # only source (see docs/build_multi_deploy.md §8), so tag BEFORE promoting or
 # the master reads a bare hash.
-VERSION="$(git describe --tags --dirty --always)"
 if ! grep -q "__VERSION__" "$SETTINGS"; then
   echo "Error: $SETTINGS has no __VERSION__ placeholder in the author bio." >&2
   exit 1
