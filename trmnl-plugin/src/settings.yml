@@ -61,4 +61,10 @@ custom_fields:
   default: 1Y
 name: FX Trends
 description: Exchange rate sparklines, 1M-5Y
-refresh_interval: 3600
+# Minutes; allowed: 15 | 60 | 360 | 720 | 1440. The ECB publishes once per
+# working day around 16:00 CET and the Worker caches for an hour, so hourly is
+# the fastest that can ever show new data. The floor stops installers picking
+# faster; they can still go slower. Set here rather than in the dashboard: a
+# push replaces the server's copy with this file, so a floor set there is lost.
+refresh_interval: 60
+refresh_interval_floor: '60'
