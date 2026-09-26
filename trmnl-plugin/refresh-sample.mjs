@@ -15,7 +15,7 @@ import { fileURLToPath } from "node:url";
 const here = dirname(fileURLToPath(import.meta.url));
 const worker = (await import(join(here, "../trmnl-worker/src/index.js"))).default;
 
-const pairs = process.argv[2] || "GBP/AUD, EUR/USD, GBP/USD, USD/JPY, EUR/CHF, GBP/EUR";
+const pairs = process.argv[2] || "EUR/USD, GBP/USD, USD/JPY, USD/CHF, AUD/USD, USD/CAD";
 const range = process.argv[3] || "1Y";
 const TOKEN = "local-sample-token";
 

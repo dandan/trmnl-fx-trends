@@ -45,8 +45,8 @@ custom_fields:
   description: 'Comma-separated FROM/TO, max 8. Supported: AUD BRL CAD CHF CNY CZK DKK
     EUR GBP HKD HUF IDR ILS INR ISK JPY KRW MXN MYR NOK NZD PHP PLN RON SEK SGD THB
     TRY USD ZAR'
-  placeholder: GBP/AUD, EUR/USD, USD/JPY
-  default: GBP/AUD, EUR/USD, GBP/USD, USD/JPY, EUR/CHF, GBP/EUR
+  placeholder: EUR/USD, GBP/USD, USD/JPY
+  default: EUR/USD, GBP/USD, USD/JPY, USD/CHF, AUD/USD, USD/CAD
 - keyname: range
   field_type: select
   name: Sparkline range
