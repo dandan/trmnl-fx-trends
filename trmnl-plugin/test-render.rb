@@ -100,6 +100,8 @@ VIEWS.each do |view, limit|
   check("#{view}: the window is stated once", count(out, /#{SAMPLE['range_label']}/) == 1,
         "got #{count(out, /#{SAMPLE['range_label']}/)}")
   check("#{view}: no unresolved Liquid", !out.include?("{{") && !out.include?("{%"))
+  # The recipe linter (Chef) rejects inline styles; everything is classes.
+  check("#{view}: no inline style attributes", !out.include?("style="))
   # The title names the environment only when the Worker names itself (the QA
   # deployment does, production does not), so the recipe's title stays bare.
   check("#{view}: production title is bare", out.include?('<span class="title">Exchange Rates</span>'))
@@ -173,13 +175,15 @@ VIEWS.each do |view, limit|
     check("#{view}: all points parse as coordinates", ok)
     # The end dot is positioned HTML, never an svg shape: a <circle> or <line>
     # inside a preserveAspectRatio="none" box is squashed with it.
-    sparks = out.scan(%r{<div class="fx-plot">.*?</svg>}m).join
-    check("#{view}: no marker drawn inside the sparkline svg",
-          !sparks.include?("<line") && !sparks.include?("<circle"))
+    # The dot is a <circle> in the unscaled OUTER svg; nothing may be drawn
+    # inside the inner, squashed one but the polyline.
+    inner = out.scan(%r{<svg viewBox="0 0 200 30".*?</svg>}m).join
+    check("#{view}: nothing but the polyline inside the squashed svg",
+          !inner.include?("<line") && !inner.include?("<circle"))
     check("#{view}: one end dot per row", count(out, /class="fx-dot"/) == expected_rows)
     # The dot's y is the last point's y as a percentage of the 30px box; the
     # Worker pads the box by 2px, so every value lands strictly inside 0..100.
-    tops = out.scan(/class="fx-dot" style="top: ([^"%]*)%"/).flatten
+    tops = out.scan(/class="fx-dot" cx="100%" cy="([^"%]*)%"/).flatten
     check("#{view}: every dot lands inside the plot",
           tops.size == expected_rows && tops.all? { |t| (v = Float(t, exception: false)) && v > 0 && v < 100 },
           tops.inspect)
@@ -225,6 +229,7 @@ VIEWS.each_key do |view|
   check("#{view}: renders without Liquid errors", errors.empty?, errors.join("; "))
   check("#{view}: shows the unavailable state", out.include?("Rates unavailable"))
   check("#{view}: no rows", count(out, /class="fx-row"/).zero?)
+  check("#{view}: error state has no inline style", !out.include?("style="))
   check("#{view}: no NaN", !out.match?(/NaN/))
   # With no data there is no date to report, so the title bar must not leave a
   # separator stranded at either end of the cell ("· ECB", or a leading dot).

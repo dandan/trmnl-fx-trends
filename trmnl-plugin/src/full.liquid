@@ -32,7 +32,7 @@
   .fx--full .fx-rate { font-size: 34px; }
   .fx--full .fx-chg  { font-size: 17px; }
   .fx--full .fx-pill { padding: 5px 8px; }
-  .fx--full .fx-dot  { width: 9px; height: 9px; }
+  .fx--full .fx-dot  { r: 4.5px; }
   .fx--full .fx-range{ font-size: 14px; }
   .fx--full .fx-head { font-size: 14px; letter-spacing: 0.08em; }
   {% comment %}
@@ -47,7 +47,7 @@
   {% if fx_failed %}
     <div class="fx-error">
       <span class="title">Rates unavailable</span>
-      <span class="label label--gray 1bit:text--black" style="margin-top:6px;">
+      <span class="label label--gray 1bit:text--black">
         {{ error | default: "No data returned" }}
       </span>
     </div>
@@ -71,12 +71,12 @@
           {% assign fx_end = row.points | split: " " | last | split: "," %}
           {% assign fx_end_y = fx_end[1] | times: 100.0 | divided_by: 30 %}
           <div class="fx-spark">
-            <div class="fx-plot">
-              <svg viewBox="0 0 200 30" width="100%" height="30" preserveAspectRatio="none">
+            <svg class="fx-plot" width="100%" height="30">
+              <svg viewBox="0 0 200 30" width="100%" height="100%" preserveAspectRatio="none">
                 <polyline points="{{ row.points }}" vector-effect="non-scaling-stroke"/>
               </svg>
-              <span class="fx-dot" style="top: {{ fx_end_y }}%"></span>
-            </div>
+              <circle class="fx-dot" cx="100%" cy="{{ fx_end_y }}%"/>
+            </svg>
           </div>
           <div class="fx-range"><span>{{ row.hi_str }}</span><span>{{ row.lo_str }}</span></div>
         </div>
