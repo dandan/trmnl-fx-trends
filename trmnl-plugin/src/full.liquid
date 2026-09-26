@@ -27,11 +27,10 @@
     rule) fits the panel above the title bar; a 15px pad overflowed by 2px.
   {% endcomment %}
   .fx--full { --fx-top-pad: 10px; }
-  .fx--full .fx-row  { padding: 14px 0; }
+  {% comment %} Row padding is the framework's py--3.5 (14px) on the row itself. {% endcomment %}
   .fx--full .fx-pair { font-size: 26px; }
   .fx--full .fx-rate { font-size: 34px; }
   .fx--full .fx-chg  { font-size: 17px; }
-  .fx--full .fx-pill { padding: 5px 8px; }
   .fx--full .fx-dot  { r: 4.5px; }
   .fx--full .fx-range{ font-size: 14px; }
   .fx--full .fx-head { font-size: 14px; letter-spacing: 0.08em; }
@@ -45,40 +44,40 @@
 
 <div class="layout layout--col layout--justify-start">
   {% if fx_failed %}
-    <div class="fx-error">
+    <div class="fx-error flex flex--col flex--center-y text--center">
       <span class="title">Rates unavailable</span>
       <span class="label label--gray 1bit:text--black">
         {{ error | default: "No data returned" }}
       </span>
     </div>
   {% else %}
-    <div class="fx-list fx--full">
+    <div class="fx-list flex flex--col gap--none fx--full">
       {% comment %}
         The window names the TREND column but governs three of them — the change
         figure, the sparkline and hi/lo are all measured over it. It sits here
         rather than in the title bar because a column header is read with the
         numbers, which is what keeps CHANGE from being taken for a daily move.
       {% endcomment %}
-      <div class="fx-head">
-        <span>PAIR</span><span>LATEST</span><span>CHANGE</span><span>{% if range_label %}{{ range_label }} {% endif %}TREND</span><span>HI / LO</span>
+      <div class="fx-head grid">
+        <span>PAIR</span><span class="text--right">LATEST</span><span class="text--right">CHANGE</span><span class="text--center">{% if range_label %}{{ range_label }} {% endif %}TREND</span><span class="text--right">HI / LO</span>
       </div>
 
       {% for row in rows limit: 6 %}
-        <div class="fx-row">
-          <div class="fx-pair">{{ row.from }}<span class="fx-arrow">&rarr;</span>{{ row.to }}</div>
-            <div class="fx-rate">{{ row.rate_str }}</div>
-          <div class="fx-chg"><span class="fx-pill rounded--xsmall{% if row.change_pct < 0 %} fx-pill--down bg--black text--white{% endif %}">{{ row.change_str }}%</span></div>
+        <div class="fx-row grid py--3.5">
+          <div class="fx-pair">{{ row.from }}<span class="fx-arrow px--0.5">&rarr;</span>{{ row.to }}</div>
+            <div class="fx-rate text--right">{{ row.rate_str }}</div>
+          <div class="fx-chg flex flex--right gap--none"><span class="fx-pill inline-block rounded--xsmall py--1 px--2{% if row.change_pct < 0 %} fx-pill--down bg--black text--white{% endif %}">{{ row.change_str }}%</span></div>
           {% assign fx_end = row.points | split: " " | last | split: "," %}
           {% assign fx_end_y = fx_end[1] | times: 100.0 | divided_by: 30 %}
-          <div class="fx-spark">
-            <svg class="fx-plot" width="100%" height="30">
-              <svg viewBox="0 0 200 30" width="100%" height="100%" preserveAspectRatio="none">
+          <div class="fx-spark flex gap--none">
+            <svg class="fx-plot block" width="100%" height="30">
+              <svg class="block" viewBox="0 0 200 30" width="100%" height="100%" preserveAspectRatio="none">
                 <polyline points="{{ row.points }}" vector-effect="non-scaling-stroke"/>
               </svg>
               <circle class="fx-dot" cx="100%" cy="{{ fx_end_y }}%"/>
             </svg>
           </div>
-          <div class="fx-range"><span>{{ row.hi_str }}</span><span>{{ row.lo_str }}</span></div>
+          <div class="fx-range flex flex--col flex--between gap--none text--right"><span>{{ row.hi_str }}</span><span>{{ row.lo_str }}</span></div>
         </div>
       {% endfor %}
     </div>

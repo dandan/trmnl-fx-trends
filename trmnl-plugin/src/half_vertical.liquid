@@ -15,19 +15,24 @@
   .fx--halfv .fx-row,
   .fx--halfv .fx-head { grid-template-columns: 96px minmax(70px, auto) 58px 1fr; gap: 8px; }
   .fx--halfv { --fx-top-pad: 10px; }
-  .fx--halfv .fx-row  { padding: 17px 0; }
+  {% comment %} Row padding is py--4 (16px) on the row: 17px would not step. {% endcomment %}
   .fx--halfv .fx-pair { font-size: 14px; }
   .fx--halfv .fx-rate { font-size: 16px; }
   .fx--halfv .fx-chg  { font-size: 11px; }
-  .fx--halfv .fx-pill { padding: 3px 5px; }
   .fx--halfv .fx-dot  { r: 3px; }
   {% comment %} TREND is the last column here, so keep the dot's overhang inside it. {% endcomment %}
   .fx--halfv .fx-spark { padding-right: 3px; }
   .fx--halfv .fx-head { font-size: 11px; letter-spacing: 0.08em; }
   {% comment %} Narrow plot, so a squatter shape than the wide views. {% endcomment %}
   {% comment %} Capped too: this column is narrow, so an unbounded height goes square. {% endcomment %}
-  .fx--halfv .fx-spark svg { height: calc((var(--screen-h) - 82px - var(--fx-top-pad)) / 6 - 35px);
-                             max-height: calc(var(--screen-h) / 16); }
+  {% comment %}
+    The cap, not the height calc, is what binds on OG (30px at /16 against a
+    31.7px calc). /15 lets the calc win there, so the six rows fill the panel
+    as they did before the row padding moved to the framework's 16px step,
+    while still holding the plot to 52px on TRMNL X.
+  {% endcomment %}
+  .fx--halfv .fx-spark svg { height: calc((var(--screen-h) - 82px - var(--fx-top-pad)) / 6 - 33px);
+                             max-height: calc(var(--screen-h) / 15); }
   {% comment %}
     Portrait: the cap above guards against the column widening in landscape
     on a big panel, but in portrait this column is as narrow as on OG and the
@@ -39,25 +44,25 @@
 
 <div class="layout layout--col layout--justify-start">
   {% if fx_failed %}
-    <div class="fx-error">
+    <div class="fx-error flex flex--col flex--center-y text--center">
       <span class="title">Rates unavailable</span>
     </div>
   {% else %}
-    <div class="fx-list fx--halfv">
-      <div class="fx-head">
-        <span>PAIR</span><span>LATEST</span><span>CHANGE</span><span>{% if range_label %}{{ range_label }} {% endif %}TREND</span>
+    <div class="fx-list flex flex--col gap--none fx--halfv">
+      <div class="fx-head grid">
+        <span>PAIR</span><span class="text--right">LATEST</span><span class="text--right">CHANGE</span><span class="text--center">{% if range_label %}{{ range_label }} {% endif %}TREND</span>
       </div>
 
       {% for row in rows limit: 6 %}
-        <div class="fx-row">
-          <div class="fx-pair">{{ row.from }}<span class="fx-arrow">&rarr;</span>{{ row.to }}</div>
-            <div class="fx-rate">{{ row.rate_str }}</div>
-          <div class="fx-chg"><span class="fx-pill rounded--xsmall{% if row.change_pct < 0 %} fx-pill--down bg--black text--white{% endif %}">{{ row.change_str }}%</span></div>
+        <div class="fx-row grid py--4">
+          <div class="fx-pair">{{ row.from }}<span class="fx-arrow px--0.5">&rarr;</span>{{ row.to }}</div>
+            <div class="fx-rate text--right">{{ row.rate_str }}</div>
+          <div class="fx-chg flex flex--right gap--none"><span class="fx-pill inline-block rounded--xsmall py--1 px--1{% if row.change_pct < 0 %} fx-pill--down bg--black text--white{% endif %}">{{ row.change_str }}%</span></div>
           {% assign fx_end = row.points | split: " " | last | split: "," %}
           {% assign fx_end_y = fx_end[1] | times: 100.0 | divided_by: 30 %}
-          <div class="fx-spark">
-            <svg class="fx-plot" width="100%" height="24">
-              <svg viewBox="0 0 200 30" width="100%" height="100%" preserveAspectRatio="none">
+          <div class="fx-spark flex gap--none">
+            <svg class="fx-plot block" width="100%" height="24">
+              <svg class="block" viewBox="0 0 200 30" width="100%" height="100%" preserveAspectRatio="none">
                 <polyline points="{{ row.points }}" vector-effect="non-scaling-stroke"/>
               </svg>
               <circle class="fx-dot" cx="100%" cy="{{ fx_end_y }}%"/>

@@ -12,44 +12,43 @@
     push the last row under the title bar rather than leaving a gap.
   {% endcomment %}
   .fx--halfh { --fx-top-pad: 8px; }
-  .fx--halfh .fx-row  { padding: 11px 0; }
+  {% comment %} Row padding is py--2.5 (10px) on the row: 11px would not step. {% endcomment %}
   .fx--halfh .fx-pair { font-size: 16px; }
   .fx--halfh .fx-rate { font-size: 19px; }
   .fx--halfh .fx-chg  { font-size: 12px; }
-  .fx--halfh .fx-pill { padding: 4px 6px; }
   .fx--halfh .fx-dot  { r: 3.5px; }
   .fx--halfh .fx-range{ font-size: 11px; }
-  {% comment %} Half the panel height, 3 rows, 23px row padding. {% endcomment %}
-  .fx--halfh .fx-spark svg { height: calc((var(--screen-h) / 2 - 82px - var(--fx-top-pad)) / 3 - 23px); }
+  {% comment %} Half the panel height, 3 rows, 21px row padding (2 x 10 + rule). {% endcomment %}
+  .fx--halfh .fx-spark svg { height: calc((var(--screen-h) / 2 - 82px - var(--fx-top-pad)) / 3 - 21px); }
 </style>
 
 <div class="layout layout--col layout--justify-start">
   {% if fx_failed %}
-    <div class="fx-error">
+    <div class="fx-error flex flex--col flex--center-y text--center">
       <span class="title">Rates unavailable</span>
     </div>
   {% else %}
-    <div class="fx-list fx--halfh">
-      <div class="fx-head">
-        <span>PAIR</span><span>LATEST</span><span>CHANGE</span><span>{% if range_label %}{{ range_label }} {% endif %}TREND</span><span>HI / LO</span>
+    <div class="fx-list flex flex--col gap--none fx--halfh">
+      <div class="fx-head grid">
+        <span>PAIR</span><span class="text--right">LATEST</span><span class="text--right">CHANGE</span><span class="text--center">{% if range_label %}{{ range_label }} {% endif %}TREND</span><span class="text--right">HI / LO</span>
       </div>
 
       {% for row in rows limit: 3 %}
-        <div class="fx-row">
-          <div class="fx-pair">{{ row.from }}<span class="fx-arrow">&rarr;</span>{{ row.to }}</div>
-            <div class="fx-rate">{{ row.rate_str }}</div>
-          <div class="fx-chg"><span class="fx-pill rounded--xsmall{% if row.change_pct < 0 %} fx-pill--down bg--black text--white{% endif %}">{{ row.change_str }}%</span></div>
+        <div class="fx-row grid py--2.5">
+          <div class="fx-pair">{{ row.from }}<span class="fx-arrow px--0.5">&rarr;</span>{{ row.to }}</div>
+            <div class="fx-rate text--right">{{ row.rate_str }}</div>
+          <div class="fx-chg flex flex--right gap--none"><span class="fx-pill inline-block rounded--xsmall py--1 px--1.5{% if row.change_pct < 0 %} fx-pill--down bg--black text--white{% endif %}">{{ row.change_str }}%</span></div>
           {% assign fx_end = row.points | split: " " | last | split: "," %}
           {% assign fx_end_y = fx_end[1] | times: 100.0 | divided_by: 30 %}
-          <div class="fx-spark">
-            <svg class="fx-plot" width="100%" height="26">
-              <svg viewBox="0 0 200 30" width="100%" height="100%" preserveAspectRatio="none">
+          <div class="fx-spark flex gap--none">
+            <svg class="fx-plot block" width="100%" height="26">
+              <svg class="block" viewBox="0 0 200 30" width="100%" height="100%" preserveAspectRatio="none">
                 <polyline points="{{ row.points }}" vector-effect="non-scaling-stroke"/>
               </svg>
               <circle class="fx-dot" cx="100%" cy="{{ fx_end_y }}%"/>
             </svg>
           </div>
-          <div class="fx-range"><span>{{ row.hi_str }}</span><span>{{ row.lo_str }}</span></div>
+          <div class="fx-range flex flex--col flex--between gap--none text--right"><span>{{ row.hi_str }}</span><span>{{ row.lo_str }}</span></div>
         </div>
       {% endfor %}
     </div>

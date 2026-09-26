@@ -60,6 +60,17 @@ check("settings: author bio ends with the version placeholder",
 check("settings: no version literal committed",
       !SETTINGS.match?(/Version v?\d+\.\d+/))
 
+# The recipe linter counts these declarations in a plugin's CSS as inline
+# styles. Layout is carried by framework classes in the markup instead; only
+# font-size remains here, for want of matching framework sizes.
+css = (VIEWS.keys.map { |v| File.read(File.join(HERE, "src", "#{v}.liquid")) } << SHARED)
+        .map { |t| t.scan(%r{<style>(.*?)</style>}m).join }.join
+css_no_comments = css.gsub(/\{% comment %\}.*?\{% endcomment %\}/m, "")
+%w[display justify-content text-align padding margin background-color color border-radius object-fit].each do |prop|
+  check("css: no #{prop} declarations (framework classes carry it)",
+        !css_no_comments.match?(/(^|[^-a-z])#{prop}\s*:/))
+end
+
 # ---------------------------------------------------------------- happy path
 puts "With #{SAMPLE['rows'].size} pairs of live data:"
 VIEWS.each do |view, limit|
@@ -67,8 +78,8 @@ VIEWS.each do |view, limit|
   expected_rows = [SAMPLE["rows"].size, limit].min
 
   check("#{view}: renders without Liquid errors", errors.empty?, errors.join("; "))
-  check("#{view}: #{expected_rows} rows", count(out, /class="fx-row"/) == expected_rows,
-        "got #{count(out, /class="fx-row"/)}")
+  check("#{view}: #{expected_rows} rows", count(out, /class="fx-row[ "]/) == expected_rows,
+        "got #{count(out, /class="fx-row[ "]/)}")
   check("#{view}: no NaN/Infinity", !out.match?(/NaN|Infinity/))
   check("#{view}: title_bar present", out.include?("title_bar"))
   check("#{view}: title bar carries the inline icon",
@@ -110,8 +121,8 @@ VIEWS.each do |view, limit|
   # Direction is stated explicitly: "GBP -> AUD" reads as "1 GBP buys N AUD".
   # The slash form relies on knowing which currency is being quoted.
   check("#{view}: pairs use the direction arrow",
-        count(out, /class="fx-arrow"/) == expected_rows,
-        "got #{count(out, /class=\"fx-arrow\"/)}")
+        count(out, /class="fx-arrow[ "]/) == expected_rows,
+        "got #{count(out, /class=\"fx-arrow[ \"]/)}")
   check("#{view}: no slash-form pairs left", !out.include?("fx-slash"))
 
   # The change is quoted signed, to a fixed 2dp, so the column lines up and reads
@@ -119,7 +130,7 @@ VIEWS.each do |view, limit|
   # or `| round` here would drop the sign, or the trailing zero it carries.
   # The figure sits in a .fx-pill (filled or outlined); the pill is styling, so it is
   # stripped here and the text inside it is what has to match.
-  cells = out.scan(%r{<div class="fx-chg">(.*?)</div>}m).flatten
+  cells = out.scan(%r{<div class="fx-chg[^"]*">(.*?)</div>}m).flatten
   check("#{view}: every change sits in a pill",
         cells.all? { |c| c.match?(%r{\A\s*<span class="fx-pill[^"]*">[^<]*</span>\s*\z}) })
   changes = cells.map { |c| c.gsub(/<[^>]+>/, "").strip }
@@ -144,7 +155,7 @@ VIEWS.each do |view, limit|
   # One cell per rate, printed verbatim. The decimals are deliberately not
   # aligned (see shared.liquid), so there is no split markup to reassemble —
   # what matters is that the cell carries exactly what the Worker sent.
-  rendered = out.scan(%r{<div class="fx-rate">([^<]*)</div>}).flatten.map(&:strip)
+  rendered = out.scan(%r{<div class="fx-rate[^"]*">([^<]*)</div>}).flatten.map(&:strip)
   expected = SAMPLE["rows"].first(limit).map { |r| r["rate_str"] }
   check("#{view}: #{expected_rows} rate cells", rendered.size == expected_rows,
         "got #{rendered.size}")
@@ -155,7 +166,7 @@ VIEWS.each do |view, limit|
   # where those values sit in the trace beside them. The original markup had
   # them the other way round, which reads as an upside-down axis.
   if RANGE_VIEWS.include?(view)
-    pairs_hi_lo = out.scan(%r{<div class="fx-range"><span>([^<]*)</span><span>([^<]*)</span></div>})
+    pairs_hi_lo = out.scan(%r{<div class="fx-range[^"]*"><span>([^<]*)</span><span>([^<]*)</span></div>})
     check("#{view}: HI is printed above LO",
           pairs_hi_lo.all? { |hi, lo| Float(hi) >= Float(lo) },
           pairs_hi_lo.reject { |hi, lo| Float(hi) >= Float(lo) }.inspect)
@@ -228,7 +239,7 @@ VIEWS.each_key do |view|
   out, errors = render(view, error_vars)
   check("#{view}: renders without Liquid errors", errors.empty?, errors.join("; "))
   check("#{view}: shows the unavailable state", out.include?("Rates unavailable"))
-  check("#{view}: no rows", count(out, /class="fx-row"/).zero?)
+  check("#{view}: no rows", count(out, /class="fx-row[ "]/).zero?)
   check("#{view}: error state has no inline style", !out.include?("style="))
   check("#{view}: no NaN", !out.match?(/NaN/))
   # With no data there is no date to report, so the title bar must not leave a
@@ -252,7 +263,7 @@ puts "\nWith a single pair (fewer than any view's limit):"
 one = { "rows" => [SAMPLE["rows"].first], "range" => SAMPLE["range"], "as_of" => SAMPLE["as_of"] }
 VIEWS.each_key do |view|
   out, errors = render(view, one)
-  check("#{view}: renders one row", count(out, /class="fx-row"/) == 1, errors.join("; "))
+  check("#{view}: renders one row", count(out, /class="fx-row[ "]/) == 1, errors.join("; "))
 end
 
 # ---------------------------------------------------------------- flat pairs
@@ -263,7 +274,7 @@ flat = SAMPLE["rows"].first.merge("change_pct" => 0, "change_str" => "0.00",
                                   "points" => "0,15 100,15 200,15")
 VIEWS.each_key do |view|
   out, = render(view, { "rows" => [flat], "range" => "1Y", "as_of" => SAMPLE["as_of"] })
-  cell = out[%r{<div class="fx-chg">(.*?)</div>}m, 1].to_s.gsub(/<[^>]+>/, "").strip
+  cell = out[%r{<div class="fx-chg[^"]*">(.*?)</div>}m, 1].to_s.gsub(/<[^>]+>/, "").strip
   check("#{view}: zero change carries no sign", !cell.match?(/[+-]/))
   check("#{view}: zero change is outlined, not filled", !out.match?(/class="fx-pill[^"]*fx-pill--down/))
   # Nothing takes the arrow's place: a dash there reads as "minus 0%".

@@ -47,7 +47,7 @@
   {% comment %}
     Rows share the panel height equally, and the plot fills whatever height its
     row gets. TRMNL X has ~240 CSS px more height than OG; sending that surplus
-    to the gutters (justify-content: space-between) produced 33px gaps between
+    to the gutters (space-between on the column) produced 33px gaps between
     rows and left the traces at 52px — tall rows with a thin chart floating in
     them. Sending it to the plots instead is what actually uses the panel.
   {% endcomment %}
@@ -80,11 +80,26 @@
     because they may be placed in the LOWER half of a mashup, where the inset
     buys nothing and the height is scarcer.
   {% endcomment %}
+  {% comment %}
+    LAYOUT COMES FROM FRAMEWORK CLASSES, NOT FROM THESE RULES
+    The recipe linter counts display, justify-content, text-align, padding and
+    similar declarations in a plugin's CSS as "inline styles" and wants the
+    framework's utilities instead. So every element carries them as classes in
+    the markup — `flex`, `grid`, `flex--right`, `text--right`, `py--3.5` — and
+    this stylesheet keeps only what the framework has no utility for: the grid
+    columns, the type scale, borders, the svg geometry. Two things to know:
+
+    - `.flex` and `.grid` add `gap: var(--gap)`, so every one carries
+      `gap--none`; the row grids then set their own gap here.
+    - `.flex--col` centres items on the cross axis; `.fx-range` overrides that
+      to stretch below, so its right-aligned figures reach the column edge.
+    - Framework padding steps are content-scaled (py--3.5 is 14px on OG). The
+      narrow views' row padding moved to the nearest step and their plot-height
+      constants were adjusted to match, so the fit is unchanged.
+  {% endcomment %}
   .fx-list {
     font-family: "Inter Variable", Inter, sans-serif;
     padding-top: var(--fx-top-pad, 0px);
-    display: flex;
-    flex-direction: column;
     flex: 1;
     width: 100%;
   }
@@ -96,7 +111,6 @@
     so the header reads as a header and not as a seventh row.
   {% endcomment %}
   .fx-row {
-    display: grid;
     align-items: center;
     border-bottom: 1px solid currentColor;
   }
@@ -109,7 +123,6 @@
     caps, Inter holds together at 0.1em.
   {% endcomment %}
   .fx-head {
-    display: grid;
     font-size: 12px;
     letter-spacing: 0.1em;
     font-weight: 700;
@@ -124,12 +137,9 @@
     right-aligned number and right-aligns with it. LATEST used to centre, from
     when the rate was decimal-aligned and had two ragged outer edges; now that
     the column is right-aligned, centring left the word visibly off its
-    numbers. Views with four columns simply have no nth-child(5) to match.
+    numbers. The alignment is carried by `text--right` / `text--center` on
+    each header span in the views.
   {% endcomment %}
-  .fx-head span:nth-child(4) { text-align: center; }
-  .fx-head span:nth-child(2),
-  .fx-head span:nth-child(3),
-  .fx-head span:nth-child(5) { text-align: right; }
 
   {% comment %}
     Every number in the row right-aligns on its column edge. The decimal points
@@ -141,7 +151,6 @@
   {% endcomment %}
   .fx-rate, .fx-chg, .fx-range {
     font-variant-numeric: tabular-nums;
-    text-align: right;
   }
 
   {% comment %}
@@ -158,7 +167,7 @@
     and push the last one under the title bar.
   {% endcomment %}
   .fx-pair { font-weight: 800; letter-spacing: -0.01em; white-space: nowrap; line-height: 1; }
-  .fx-pair .fx-arrow { font-weight: 400; padding: 0 0.15em; }
+  .fx-pair .fx-arrow { font-weight: 400; }
 
   .fx-rate { font-weight: 700; letter-spacing: -0.01em; line-height: 1; }
   {% comment %}
@@ -167,7 +176,7 @@
     how a ▲/▼ glyph once ended up on its own line above the number, looking
     deliberate while hiding that the column needed widening.
   {% endcomment %}
-  .fx-chg  { font-weight: 700; white-space: nowrap; display: flex; justify-content: flex-end; }
+  .fx-chg  { font-weight: 700; white-space: nowrap; }
 
   {% comment %}
     THE CHANGE SITS IN A PILL: FILLED FOR A FALL, OUTLINED FOR A RISE
@@ -192,7 +201,6 @@
     both pills keep the same size and the column stays aligned.
   {% endcomment %}
   .fx-pill {
-    display: inline-block;
     border: 1.5px solid currentColor;
     line-height: 1;
   }
@@ -222,9 +230,7 @@
     own plot box.
   {% endcomment %}
   .fx-range {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
+    align-items: stretch;
     line-height: 1;
     white-space: nowrap;
     {% comment %}
@@ -268,7 +274,6 @@
     hit both, which is why this is a subtraction and not a division.
   {% endcomment %}
   .fx-spark {
-    display: flex;
     align-items: center;
     align-self: stretch;
     width: 100%;
@@ -285,8 +290,8 @@
     The narrow views pad .fx-spark on the right so the overhang stays inside
     the column.
   {% endcomment %}
-  .fx-spark svg.fx-plot { display: block; width: 100%; overflow: visible; }
-  .fx-spark svg svg { display: block; width: 100%; height: 100%; }
+  .fx-spark svg.fx-plot { width: 100%; overflow: visible; }
+  .fx-spark svg svg { width: 100%; height: 100%; }
   .fx-spark polyline {
     fill: none;
     stroke: currentColor;
@@ -341,12 +346,8 @@
 
   {% comment %} Shown instead of the list when the Worker returns an error. {% endcomment %}
   .fx-error {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
     gap: 6px;
     height: 100%;
-    text-align: center;
   }
 </style>
 
