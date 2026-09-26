@@ -25,6 +25,7 @@ SPARKLINE_VIEWS = VIEWS.keys.freeze
 RANGE_VIEWS = %w[full half_horizontal].freeze
 
 SHARED = File.read(File.join(HERE, "src", "shared.liquid"))
+SETTINGS = File.read(File.join(HERE, "src", "settings.yml"))
 SAMPLE = JSON.parse(File.read(File.join(HERE, "sample.json")))
 
 $failures = 0
@@ -50,6 +51,14 @@ def fmt(iso, year: true)
 end
 
 puts "Rendering #{VIEWS.size} views\n\n"
+
+# The author bio carries a version placeholder that deploy.sh fills from git at
+# push time. A literal version here would be a second source of truth that
+# drifts from the tags; a missing placeholder would push with no version.
+check("settings: author bio ends with the version placeholder",
+      SETTINGS.match?(/Version __VERSION__\.'/))
+check("settings: no version literal committed",
+      !SETTINGS.match?(/Version v?\d+\.\d+/))
 
 # ---------------------------------------------------------------- happy path
 puts "With #{SAMPLE['rows'].size} pairs of live data:"

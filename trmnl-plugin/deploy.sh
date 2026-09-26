@@ -150,6 +150,20 @@ fi
 sed -i "s|https://${COMMITTED_HOST}/|https://${WORKER_HOST}/|" "$SETTINGS"
 echo "==> polling_url -> https://${WORKER_HOST}/ (for this upload only)"
 
+# The bio ends in "Version __VERSION__". deploy.sh fills it from `git describe`
+# for the upload, so the dashboard's "About this plugin" says which build an
+# instance runs — a clean tag on prod, and something like
+# v1.0.0-2-gabc1234-dirty on a QA push from an uncommitted tree. Tags are the
+# only source (see docs/build_multi_deploy.md §8), so tag BEFORE promoting or
+# the master reads a bare hash.
+VERSION="$(git describe --tags --dirty --always)"
+if ! grep -q "__VERSION__" "$SETTINGS"; then
+  echo "Error: $SETTINGS has no __VERSION__ placeholder in the author bio." >&2
+  exit 1
+fi
+sed -i "s|__VERSION__|${VERSION}|" "$SETTINGS"
+echo "==> version -> ${VERSION} (for this upload only)"
+
 # settings.yml also carries the plugin's NAME, and the push overwrites the
 # server's copy with it — which is how the QA clone lost its "(QA)" and became
 # a twin of the Recipe Master in the dashboard. A profile may append a suffix

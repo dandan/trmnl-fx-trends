@@ -281,6 +281,7 @@ recipe ships. Three values are held out of git, in `.env.<profile>`:
 | `TRMNL_API_KEY` | A secret, and per account. |
 | `TRMNL_PLUGIN_ID` | Per instance, *and* `trmnlp push` overwrites `settings.yml` with the server's copy including its `id`. |
 | `WORKER_HOST` | Per instance: the QA clone polls the QA Worker. `deploy.sh` swaps it into `polling_url` for the upload only, inside the same backup/restore that already protects `settings.yml`, and refuses to run without it. |
+| *(version)* | Not a profile value: the bio's `Version __VERSION__` is filled from `git describe --tags` at push time, so "About this plugin" in the dashboard says which build an instance runs. Tag before promoting. |
 | `PLUGIN_NAME_SUFFIX` | Optional. `settings.yml` carries the plugin's `name:` and the push overwrites the server's copy with it, so the QA clone became a twin of the master in the dashboard. The QA profile sets `" (QA)"`, applied for the upload only. |
 
 > **Two steps stay manual**, since trmnlp has no API for either: adding the

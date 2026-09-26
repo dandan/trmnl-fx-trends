@@ -200,12 +200,16 @@ One version for the whole repo, since the Worker and the plugin ship together
 in a fixed order and the additive rule keeps them compatible: the tag is the
 version of the pair.
 
-**Tag on promotion, not on commit.** Most commits go to QA and get revised; a
-version means "this reached everyone". So: promote to prod, then tag that
-commit, annotated, with the tag message as the changelog for the release:
+**Tag the commit being promoted, then promote, then push the tag.** Most
+commits go to QA and get revised; a version means "this reached everyone".
+The plugin's bio is stamped from the tag at push time (below), so the tag has
+to exist before the prod push; pushing the tag only after both deploys
+succeed keeps its meaning. If a deploy fails, delete the local tag.
 
 ```
 git tag -a v1.1.0 -m "Add the refresh floor and recipe overview"
+(cd trmnl-worker && ./deploy.sh prod)
+(cd trmnl-plugin && ./deploy.sh prod --force)
 git push origin v1.1.0
 ```
 
@@ -222,9 +226,13 @@ on production means something was deployed that was not a clean tag, which
 is the signal to go and tag it. Before the first tag it reports the bare
 commit hash.
 
-**Nothing installer-facing.** No version in the footer, the plugin name or
-the overview: none of the popular recipes shows one, the directory has no
-slot for it, and updates simply propagate from the Recipe Master.
+**The plugin is stamped too.** The author bio ends in `Version __VERSION__`,
+which `trmnl-plugin/deploy.sh` fills from `git describe` for the upload, so
+the dashboard's "About this plugin" says which build each instance runs. It
+is the one installer-visible trace of a version, and it is there because the
+dashboard offers no other way to tell instances apart. Nothing on the panel:
+none of the popular recipes shows a version, and updates simply propagate
+from the Recipe Master.
 
 ## 9. Not doing
 
