@@ -7,7 +7,8 @@ display.
 
 ## What it shows
 
-One row per currency pair, up to eight:
+One row per currency pair, up to eight (the full layout shows all eight on a
+TRMNL X and the first six on the original TRMNL):
 
 - **The pair**, written as a conversion: `GBP → AUD` means "one pound buys this
   many dollars".

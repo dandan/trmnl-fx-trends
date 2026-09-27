@@ -15,7 +15,7 @@ require "date"
 
 HERE = __dir__
 VIEWS = {
-  "full"            => 6,
+  "full"            => 8,
   "half_horizontal" => 3,
   "half_vertical"   => 6,
   "quadrant"        => 3,
@@ -213,6 +213,20 @@ VIEWS.each do |view, limit|
     check("#{view}: no sparkline (by design)", count(out, /<polyline/).zero?)
   end
 end
+
+# The full view renders up to eight rows; rows seven and eight carry the
+# framework's `hidden lg:grid`, so only a large screen (TRMNL X) shows them
+# and every other device keeps its six. The lg plot height divides by the
+# rows that screen actually has.
+puts "\nWith eight pairs:"
+eight = SAMPLE.merge("rows" => SAMPLE["rows"] + SAMPLE["rows"].first(2))
+out, = render("full", eight)
+check("full: eight rows rendered", count(out, /class="fx-row[ "]/) == 8, "got #{count(out, /class="fx-row[ "]/)}")
+check("full: rows 7 and 8 are hidden below lg", count(out, /class="fx-row grid py--3\.5 hidden lg:grid"/) == 2)
+check("full: rows 1-6 are always shown", count(out, /class="fx-row grid py--3\.5"/) == 6)
+check("full: lg plot height divides by 8", out.include?("/ 8 - 29px"))
+out, = render("full", SAMPLE)
+check("full: with six pairs the lg plot height divides by 6", out.include?("/ 6 - 29px") && !out.include?("hidden lg:grid"))
 
 # A response can carry a single day (a fresh 1M window over a holiday week), and
 # an older Worker sends no start_date at all. Neither may print a dangling dash.

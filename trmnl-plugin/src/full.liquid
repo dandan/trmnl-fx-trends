@@ -29,6 +29,8 @@
     2px rule), 29px of row inset. The result matches the rate's 34px line box
     to within 2px, so the plot and the type set the row height together.
   {% endcomment %}
+{% comment %} Rows a large screen shows: the plot height below divides by it. {% endcomment %}
+{% assign fx_rows_lg = rows | size | at_most: 8 | at_least: 1 %}
 <style>
   .fx--full .fx-row,
   .fx--full .fx-head { grid-template-columns: 140px minmax(164px, auto) 86px 1fr minmax(70px, auto); gap: 20px; }
@@ -36,6 +38,7 @@
   .fx--full .fx-dot  { r: 4.5px; }
   .fx--full .fx-head { letter-spacing: 0.08em; }
   .fx--full .fx-spark svg { height: calc((var(--screen-h) - 85px - var(--fx-top-pad)) / 6 - 29px); }
+  .screen--lg .fx--full .fx-spark svg { height: calc((var(--screen-h) - 85px - var(--fx-top-pad)) / {{ fx_rows_lg }} - 29px); }
 </style>
 
 <div class="layout layout--col layout--justify-start">
@@ -58,8 +61,17 @@
         <span>PAIR</span><span class="text--right">LATEST</span><span class="text--right">CHANGE</span><span class="text--center">{% if range_label %}{{ range_label }} {% endif %}TREND</span><span class="text--right">HI / LO</span>
       </div>
 
-      {% for row in rows limit: 6 %}
-        <div class="fx-row grid py--3.5">
+      {% comment %}
+        EIGHT ROWS ON A LARGE SCREEN, SIX ELSEWHERE
+        The field allows eight pairs. Six rows of 34px rate fill a TRMNL OG;
+        the TRMNL X has 300px more height, so it shows all eight. Rows seven
+        and eight are `hidden` and `lg:grid`, the framework's own breakpoint
+        classes, so only a large screen displays them; the plot height above
+        divides by the rows a large screen actually has, so six pairs on an X
+        still fill it. Portrait X is also `lg` and taller still.
+      {% endcomment %}
+      {% for row in rows limit: 8 %}
+        <div class="fx-row grid py--3.5{% if forloop.index > 6 %} hidden lg:grid{% endif %}">
           <div class="fx-pair">{{ row.from }}<span class="fx-arrow px--0.5">&rarr;</span>{{ row.to }}</div>
             <div class="fx-rate text--right">{{ row.rate_str }}</div>
           <div class="fx-chg flex flex--right gap--none"><span class="fx-pill inline-block rounded--xsmall py--1 px--2{% if row.change_pct < 0 %} fx-pill--down bg--black text--white{% endif %}">{{ row.change_str }}%</span></div>
