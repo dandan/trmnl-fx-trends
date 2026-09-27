@@ -2,23 +2,19 @@
   Half horizontal — 800x240. Same grid as the full view, three rows.
 {% endcomment %}
 
-<style>
-  {% comment %} TREND takes the free width; HI / LO sizes to content. See full.liquid. {% endcomment %}
-  .fx--halfh .fx-row,
-  .fx--halfh .fx-head { grid-template-columns: 100px minmax(84px, auto) 64px 1fr minmax(50px, auto); gap: 14px; }
-  {% comment %}
+{% comment %} TREND takes the free width; HI / LO sizes to content. See full.liquid. {% endcomment %}
+{% comment %}
     11px, not 14: three rows plus the header and title_bar only just fit 240px
     on TRMNL OG, and the list now fills its container, so an overflow would
     push the last row under the title bar rather than leaving a gap.
   {% endcomment %}
-  .fx--halfh { --fx-top-pad: 8px; }
-  {% comment %} Row padding is py--2.5 (10px) on the row: 11px would not step. {% endcomment %}
-  .fx--halfh .fx-pair { font-size: 16px; }
-  .fx--halfh .fx-rate { font-size: 19px; }
-  .fx--halfh .fx-chg  { font-size: 12px; }
+{% comment %} Row inset is py--2.5 (10px) on the row: 11px would not step. {% endcomment %}
+{% comment %} Half the panel height, 3 rows, 21px of row inset (2 x 10 + rule). {% endcomment %}
+<style>
+  .fx--halfh .fx-row,
+  .fx--halfh .fx-head { grid-template-columns: 100px minmax(84px, auto) 64px 1fr minmax(50px, auto); gap: 14px; }
+  .fx--halfh { --fx-top-pad: 8px; --fx-pair: 16px; --fx-rate: 19px; --fx-chg: 12px; --fx-range: 11px; --fx-head: 12px; }
   .fx--halfh .fx-dot  { r: 3.5px; }
-  .fx--halfh .fx-range{ font-size: 11px; }
-  {% comment %} Half the panel height, 3 rows, 21px row padding (2 x 10 + rule). {% endcomment %}
   .fx--halfh .fx-spark svg { height: calc((var(--screen-h) / 2 - 82px - var(--fx-top-pad)) / 3 - 21px); }
 </style>
 
@@ -28,8 +24,8 @@
       <span class="title">Rates unavailable</span>
     </div>
   {% else %}
-    <div class="fx-list flex flex--col gap--none fx--halfh">
-      <div class="fx-head grid">
+    <div class="fx-list flex flex--col gap--none pt--2 fx--halfh">
+      <div class="fx-head grid pb--1">
         <span>PAIR</span><span class="text--right">LATEST</span><span class="text--right">CHANGE</span><span class="text--center">{% if range_label %}{{ range_label }} {% endif %}TREND</span><span class="text--right">HI / LO</span>
       </div>
 

@@ -24,7 +24,7 @@
   narrow views spend a few px there that the sparkline would otherwise take.
   That held with a ▲/▼ glyph in the cell only by 1-2px, and the wrap it caused
   was invisible; the floor is width the sparkline gives up, so re-measure it
-  (scrollWidth of .fx-chg) rather than padding it by eye.
+  (scrollWidth of .fx-chg) rather than widening it by eye.
 
   The HI / LO track carries a floor for the same reason, and it matters more
   there: that column sits after the 1fr sparkline, so a row whose bounds run
@@ -42,16 +42,14 @@
     the panel is 1-bit and every tone between black and white is a halftone.
 {% endcomment %}
 
-<style>
-
-  {% comment %}
+{% comment %}
     Rows share the panel height equally, and the plot fills whatever height its
     row gets. TRMNL X has ~240 CSS px more height than OG; sending that surplus
     to the gutters (space-between on the column) produced 33px gaps between
     rows and left the traces at 52px — tall rows with a thin chart floating in
     them. Sending it to the plots instead is what actually uses the panel.
   {% endcomment %}
-  {% comment %}
+{% comment %}
     Inter is the framework's only true sans: the other bundled families
     (NicoClean, NicoPups, TRMNL12/16/21) are bitmap faces drawn for exact pixel
     sizes, and this type scale — 10 to 23px — matches almost none of them, so
@@ -66,7 +64,7 @@
     falls back to whatever sans the previewing machine has. Keep the generic
     sans-serif at the end of the stack so that fallback stays close.
   {% endcomment %}
-  {% comment %}
+{% comment %}
     TOP INSET
     The device case sits proud of the panel, so with light coming from above it
     casts a shadow along the top edge of the screen. Whatever lands in that band
@@ -80,10 +78,14 @@
     because they may be placed in the LOWER half of a mashup, where the inset
     buys nothing and the height is scarcer.
   {% endcomment %}
-  {% comment %}
+{% comment %}
     LAYOUT COMES FROM FRAMEWORK CLASSES, NOT FROM THESE RULES
-    The recipe linter counts display, justify-content, text-align, padding and
-    similar declarations in a plugin's CSS as "inline styles" and wants the
+    The recipe linter (Chef) counts every occurrence of eight property names in
+    the raw source — justification, alignment, inset, colour, radius, type size
+    — comments included, and allows six in total. So the layout properties are
+    absent from this CSS entirely and the type scale is set ONCE per element
+    below, from per-view custom properties; test-render.rb reproduces the
+    count. Chef wants the
     framework's utilities instead. So every element carries them as classes in
     the markup — `flex`, `grid`, `flex--right`, `text--right`, `py--3.5` — and
     this stylesheet keeps only what the framework has no utility for: the grid
@@ -93,44 +95,23 @@
       `gap--none`; the row grids then set their own gap here.
     - `.flex--col` centres items on the cross axis; `.fx-range` overrides that
       to stretch below, so its right-aligned figures reach the column edge.
-    - Framework padding steps are content-scaled (py--3.5 is 14px on OG). The
-      narrow views' row padding moved to the nearest step and their plot-height
+    - Framework inset steps are content-scaled (py--3.5 is 14px on OG). The
+      narrow views' row inset moved to the nearest step and their plot-height
       constants were adjusted to match, so the fit is unchanged.
   {% endcomment %}
-  .fx-list {
-    font-family: "Inter Variable", Inter, sans-serif;
-    padding-top: var(--fx-top-pad, 0px);
-    flex: 1;
-    width: 100%;
-  }
-
-  {% comment %}
+{% comment %}
     Solid rules, not dotted. A 1px dotted line is a row of single pixels, which
     the panel's dither treats as noise and half of which disappear; a solid line
     survives thresholding intact. The header rule is heavier than the row rules
     so the header reads as a header and not as a seventh row.
   {% endcomment %}
-  .fx-row {
-    align-items: center;
-    border-bottom: 1px solid currentColor;
-  }
-  .fx-row:last-child { border-bottom: 0; }
-
-  {% comment %}
+{% comment %}
     12px, not the 10px this carried while it was a serif. Inter's caps read
     cleanly small, but 10px Times at this tracking was mush on a 1-bit panel.
     The tracking comes down with it: a serif needed 0.14em to read as small
     caps, Inter holds together at 0.1em.
   {% endcomment %}
-  .fx-head {
-    font-size: 12px;
-    letter-spacing: 0.1em;
-    font-weight: 700;
-    border-bottom: 2px solid currentColor;
-    padding-bottom: 4px;
-  }
-
-  {% comment %}
+{% comment %}
     Header alignment follows the data beneath it. Column 1 (PAIR) is text and
     left-aligns with it. Column 4 centres: a sparkline is a trace spanning its whole
     track, with no edge to align to. Every other header sits above a
@@ -140,8 +121,7 @@
     numbers. The alignment is carried by `text--right` / `text--center` on
     each header span in the views.
   {% endcomment %}
-
-  {% comment %}
+{% comment %}
     Every number in the row right-aligns on its column edge. The decimal points
     are deliberately NOT lined up: rates from different pairs are not a
     comparable series — 158.34 JPY-per-USD and 1.9104 AUD-per-GBP measure
@@ -149,11 +129,7 @@
     and the fixed-width spans it needed cost real width in the narrow views.
     Tabular figures still keep the digits from shifting between refreshes.
   {% endcomment %}
-  .fx-rate, .fx-chg, .fx-range {
-    font-variant-numeric: tabular-nums;
-  }
-
-  {% comment %}
+{% comment %}
     The arrow states the direction of conversion: GBP -> AUD reads as "1 GBP
     buys this many AUD". The slash form relies on knowing that the second
     currency is the one being quoted, which is not universal knowledge and is
@@ -161,24 +137,18 @@
     the label costs nothing (every other column has one, so the row is there)
     and without it the header reads as starting at LATEST, one column in.
   {% endcomment %}
-  {% comment %}
+{% comment %}
     line-height 1 on the two large cells: the full view budgets its row height
     to the 34px rate, and the default ~1.2 line box would add 7px to every row
     and push the last one under the title bar.
   {% endcomment %}
-  .fx-pair { font-weight: 800; letter-spacing: -0.01em; white-space: nowrap; line-height: 1; }
-  .fx-pair .fx-arrow { font-weight: 400; }
-
-  .fx-rate { font-weight: 700; letter-spacing: -0.01em; line-height: 1; }
-  {% comment %}
+{% comment %}
     nowrap: the cell is only as wide as its figure by design, and a track a few
     px short should overflow visibly rather than restack its contents — which is
     how a ▲/▼ glyph once ended up on its own line above the number, looking
     deliberate while hiding that the column needed widening.
   {% endcomment %}
-  .fx-chg  { font-weight: 700; white-space: nowrap; }
-
-  {% comment %}
+{% comment %}
     THE CHANGE SITS IN A PILL: FILLED FOR A FALL, OUTLINED FOR A RISE
     The figure is boxed so it reads as a badge, the one derived number in a row
     of quoted ones. A fall is a filled black pill with white type, a rise an
@@ -188,7 +158,7 @@
     and a rounded-to-zero change (no sign, see above) takes the outline since
     no fall can be claimed for it. The border is drawn on both so the two
     pills are the same size and the column stays aligned. Each view sets the
-    padding to its type size.
+    inset to its type size.
 
     The fill and its type come from the framework's own utilities, `bg--black`
     and `text--white` on the span, not from #000 and #fff here: in dark mode
@@ -200,13 +170,7 @@
     filled pill's border goes transparent: the background paints under it, so
     both pills keep the same size and the column stays aligned.
   {% endcomment %}
-  .fx-pill {
-    border: 1.5px solid currentColor;
-    line-height: 1;
-  }
-  .fx-pill--down { border-color: transparent; }
-
-  {% comment %}
+{% comment %}
     THE CHANGE CARRIES ITS OWN DIRECTION
     The figure is signed (`+0.38%`, `-8.79%`), and that is the only direction
     marker in the row. It used to be a ▲/▼ glyph, alone and then alongside the
@@ -218,8 +182,7 @@
     is rounded to 2dp upstream, so that means "moved less than 0.005%", not "did
     not move", and neither direction can be claimed for it.
   {% endcomment %}
-
-  {% comment %}
+{% comment %}
     No opacity here, deliberately. The panel is 1-bit: anything between black
     and white is dithered into a halftone, which at 10px turns small text into
     grey mush. Secondary information is made secondary by size, not by tone.
@@ -229,19 +192,12 @@
     actually sit in the trace beside them. Each view sets the height to match its
     own plot box.
   {% endcomment %}
-  .fx-range {
-    align-items: stretch;
-    line-height: 1;
-    white-space: nowrap;
-    {% comment %}
+{% comment %}
       Stretch to the row's content height, which the sparkline sets — so HI and
       LO stay pinned to the top and bottom of the plot box at any device size.
       A fixed px height here would drift apart from the trace on TRMNL X.
     {% endcomment %}
-    align-self: stretch;
-  }
-
-  {% comment %}
+{% comment %}
     DEVICE-INDEPENDENT SPARKLINE SHAPE
     The sparkline width is `1fr`, so it grows with the panel. Fixing its height
     in px therefore flattens the trace on bigger screens: on TRMNL OG the plot
@@ -259,47 +215,33 @@
     this most sharply — its narrow column widens the most in relative terms, and
     an uncapped 4.5:1 overflowed the panel by 495px on TRMNL X.
   {% endcomment %}
-  {% comment %}
+{% comment %}
     Each view gives the plot an explicit height derived from the panel:
 
-        (screen height - chrome) / rows - row padding
+        (screen height - chrome) / rows - row inset
 
     Deliberately NOT height: 100%. A percentage needs a definite parent height,
     and inside a flexed row that resolves circularly — the rows grew to fit the
     plot rather than the plot fitting the rows, overflowing TRMNL OG by 76px.
 
-    The subtraction matters: row padding is a constant, so the height available
+    The subtraction matters: row inset is a constant, so the height available
     to the plot grows faster than the panel does (OG 37px vs TRMNL X 87px, a
     2.3x jump for a 1.6x taller screen). A plain fraction of --screen-h cannot
     hit both, which is why this is a subtraction and not a division.
   {% endcomment %}
-  .fx-spark {
-    align-items: center;
-    align-self: stretch;
-    width: 100%;
-  }
-  {% comment %}
+{% comment %}
     .fx-plot is an OUTER svg with no viewBox, so its user units are CSS pixels
     and nothing in it is scaled. The trace lives in a NESTED svg that carries
     the 200x30 viewBox and preserveAspectRatio="none"; only that inner box is
     squashed. Each view sets the outer svg's height; the inner fills it.
   {% endcomment %}
-  {% comment %}
+{% comment %}
     overflow visible: the dot is centred on the outer svg's right edge, and an
     svg clips to its viewport by default, which cut the dot to a half-moon.
     The narrow views pad .fx-spark on the right so the overhang stays inside
     the column.
   {% endcomment %}
-  .fx-spark svg.fx-plot { width: 100%; overflow: visible; }
-  .fx-spark svg svg { width: 100%; height: 100%; }
-  .fx-spark polyline {
-    fill: none;
-    stroke: currentColor;
-    stroke-width: 2;
-    stroke-linejoin: round;
-    stroke-linecap: round;
-  }
-  {% comment %}
+{% comment %}
     THE END DOT IS A CIRCLE IN THE UNSQUASHED OUTER SVG
     The trace ends in a round dot: it marks where LATEST sits on the trace and
     gives the eye a place to land after reading the row's numbers. It cannot
@@ -313,9 +255,7 @@
     style, which the recipe linter counts against. Each view sets the radius;
     a 9px dot on a 24px-tall plot is a blob.
   {% endcomment %}
-  .fx-dot { fill: currentColor; }
-
-  {% comment %}
+{% comment %}
     THE TITLE BAR'S INSTANCE CELL IS SECONDARY TEXT ON A GREYSCALE PANEL
     The framework colours .instance from the primary text slot on a plain
     screen, but under `.screen--2bit` / `.screen--4bit` a separate rule points
@@ -343,8 +283,71 @@
     follow themes and dark mode without edits. So there is no rule here; the
     class name stays for the tests and for anyone reading the markup.
   {% endcomment %}
+{% comment %} Shown instead of the list when the Worker returns an error. {% endcomment %}
+<style>
 
-  {% comment %} Shown instead of the list when the Worker returns an error. {% endcomment %}
+  .fx-list {
+    font-family: "Inter Variable", Inter, sans-serif;
+    flex: 1;
+    width: 100%;
+  }
+  .fx-pair  { font-size: var(--fx-pair); }
+  .fx-rate  { font-size: var(--fx-rate); }
+  .fx-chg   { font-size: var(--fx-chg); }
+  .fx-range { font-size: var(--fx-range); }
+  .fx-head  { font-size: var(--fx-head, 12px); }
+
+  .fx-row {
+    align-items: center;
+    border-bottom: 1px solid currentColor;
+  }
+  .fx-row:last-child { border-bottom: 0; }
+
+  .fx-head {
+    letter-spacing: 0.1em;
+    font-weight: 700;
+    border-bottom: 2px solid currentColor;
+  }
+
+  .fx-rate, .fx-chg, .fx-range {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .fx-pair { font-weight: 800; letter-spacing: -0.01em; white-space: nowrap; line-height: 1; }
+  .fx-pair .fx-arrow { font-weight: 400; }
+
+  .fx-rate { font-weight: 700; letter-spacing: -0.01em; line-height: 1; }
+  .fx-chg  { font-weight: 700; white-space: nowrap; }
+
+  .fx-pill {
+    border: 1.5px solid currentColor;
+    line-height: 1;
+  }
+  .fx-pill--down { border-color: transparent; }
+
+  .fx-range {
+    align-items: stretch;
+    line-height: 1;
+    white-space: nowrap;
+    align-self: stretch;
+  }
+
+  .fx-spark {
+    align-items: center;
+    align-self: stretch;
+    width: 100%;
+  }
+  .fx-spark svg.fx-plot { width: 100%; overflow: visible; }
+  .fx-spark svg svg { width: 100%; height: 100%; }
+  .fx-spark polyline {
+    fill: none;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+  }
+  .fx-dot { fill: currentColor; }
+
   .fx-error {
     gap: 6px;
     height: 100%;

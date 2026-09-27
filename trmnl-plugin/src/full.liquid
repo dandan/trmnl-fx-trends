@@ -3,15 +3,12 @@
   Merge variables come from the Worker's /rates response.
 {% endcomment %}
 
-<style>
-  {% comment %}
+{% comment %}
     TREND takes the free width (1fr) and HI / LO sizes to its content (auto).
     The reverse — a fixed sparkline with 1fr on the bounds — left ~119px of
     empty space inside the last cell, stranding the numbers at the far edge.
   {% endcomment %}
-  .fx--full .fx-row,
-  .fx--full .fx-head { grid-template-columns: 140px minmax(164px, auto) 86px 1fr minmax(70px, auto); gap: 20px; }
-  {% comment %}
+{% comment %}
     THE TYPE SCALE
     The rate is the number the panel exists to show, so it is the largest thing
     on it: 34px, with the pair at 26px beside it, the two sizes a clear step
@@ -26,19 +23,18 @@
     line-height 1 (set in shared.liquid), so 6 rows x (34px + 2 x 14px + 1px
     rule) fits the panel above the title bar; a 15px pad overflowed by 2px.
   {% endcomment %}
-  .fx--full { --fx-top-pad: 10px; }
-  {% comment %} Row padding is the framework's py--3.5 (14px) on the row itself. {% endcomment %}
-  .fx--full .fx-pair { font-size: 26px; }
-  .fx--full .fx-rate { font-size: 34px; }
-  .fx--full .fx-chg  { font-size: 17px; }
-  .fx--full .fx-dot  { r: 4.5px; }
-  .fx--full .fx-range{ font-size: 14px; }
-  .fx--full .fx-head { font-size: 14px; letter-spacing: 0.08em; }
-  {% comment %}
+{% comment %} Row inset is the framework's py--3.5 (14px) on the row itself. {% endcomment %}
+{% comment %}
     6 rows, ~85px of header+title_bar chrome (the header is 14px here, with a
-    2px rule), 29px row padding. The result matches the rate's 34px line box
+    2px rule), 29px of row inset. The result matches the rate's 34px line box
     to within 2px, so the plot and the type set the row height together.
   {% endcomment %}
+<style>
+  .fx--full .fx-row,
+  .fx--full .fx-head { grid-template-columns: 140px minmax(164px, auto) 86px 1fr minmax(70px, auto); gap: 20px; }
+  .fx--full { --fx-top-pad: 10px; --fx-pair: 26px; --fx-rate: 34px; --fx-chg: 17px; --fx-range: 14px; --fx-head: 14px; }
+  .fx--full .fx-dot  { r: 4.5px; }
+  .fx--full .fx-head { letter-spacing: 0.08em; }
   .fx--full .fx-spark svg { height: calc((var(--screen-h) - 85px - var(--fx-top-pad)) / 6 - 29px); }
 </style>
 
@@ -51,14 +47,14 @@
       </span>
     </div>
   {% else %}
-    <div class="fx-list flex flex--col gap--none fx--full">
+    <div class="fx-list flex flex--col gap--none pt--2.5 fx--full">
       {% comment %}
         The window names the TREND column but governs three of them — the change
         figure, the sparkline and hi/lo are all measured over it. It sits here
         rather than in the title bar because a column header is read with the
         numbers, which is what keeps CHANGE from being taken for a daily move.
       {% endcomment %}
-      <div class="fx-head grid">
+      <div class="fx-head grid pb--1">
         <span>PAIR</span><span class="text--right">LATEST</span><span class="text--right">CHANGE</span><span class="text--center">{% if range_label %}{{ range_label }} {% endif %}TREND</span><span class="text--right">HI / LO</span>
       </div>
 

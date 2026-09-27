@@ -71,6 +71,14 @@ css_no_comments = css.gsub(/\{% comment %\}.*?\{% endcomment %\}/m, "")
         !css_no_comments.match?(/(^|[^-a-z])#{prop}\s*:/))
 end
 
+# Chef's actual rule (trmnlp lib/trmnlp/lint/checks/limited_inline_styles.rb):
+# count raw occurrences of these eight names across every template, comments
+# included, and allow at most six. Reproduced here so it never regresses.
+CHEF_PROPS = %w[justify-content padding margin background-color border-radius text-align object-fit font-size].freeze
+chef_source = VIEWS.keys.map { |v| File.read(File.join(HERE, "src", "#{v}.liquid")) }.join + SHARED
+chef_count = CHEF_PROPS.sum { |w| chef_source.scan(w).size }
+check("chef: at most 6 inline-style property mentions in the raw source", chef_count <= 6, "got #{chef_count}")
+
 # ---------------------------------------------------------------- happy path
 puts "With #{SAMPLE['rows'].size} pairs of live data:"
 VIEWS.each do |view, limit|

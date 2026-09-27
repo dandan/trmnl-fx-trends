@@ -8,21 +8,17 @@
   carries shape rather than digits.
 {% endcomment %}
 
+{% comment %} Row inset is py--2 (8px) on the row: 9px would not step. {% endcomment %}
+{% comment %} Half the panel height, 3 rows, 17px of row inset (2 x 8 + rule); capped like half_vertical, and the cap is what binds on OG. {% endcomment %}
+{% comment %} Portrait: no cap, for the reason given in half_vertical. {% endcomment %}
 <style>
   .fx--quad .fx-row,
   .fx--quad .fx-head { grid-template-columns: 88px minmax(66px, auto) 50px 1fr; gap: 7px; }
-  .fx--quad { --fx-top-pad: 8px; }
-  {% comment %} Row padding is py--2 (8px) on the row: 9px would not step. {% endcomment %}
-  .fx--quad .fx-pair { font-size: 13px; }
-  .fx--quad .fx-rate { font-size: 15px; }
-  .fx--quad .fx-chg  { font-size: 10px; }
+  .fx--quad { --fx-top-pad: 8px; --fx-pair: 13px; --fx-rate: 15px; --fx-chg: 10px; --fx-head: 10px; }
   .fx--quad .fx-dot  { r: 2.5px; }
-  .fx--quad .fx-spark { padding-right: 3px; }
-  .fx--quad .fx-head { font-size: 10px; letter-spacing: 0.06em; }
-  {% comment %} Half the panel height, 3 rows, 17px row padding (2 x 8 + rule); capped like half_vertical, and the cap is what binds on OG. {% endcomment %}
+  .fx--quad .fx-head { letter-spacing: 0.06em; }
   .fx--quad .fx-spark svg { height: calc((var(--screen-h) / 2 - 70px - var(--fx-top-pad)) / 3 - 17px);
                             max-height: calc(var(--screen-h) / 15); }
-  {% comment %} Portrait: no cap, for the reason given in half_vertical. {% endcomment %}
   .screen--portrait .fx--quad .fx-spark svg { max-height: none; }
 </style>
 
@@ -32,8 +28,8 @@
       <span class="title">Rates unavailable</span>
     </div>
   {% else %}
-    <div class="fx-list flex flex--col gap--none fx--quad">
-      <div class="fx-head grid">
+    <div class="fx-list flex flex--col gap--none pt--2 fx--quad">
+      <div class="fx-head grid pb--1">
         <span>PAIR</span><span class="text--right">LATEST</span><span class="text--right">CHANGE</span><span class="text--center">{% if range_label %}{{ range_label }} {% endif %}TREND</span>
       </div>
 
@@ -44,7 +40,7 @@
           <div class="fx-chg flex flex--right gap--none"><span class="fx-pill inline-block rounded--xsmall py--1 px--1{% if row.change_pct < 0 %} fx-pill--down bg--black text--white{% endif %}">{{ row.change_str }}%</span></div>
           {% assign fx_end = row.points | split: " " | last | split: "," %}
           {% assign fx_end_y = fx_end[1] | times: 100.0 | divided_by: 30 %}
-          <div class="fx-spark flex gap--none">
+          <div class="fx-spark flex gap--none pr--1">
             <svg class="fx-plot block" width="100%" height="24">
               <svg class="block" viewBox="0 0 200 30" width="100%" height="100%" preserveAspectRatio="none">
                 <polyline points="{{ row.points }}" vector-effect="non-scaling-stroke"/>
