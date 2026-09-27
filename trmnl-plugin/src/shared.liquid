@@ -2,6 +2,18 @@
   Prepended to every view by TRMNL. Holds the shared styles and the framework
   workarounds; each view supplies its own grid columns and row count.
 
+  IN SHORT
+  A grid of currency-pair rows: pair, latest rate, signed change in a pill, a
+  sparkline with its end dot, and (wide views) the window's high and low. The
+  full view shows up to 8 rows on a TRMNL X and 6 elsewhere; half views 6 or
+  3. Layout comes from framework classes in the views; this CSS holds only
+  what the framework has no utility for — the grid columns, the type scale
+  (per-view custom properties), rules, and the sparkline geometry. Row
+  heights are derived from the screen height so every device fills its panel;
+  the pixel budgets are in each view's <style> block. The long comments below
+  record why each decision was made; none of them is needed to fork the
+  plugin.
+
   THE SPARKLINE TRICK
   The Worker emits `points` in a fixed 200x30 coordinate space (w=200&h=30 in
   the polling URL). There is only ONE polling response for all four view sizes,

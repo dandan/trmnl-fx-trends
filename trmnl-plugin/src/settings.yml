@@ -52,6 +52,7 @@ custom_fields:
   field_type: select
   name: Sparkline range
   description: How far back each sparkline reaches. The change % matches this window.
+  help_text: Also names the TREND column, e.g. "1 YEAR TREND".
   options:
   - 1M
   - 3M
