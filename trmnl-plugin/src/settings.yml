@@ -39,6 +39,7 @@ custom_fields:
     Daniel Laeng. Source code and issues on GitHub. Version __VERSION__.'
   category: finance
   github_url: https://github.com/dandan/trmnl-fx-trends
+  learn_more_url: https://github.com/dandan/trmnl-fx-trends/issues
 - keyname: pairs
   field_type: string
   name: Currency pairs
