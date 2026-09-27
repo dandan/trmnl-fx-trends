@@ -42,10 +42,10 @@ custom_fields:
 - keyname: pairs
   field_type: string
   name: Currency pairs
-  description: 'Comma-separated FROM/TO, up to 8. The full layout shows all 8 on a
-    TRMNL X and the first 6 on a TRMNL OG; the half layouts show 6 or 3. Supported: AUD BRL CAD CHF CNY CZK DKK
-    EUR GBP HKD HUF IDR ILS INR ISK JPY KRW MXN MYR NOK NZD PHP PLN RON SEK SGD THB
-    TRY USD ZAR'
+  description: 'Comma-separated FROM/TO, up to 8, in the order they should appear.
+    Smaller layouts show only the first few.'
+  help_text: 'Supported: AUD BRL CAD CHF CNY CZK DKK EUR GBP HKD HUF IDR ILS INR ISK
+    JPY KRW MXN MYR NOK NZD PHP PLN RON SEK SGD THB TRY USD ZAR'
   placeholder: EUR/USD, GBP/USD, USD/JPY
   default: EUR/USD, GBP/USD, USD/JPY, USD/CHF, AUD/USD, USD/CAD
 - keyname: range
