@@ -16,26 +16,20 @@
 {% comment %} Narrow plot, so a squatter shape than the wide views. {% endcomment %}
 {% comment %} Capped too: this column is narrow, so an unbounded height goes square. {% endcomment %}
 {% comment %}
-    The cap, not the height calc, is what binds on OG (30px at /16 against a
-    31.7px calc). /15 lets the calc win there, so the six rows fill the panel
-    as they did before the row inset moved to the framework's 16px step,
-    while still holding the plot to 52px on TRMNL X.
-  {% endcomment %}
-{% comment %}
-    Portrait: the cap above guards against the column widening in landscape
-    on a big panel, but in portrait this column is as narrow as on OG and the
-    panel is twice as tall, so the cap left the lower third empty. The plain
-    height calc (123px in 390px, ~3:1) is the right shape here.
-  {% endcomment %}
+    No height cap. One existed from the aspect-ratio era, to stop a ratio-driven
+    plot going square in this narrow column on a wide panel; with the height
+    now derived from the panel it only ever cut the rows short, leaving the
+    lower third of a TRMNL X landscape panel empty. Six rows of
+    (screen height - chrome) / 6 fill every device: 32px plots on OG, 82px on
+    the X, 123px in X portrait.
+{% endcomment %}
 <style>
   .fx--halfv .fx-row,
   .fx--halfv .fx-head { grid-template-columns: 96px minmax(70px, auto) 58px 1fr; gap: 8px; }
   .fx--halfv { --fx-top-pad: 10px; --fx-pair: 14px; --fx-rate: 16px; --fx-chg: 11px; --fx-head: 11px; }
   .fx--halfv .fx-dot  { r: 3px; }
   .fx--halfv .fx-head { letter-spacing: 0.08em; }
-  .fx--halfv .fx-spark svg { height: calc((var(--screen-h) - 82px - var(--fx-top-pad)) / 6 - 33px);
-                             max-height: calc(var(--screen-h) / 15); }
-  .screen--portrait .fx--halfv .fx-spark svg { max-height: none; }
+  .fx--halfv .fx-spark svg { height: calc((var(--screen-h) - 82px - var(--fx-top-pad)) / 6 - 33px); }
 </style>
 
 <div class="layout layout--col layout--justify-start">

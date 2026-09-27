@@ -204,16 +204,12 @@
     was 331x30 (11:1), but on TRMNL X the width grew 3.1x while a fixed 30px
     only grew by the device's 1.8x UI scale, giving 1028x54 — 19:1.
 
-    `aspect-ratio` pins the shape instead of the height, so the trace looks the
-    same on every device and the row simply gets taller where there is room.
-    Each view sets its own ratio, because a 331px-wide plot and a 110px-wide one
-    should not be the same shape.
-
-    Each also sets a max-height as a fraction of --screen-h, because ratio alone
-    is unbounded: on a panel that is much wider without being proportionally
-    taller, the plot grows until the rows no longer fit. half_vertical showed
-    this most sharply — its narrow column widens the most in relative terms, and
-    an uncapped 4.5:1 overflowed the panel by 495px on TRMNL X.
+    An `aspect-ratio` was the first answer: it pinned the shape, but a ratio is
+    unbounded in height, and on a panel much wider than it is tall the rows no
+    longer fit — half_vertical overflowed TRMNL X by 495px, which is where the
+    max-height caps came from. The height calc in the next comment replaced
+    the ratio, and the caps went with it: derived from the panel, the plot can
+    never overflow, and a cap only cut the rows short on the X.
   {% endcomment %}
 {% comment %}
     Each view gives the plot an explicit height derived from the panel:
