@@ -242,6 +242,7 @@ git tag -a v1.2.0 -m "What changed"
 (cd ../trmnl-worker && ./deploy.sh prod)
 ./deploy.sh prod --force
 git push origin v1.2.0            # only once both prod deploys succeeded
+(cd ../trmnl-worker && ./deploy.sh qa) && ./deploy.sh qa --force   # QA onto the tag too
 ```
 
 Both deploys stamp themselves from the tag: the Worker reports it at `/`,

@@ -143,6 +143,9 @@ A change touching both halves goes out in this order:
 4. `trmnl-worker/deploy.sh prod`
 5. `trmnl-plugin/deploy.sh prod --force` (and `thomas`, for that install)
 6. `git push origin vX.Y.Z` — or `git tag -d vX.Y.Z` if a deploy failed
+7. Both `deploy.sh qa` again, so QA carries the clean tag too. Step 2's push
+   happened before the commit, so QA is stamped `-dirty` (or with a probe
+   build) until it is re-pushed from the tagged tree.
 
 `--force` skips trmnlp's "overwrite?" prompt, which needs a terminal. The tag
 comes before the prod pushes because both deploys read it (§8), and is pushed
