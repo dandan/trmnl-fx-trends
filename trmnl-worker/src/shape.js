@@ -82,7 +82,7 @@ export function buildRow(rates, { from, to }, { w, h, maxPoints = MAX_POINTS }) 
   };
 }
 
-export function buildResponse(rates, pairs, { range, w, h }) {
+export function buildResponse(rates, pairs, { range, w, h, live = null }) {
   const dates = Object.keys(rates);
   return {
     rows: pairs.map((p) => buildRow(rates, p, { w, h })),
@@ -97,6 +97,13 @@ export function buildResponse(rates, pairs, { range, w, h }) {
     // endpoints is what makes the footer agree with the trace above it.
     start_date: dates.length ? dates[0] : null,
     as_of: dates.length ? dates[dates.length - 1] : null,
+    // Whether the last point is the market rate or the last ECB fixing, and
+    // when the market rate was taken. Both additive: an older template reads
+    // only `as_of`, which stays a date, and shows the live date with no time.
+    // `latest_at` is omitted rather than null when there is no live point, so
+    // the "no null anywhere" guarantee on the body holds.
+    latest_source: live ? "market" : "ecb",
+    ...(live ? { latest_at: live.at } : {}),
     generated_at: new Date().toISOString(),
   };
 }

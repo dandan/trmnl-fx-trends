@@ -82,3 +82,36 @@ export function changePct(series) {
   if (!(first > 0)) return 0;
   return ((last - first) / first) * 100;
 }
+
+// Append the live market rate to the daily series as one more row.
+//
+// Returns { rates, applied }: `rates` is a new object, `applied` says whether
+// the live point is its last row. The point is keyed by its date, so to
+// crossSeries and buildResponse it looks like any other row and nothing
+// downstream changes shape. Rules (docs/build_live_rates.md §4.2):
+//
+//   - It supersedes a fixing on the same date. After 16:00 CET Frankfurter
+//     already has today's fixing; the market rate is newer and replaces it, so
+//     the last point is the market rate whenever the fetch succeeded.
+//   - Older than the last fixing, it is dropped: the fixing is the better row.
+//   - All or nothing. A symbol the request needs that the live response lacks
+//     drops the whole point, because `as_of` is one field for the whole table
+//     and rows cannot disagree about it.
+export function mergeLive(rates, live, symbols) {
+  const out = { ...rates };
+  if (!live?.rates || !live.at) return { rates: out, applied: false };
+
+  const date = String(live.at).slice(0, 10);
+  const dates = Object.keys(rates);
+  const last = dates.length ? dates[dates.length - 1] : "";
+  if (date < last) return { rates: out, applied: false };
+
+  const row = {};
+  for (const code of symbols) {
+    const v = live.rates[code];
+    if (!(Number.isFinite(v) && v > 0)) return { rates: out, applied: false };
+    row[code] = v;
+  }
+  out[date] = row;
+  return { rates: out, applied: true };
+}

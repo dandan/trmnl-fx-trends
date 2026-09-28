@@ -8,6 +8,10 @@
 // Runs the Worker's own handler against live Frankfurter data — no deployed
 // Worker and no token needed — then writes sample.json and rewrites the
 // `variables:` block in .trmnlp.yml so `trmnlp serve` works offline.
+//
+// The live market rate needs the fxratesapi key, read from the Worker's
+// git-ignored .dev.vars (FXRATES_API_KEY). Without it the sample is ECB-only,
+// which is a valid state but not the one the panel usually shows.
 import { readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -19,10 +23,31 @@ const pairs = process.argv[2] || "EUR/USD, GBP/USD, USD/JPY, USD/CHF, AUD/USD, U
 const range = process.argv[3] || "1Y";
 const TOKEN = "local-sample-token";
 
+function devVars() {
+  try {
+    return Object.fromEntries(
+      readFileSync(join(here, "../trmnl-worker/.dev.vars"), "utf8")
+        .split("\n").filter((l) => l.includes("=") && !l.startsWith("#"))
+        .map((l) => [l.slice(0, l.indexOf("=")).trim(), l.slice(l.indexOf("=") + 1).trim()]),
+    );
+  } catch {
+    return {};
+  }
+}
+const apiKey = devVars().FXRATES_API_KEY;
+if (!apiKey) console.warn("No FXRATES_API_KEY in ../trmnl-worker/.dev.vars: the sample will be ECB-only.");
+
+// One value in a Map stands in for the KV binding; this run makes one call.
+const store = new Map();
+const kv = {
+  async get(k, o) { const v = store.get(k); return v == null ? null : (o?.type === "json" ? JSON.parse(v) : v); },
+  async put(k, v) { store.set(k, v); },
+};
+
 const url = `https://local/rates?pairs=${encodeURIComponent(pairs)}&range=${range}&w=200&h=30`;
 const res = await worker.fetch(
   new Request(url, { headers: { Authorization: `Bearer ${TOKEN}` } }),
-  { API_TOKEN: TOKEN },
+  { API_TOKEN: TOKEN, FXRATES_API_KEY: apiKey, LIVE_CACHE: kv },
   {},
 );
 const body = await res.json();

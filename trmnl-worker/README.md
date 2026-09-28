@@ -1,8 +1,10 @@
 # exchange-rates-trmnl-worker
 
 A Cloudflare Worker that turns currency pairs into **plot-ready sparkline data**
-for a [TRMNL](https://usetrmnl.com) private plugin. Rates come from
-[Frankfurter](https://frankfurter.dev) (ECB reference data) — keyless, no signup.
+for a [TRMNL](https://usetrmnl.com) private plugin. The daily series comes from
+[Frankfurter](https://frankfurter.dev) (ECB reference data, keyless) and the
+last point from [fxratesapi](https://fxratesapi.com) (the latest market rate,
+free plan, one API key held as a Worker secret).
 
 The device does no arithmetic: `points` is an SVG coordinate string already
 scaled to the requested box, so the plugin's Liquid is just
@@ -29,9 +31,15 @@ GET /rates?pairs=GBP/AUD,EUR/USD&range=1Y&w=200&h=30
     "lo": 1.8634, "hi": 2.0937,
     "points": "0.0,21.4 4.3,19.8 …", "n": 48
   }],
-  "range": "1Y", "as_of": "2026-08-07", "generated_at": "2026-08-08T…"
+  "range": "1Y", "as_of": "2026-08-07",
+  "latest_source": "market", "latest_at": "2026-08-07T19:40:12.000Z",
+  "generated_at": "2026-08-07T…"
 }
 ```
+
+`latest_source` is `market` when the last point is the live rate and `ecb`
+when it is the last fixing (the live fetch failed, or was older). `latest_at`
+is present only in the first case; `as_of` is always the last point's date.
 
 `/` is a public, data-free health endpoint.
 
@@ -39,12 +47,28 @@ GET /rates?pairs=GBP/AUD,EUR/USD&range=1Y&w=200&h=30
 
 - **One upstream request serves every pair.** Everything is fetched as
   `base=USD` and cross-rated locally, so pair count doesn't affect fetch count.
-- **The same request supplies the current rate.** Frankfurter clamps `end` to the
-  latest publication, so the last point of the series *is* today's rate.
+- **The live rate is one more row.** fxratesapi's rates are merged into the
+  Frankfurter series under their own date (`mergeLive` in `series.js`), so the
+  last point of every series is the latest market rate and nothing downstream
+  knows the difference. A fixing on the same date is superseded; a live point
+  older than the last fixing, or missing a needed currency, is dropped and the
+  response is ECB-only. See [`../docs/build_live_rates.md`](../docs/build_live_rates.md).
+- **The live rate is cached in KV, lazily.** fxratesapi's free plan is 1,000
+  calls a month and the edge cache is per data centre, so `live.js` keeps the
+  one value in the `LIVE_CACHE` namespace: a poll that finds it older than
+  `LIVE_REFRESH_SECONDS` (3600) fetches once and writes it back with a
+  `LIVE_EXPIRE_SECONDS` (7200) TTL. At most 24 calls a day. A failed refetch
+  serves the stored copy until it expires.
+- **The live fetch never fails the request.** `fetchLive` returns a reason
+  instead of throwing, and without the `FXRATES_API_KEY` secret it does not
+  call out at all, so a missing key, a spent quota or an outage costs the
+  live point and nothing else.
 - **`lo`/`hi` come from the full series**, not the downsampled one, so the labels
   match the y-scale the line was drawn against.
-- **Stateless** — no KV, no cron. Upstream responses are edge-cached for 6h via
-  `cf.cacheTtl`.
+- **One KV value, no cron.** The Frankfurter response is edge-cached for 1h
+  via `cf.cacheTtl`; the live rate is the one thing in KV, for the reason
+  above. Namespaces: `LIVE_CACHE` and, for QA, `qa-LIVE_CACHE`, both named in
+  `wrangler.toml`.
 
 ## Supported currencies (30)
 

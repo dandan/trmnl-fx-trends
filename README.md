@@ -12,7 +12,7 @@ TRMNL X and the first six on the original TRMNL):
 
 - **The pair**, written as a conversion: `GBP → AUD` means "one pound buys this
   many dollars".
-- **The latest rate**, to five significant figures, as the ECB quotes it.
+- **The latest rate**, to five significant figures.
 - **The percentage change** over your chosen window. Falls are filled black so
   the pairs that dropped stand out from across the room.
 - **A sparkline** of the whole window, ending in a dot at the latest rate, with
@@ -21,10 +21,12 @@ TRMNL X and the first six on the original TRMNL):
 You choose the pairs from 30 currencies, and a window of one month to five
 years. The change, the sparkline and the high and low all follow that window.
 
-Rates are the European Central Bank's daily reference rates, via
-[Frankfurter](https://frankfurter.dev). They are published once per working
-day, so the newest figure is usually yesterday's; the footer says which day.
-No account or API key is needed.
+The series is the European Central Bank's daily reference rates, via
+[Frankfurter](https://frankfurter.dev), published once per working day. The
+last point is the latest market rate, from [fxratesapi](https://fxratesapi.com),
+refreshed hourly; the footer gives its date and time in UTC. If that source is
+unavailable, the panel shows the last ECB fixing and its date alone, as it did
+before. Installing the recipe needs no account or API key.
 
 ## Layouts
 
@@ -56,7 +58,8 @@ playlist.
 Use this if you want to run your own copy or tweak the templates. The plugin
 polls a Cloudflare Worker that turns the ECB data into plot-ready rows; the
 published Worker answers any TRMNL device, so you can keep using it and only
-change the templates.
+change the templates. Running your own Worker needs a free fxratesapi key for
+the market rate, or it serves the ECB series alone; see the Worker README.
 
 <details>
 <summary>Using trmnlp (recommended)</summary>
@@ -127,12 +130,15 @@ npm run smoke
 - [`BUILD_PLAN.md`](BUILD_PLAN.md) — how the architecture was chosen
 - [`docs/build_multi_deploy.md`](docs/build_multi_deploy.md) — how changes are
   staged on one device before they reach every installer
+- [`docs/build_live_rates.md`](docs/build_live_rates.md) — how the latest market
+  rate joins the daily ECB series
 
 ## Data source
 
 | Data | Source | Terms |
 |---|---|---|
 | Daily exchange rates | [Frankfurter](https://frankfurter.dev), an open-source API serving the [ECB euro reference rates](https://www.ecb.europa.eu/stats/policy_and_exchange_rates/euro_reference_exchange_rates/html/index.en.html) | The ECB publishes the rates for information purposes only and discourages their use for transactions. Published around 16:00 CET on working days. |
+| Latest market rate | [fxratesapi](https://fxratesapi.com), mid-market rates aggregated from many sources, hourly on the free plan | Its [licence](https://fxratesapi.com/legal/terms-conditions) permits display to an app's end users for their personal reference; attribution is appreciated, not required. Needs a free API key, which the Worker holds; installers need nothing. See [`docs/build_live_rates.md`](docs/build_live_rates.md). |
 
 ## Licence
 

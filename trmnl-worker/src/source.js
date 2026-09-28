@@ -1,10 +1,17 @@
-// Frankfurter client: range -> date math, symbol union, one cached fetch.
+// Upstream clients: Frankfurter for the daily ECB series, fxratesapi for the
+// latest market rate. Range -> date math and the symbol union live here too.
 //
-// One request serves every pair. We always ask for base=USD and cross-rate
-// locally (see series.js), so the number of upstream fetches is independent of
-// how many pairs the plugin asked for.
+// One request to each serves every pair. Both are asked for base=USD and
+// cross-rated locally (see series.js), so the number of upstream fetches is
+// independent of how many pairs the plugin asked for.
 
 export const API_BASE = "https://api.frankfurter.dev/v1";
+
+// fxratesapi's latest-rates call. Mid-market rates aggregated from many
+// sources, hourly on the free plan, and licensed for display to an app's end
+// users (docs/build_live_rates.md §3). The key goes in a header, never the
+// URL, so it cannot leak into a log line.
+export const LIVE_URL = "https://api.fxratesapi.com/latest";
 
 // The 30 currencies Frankfurter carries (ECB reference rates). Hardcoded rather
 // than fetched: it changes at most once every few years, and having it locally
@@ -30,9 +37,13 @@ export const RANGES = {
   "5Y": { days: 1826, label: "5 YEARS" },
 };
 
-// Cache upstream responses at the edge for 6h. ECB publishes once per weekday,
-// so this is generous; Frankfurter itself sends max-age=86400.
-export const UPSTREAM_CACHE_TTL = 21600;
+// Cache the Frankfurter response at the edge for 1h. ECB publishes once per
+// weekday about 16:00 CET, and the plugin polls hourly; a longer TTL only
+// delays the new fixing. Frankfurter's own max-age=86400 is overridden by this.
+export const UPSTREAM_CACHE_TTL = 3600;
+
+// The live rate is not edge-cached: live.js keeps it in KV, where one fetch
+// serves every data centre and the monthly quota can be counted.
 
 export const MAX_PAIRS = 8;
 
@@ -136,4 +147,61 @@ export async function fetchRates(symbols, start, end, fetchImpl = fetch) {
     throw new HttpError(502, "Frankfurter response has no 'rates'");
   }
   return body.rates;
+}
+
+// Fetch the latest market rates against USD from fxratesapi.
+// Returns { at, rates, reason }; `rates` is null on any failure.
+//
+// Never throws: the live point is an improvement on the series, not a part of
+// it, so any failure — quota, down, malformed — degrades to the ECB-only
+// response the Worker sent before it existed. `reason` says why, for the smoke
+// test and `wrangler tail`; nothing on the request path reads it.
+//
+// Every supported currency is asked for in one call, whatever pairs this
+// request needs, so the stored value serves every later request too.
+//
+// `at` is the response's own `date`, the time the rates are good for, which is
+// what the footer prints. Not the clock: the value is served from KV for up to
+// an hour after it was fetched.
+export async function fetchLive(apiKey, fetchImpl = fetch) {
+  if (!apiKey) return { at: null, rates: null, reason: "No FXRATES_API_KEY configured" };
+
+  const symbols = [...SUPPORTED].filter((c) => c !== BASE).sort();
+  const qs = new URLSearchParams({ base: BASE, currencies: symbols.join(",") });
+  let res;
+  try {
+    res = await fetchImpl(`${LIVE_URL}?${qs}`, {
+      headers: { Accept: "application/json", Authorization: `Bearer ${apiKey}` },
+    });
+  } catch (err) {
+    return { at: null, rates: null, reason: `Could not reach fxratesapi: ${err.message}` };
+  }
+  if (!res.ok) return { at: null, rates: null, reason: `fxratesapi returned HTTP ${res.status}` };
+
+  let body;
+  try {
+    body = await res.json();
+  } catch {
+    return { at: null, rates: null, reason: "fxratesapi returned a non-JSON response" };
+  }
+  // The quota error comes back as a 200 with success:false and a message.
+  if (body?.success === false) {
+    return { at: null, rates: null, reason: `fxratesapi error: ${body?.error?.message ?? "unknown"}` };
+  }
+  const raw = body?.rates;
+  if (!raw || typeof raw !== "object") {
+    return { at: null, rates: null, reason: "fxratesapi response has no 'rates'" };
+  }
+
+  // Anything that does not parse to a positive finite number is dropped, and
+  // mergeLive treats a missing symbol as a reason to drop the whole point.
+  const rates = {};
+  for (const code of SUPPORTED) {
+    const n = Number(raw[code]);
+    if (Number.isFinite(n) && n > 0) rates[code] = n;
+  }
+
+  const stamp = Date.parse(body?.date ?? "");
+  const at = new Date(Number.isFinite(stamp) ? stamp : Date.now()).toISOString();
+  return { at, rates, reason: null };
 }

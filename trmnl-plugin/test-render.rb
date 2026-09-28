@@ -12,6 +12,7 @@
 require "liquid"
 require "json"
 require "date"
+require "time"
 
 HERE = __dir__
 VIEWS = {
@@ -96,9 +97,25 @@ VIEWS.each do |view, limit|
   # printed as `5 Sep 2025 - 4 Sep 2026`: month names rather than ISO, since
   # numeric day-month is the one form readers disagree on, and an en dash, since
   # the arrow already means "converts to" in the pair column. The data stays ISO.
-  check("#{view}: title bar spans start_date to as_of",
-        out.include?("#{fmt(SAMPLE['start_date'])} &ndash; #{fmt(SAMPLE['as_of'])}"),
-        out[%r{<span class="instance">(.*?)</span>}m, 1].to_s.gsub(/\s+/, " ").strip)
+  # The sample's last point is the market rate, so the end date carries its
+  # time, in UTC and labelled so: `27 Sep 2026 22:18 UTC`. The wide views print
+  # the whole window before it and credit both sources after it. The narrow
+  # views have room for neither: on the device the bare range already fills
+  # their width, so with a time to show they drop the start date (the column
+  # header names the window) and, as before, name no source.
+  hhmm = Time.parse(SAMPLE["latest_at"]).utc.strftime("%H:%M")
+  span = "#{fmt(SAMPLE['start_date'])} &ndash; #{fmt(SAMPLE['as_of'])}"
+  instance = out[%r{<span class="instance">(.*?)</span>}m, 1].to_s.gsub(/\s+/, " ").strip
+  check("#{view}: a market rate prints its time in UTC",
+        out.include?("#{fmt(SAMPLE['as_of'])} #{hhmm} UTC"), instance)
+  if RANGE_VIEWS.include?(view)
+    check("#{view}: title bar spans start_date to as_of", out.include?(span), instance)
+    check("#{view}: wide footer credits both sources", out.include?("&middot; ECB &middot; fxratesapi"))
+  else
+    check("#{view}: narrow footer drops the start date to make room for the time",
+          !out.include?("&ndash;"), instance)
+    check("#{view}: narrow footer names no source", !out.include?("ECB") && !out.include?("fxratesapi"))
+  end
   check("#{view}: footer carries no raw ISO date", !out.match?(/\d{4}-\d{2}-\d{2}/))
   # "LATEST", never "TODAY"/"CURRENT": ECB publishes once per working day around
   # 16:00 CET, so the newest figure is yesterday's or Friday's for roughly three
@@ -243,11 +260,28 @@ VIEWS.each_key do |view|
         out.include?(as_of) && !out.include?("&ndash; #{as_of}"))
 end
 
+# An ECB-only response — the live source fell back, or an older Worker — has
+# no latest_at and says so: the date alone, no time, and the wide views credit
+# the ECB alone.
+puts "\nWith an ECB-only response:"
+VIEWS.each_key do |view|
+  ecb = SAMPLE.reject { |k, _| k == "latest_at" }.merge("latest_source" => "ecb")
+  out, = render(view, ecb)
+  check("#{view}: no time without latest_at", out.include?(as_of) && !out.match?(/\d\d:\d\d UTC/))
+  check("#{view}: the full window returns without a time",
+        out.include?("#{fmt(SAMPLE['start_date'])} &ndash; #{as_of}"))
+  check("#{view}: no fxratesapi credit without a market rate", !out.include?("fxratesapi"))
+  out, = render(view, SAMPLE.reject { |k, _| %w[latest_at latest_source].include?(k) })
+  check("#{view}: an older Worker's response renders as before",
+        out.include?(as_of) && !out.match?(/\d\d:\d\d UTC/) && !out.include?("fxratesapi"))
+end
+
 # A window inside one year prints the year once, on the end date: a 1M window
-# reads `5 Aug - 4 Sep 2026`, not `5 Aug 2026 - 4 Sep 2026`.
+# reads `5 Aug - 4 Sep 2026`, not `5 Aug 2026 - 4 Sep 2026`. Rendered without a
+# live point, so the narrow views print the range rather than the end date.
 puts "\nWith a window inside one year:"
 VIEWS.each_key do |view|
-  one_month = SAMPLE.merge("start_date" => "2026-08-05")
+  one_month = SAMPLE.reject { |k, _| k == "latest_at" }.merge("start_date" => "2026-08-05")
   out, = render(view, one_month)
   check("#{view}: same-year window prints the year once",
         out.include?("#{fmt('2026-08-05', year: false)} &ndash; #{as_of}") &&
@@ -269,7 +303,7 @@ VIEWS.each_key do |view|
   check("#{view}: title bar degrades cleanly", out.include?("No data"))
   instance = out[%r{<span class="instance">(.*?)</span>}m, 1].to_s.strip
   check("#{view}: no orphaned separator",
-        !instance.match?(/\A&middot;/) && !instance.match?(/&middot;\s*(ECB)?\z/),
+        !instance.match?(/\A&middot;/) && !instance.match?(/&middot;\s*(ECB|fxratesapi)?\z/),
         instance)
 end
 

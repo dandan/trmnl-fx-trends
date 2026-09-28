@@ -1,8 +1,15 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import {
-  rangeToDates, symbolUnion, buildUrl, fetchRates, HttpError, SUPPORTED, RANGES,
+  rangeToDates, symbolUnion, buildUrl, fetchRates, fetchLive, HttpError, SUPPORTED, RANGES,
+  LIVE_URL,
 } from "../src/source.js";
+
+const FXRATES = JSON.parse(
+  readFileSync(new URL("./fixtures/fxratesapi-usd.json", import.meta.url)),
+);
+const KEY = "fxr_test_key";
 
 test("SUPPORTED holds the 30 Frankfurter currencies", () => {
   assert.equal(SUPPORTED.size, 30);
@@ -87,7 +94,7 @@ test("fetchRates returns the rates object and sends the edge-cache hint", async 
   };
   const rates = await fetchRates(["GBP"], "2025-01-01", "2026-01-01", stub);
   assert.deepEqual(rates, { "2026-01-01": { GBP: 0.8 } });
-  assert.equal(seen.opts.cf.cacheTtl, 21600);
+  assert.equal(seen.opts.cf.cacheTtl, 3600);
   assert.equal(seen.opts.cf.cacheEverything, true);
 });
 
@@ -119,4 +126,73 @@ test("fetchRates rejects malformed upstream bodies", async () => {
       (e) => e instanceof HttpError && e.status === 502,
     );
   }
+});
+
+const liveResponse = (body) => new Response(JSON.stringify(body), {
+  status: 200, headers: { "Content-Type": "application/json" },
+});
+
+test("fetchLive asks for every supported currency, sends the key in a header, and stamps the response's date", async () => {
+  let seen;
+  const stub = async (url, opts) => {
+    seen = { url: new URL(url), opts };
+    return liveResponse(FXRATES);
+  };
+  const live = await fetchLive(KEY, stub);
+  assert.equal(seen.url.origin + seen.url.pathname, LIVE_URL);
+  assert.equal(seen.url.searchParams.get("base"), "USD");
+  assert.equal(seen.url.searchParams.get("currencies").split(",").length, 29);
+  assert.ok(!seen.url.searchParams.get("currencies").includes("USD"));
+  assert.equal(seen.opts.headers.Authorization, `Bearer ${KEY}`);
+  assert.ok(!seen.url.href.includes(KEY), "the key must not be in the URL");
+  assert.equal(live.reason, null);
+  assert.equal(live.at, FXRATES.date);
+  assert.equal(Object.keys(live.rates).length, 29);
+  assert.equal(live.rates.GBP, FXRATES.rates.GBP);
+  for (const v of Object.values(live.rates)) assert.ok(Number.isFinite(v) && v > 0);
+});
+
+test("fetchLive is not edge-cached: the KV cache is the cache", async () => {
+  let seen;
+  await fetchLive(KEY, async (url, opts) => { seen = opts; return liveResponse(FXRATES); });
+  assert.equal(seen.cf, undefined);
+});
+
+test("fetchLive falls back to the clock without a parseable date", async () => {
+  const before = Date.now();
+  const live = await fetchLive(KEY, async () => liveResponse({ ...FXRATES, date: "soon" }));
+  const at = Date.parse(live.at);
+  assert.ok(at >= before - 1000 && at <= Date.now() + 1000, live.at);
+});
+
+test("fetchLive without a key does not call out", async () => {
+  let called = false;
+  const live = await fetchLive(undefined, async () => { called = true; return liveResponse(FXRATES); });
+  assert.equal(called, false);
+  assert.equal(live.rates, null);
+  assert.match(live.reason, /No FXRATES_API_KEY/);
+});
+
+test("fetchLive never throws: every failure is a null rates with a reason", async () => {
+  const cases = [
+    [async () => { throw new TypeError("connection refused"); }, /Could not reach/],
+    [async () => new Response("slow down", { status: 429 }), /HTTP 429/],
+    [async () => new Response("<html>", { status: 200 }), /non-JSON/],
+    [async () => liveResponse({ success: true }), /no 'rates'/],
+    // The monthly quota comes back as a 200 with success:false.
+    [async () => liveResponse({ success: false, error: { message: "Monthly usage limit reached" } }),
+      /Monthly usage limit/],
+  ];
+  for (const [stub, re] of cases) {
+    const live = await fetchLive(KEY, stub);
+    assert.equal(live.rates, null);
+    assert.equal(live.at, null);
+    assert.match(live.reason, re);
+  }
+});
+
+test("fetchLive drops unparseable and non-positive rates", async () => {
+  const body = { success: true, date: FXRATES.date, rates: { GBP: "abc", AUD: -1, EUR: 0, JPY: 157.4 } };
+  const live = await fetchLive(KEY, async () => liveResponse(body));
+  assert.deepEqual(live.rates, { JPY: 157.4 });
 });

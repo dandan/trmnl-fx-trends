@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
-  crossSeries, downsample, extent, plotPoints, changePct,
+  crossSeries, downsample, extent, plotPoints, changePct, mergeLive,
 } from "../src/series.js";
 
 // A base=USD response: note there is no "USD" key in any row.
@@ -102,4 +102,61 @@ test("changePct measures first to last", () => {
   assert.equal(changePct([["a", 100], ["b", 50]]), -50);
   assert.equal(changePct([["a", 100]]), 0);
   assert.equal(changePct([]), 0);
+});
+
+// mergeLive: the daily ECB series plus one market-rate row.
+const DAILY = {
+  "2026-09-24": { AUD: 1.4200, GBP: 0.7500 },
+  "2026-09-25": { AUD: 1.4224, GBP: 0.7546 },
+};
+const LIVE = { at: "2026-09-27T19:40:12.000Z", rates: { AUD: 1.4252, GBP: 0.7556 }, reason: null };
+
+test("mergeLive appends a live point newer than the last fixing (weekend, weekday morning)", () => {
+  const { rates, applied } = mergeLive(DAILY, LIVE, ["AUD", "GBP"]);
+  assert.equal(applied, true);
+  assert.deepEqual(Object.keys(rates), ["2026-09-24", "2026-09-25", "2026-09-27"]);
+  assert.deepEqual(rates["2026-09-27"], { AUD: 1.4252, GBP: 0.7556 });
+  assert.deepEqual(DAILY["2026-09-25"], { AUD: 1.4224, GBP: 0.7546 }, "input untouched");
+  assert.equal("2026-09-27" in DAILY, false, "input untouched");
+});
+
+test("mergeLive supersedes a fixing on the same date (weekday evening)", () => {
+  const live = { ...LIVE, at: "2026-09-25T19:40:12.000Z" };
+  const { rates, applied } = mergeLive(DAILY, live, ["AUD", "GBP"]);
+  assert.equal(applied, true);
+  assert.deepEqual(Object.keys(rates), ["2026-09-24", "2026-09-25"]);
+  assert.deepEqual(rates["2026-09-25"], { AUD: 1.4252, GBP: 0.7556 });
+});
+
+test("mergeLive drops a live point older than the last fixing", () => {
+  const live = { ...LIVE, at: "2026-09-24T19:40:12.000Z" };
+  const { rates, applied } = mergeLive(DAILY, live, ["AUD", "GBP"]);
+  assert.equal(applied, false);
+  assert.deepEqual(rates, DAILY);
+});
+
+test("mergeLive is all or nothing: a missing symbol drops the whole point", () => {
+  const { rates, applied } = mergeLive(DAILY, LIVE, ["AUD", "GBP", "JPY"]);
+  assert.equal(applied, false);
+  assert.deepEqual(rates, DAILY);
+});
+
+test("mergeLive with no live data returns the series unchanged", () => {
+  for (const live of [null, undefined, { at: null, rates: null, reason: "HTTP 429" }]) {
+    const { rates, applied } = mergeLive(DAILY, live, ["AUD", "GBP"]);
+    assert.equal(applied, false);
+    assert.deepEqual(rates, DAILY);
+  }
+});
+
+test("mergeLive keeps only the symbols asked for in the live row", () => {
+  const live = { ...LIVE, rates: { ...LIVE.rates, JPY: 157.4 } };
+  const { rates } = mergeLive(DAILY, live, ["AUD", "GBP"]);
+  assert.deepEqual(Object.keys(rates["2026-09-27"]), ["AUD", "GBP"]);
+});
+
+test("mergeLive onto an empty series appends", () => {
+  const { rates, applied } = mergeLive({}, LIVE, ["AUD"]);
+  assert.equal(applied, true);
+  assert.deepEqual(rates, { "2026-09-27": { AUD: 1.4252 } });
 });

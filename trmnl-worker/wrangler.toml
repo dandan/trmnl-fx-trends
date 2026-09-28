@@ -6,18 +6,27 @@ compatibility_date = "2026-08-01"
 #   https://exchange-rates-trmnl.<your-subdomain>.workers.dev/rates?pairs=...
 workers_dev = true
 
-# No bindings. The Worker is stateless — upstream responses are cached at the
-# edge via `cf.cacheTtl` on the outbound fetch (see src/source.js), so there is
-# no KV, no D1 and no cron. See BUILD_PLAN.md §2.
+# One binding: the KV namespace that holds the latest market rate (src/live.js).
+# The Worker was stateless until then — upstream responses were cached at the
+# edge via `cf.cacheTtl` on the outbound fetch, and the daily series still is.
+# The live rate is different: its source has a monthly quota, and the edge
+# cache is per data centre and cannot be counted, so that one value lives in
+# KV where a single fetch serves every colo. Refreshed lazily on the request
+# path; no cron. See docs/build_live_rates.md §4.5.
 #
-# That includes the TRMNL IP allowlist (src/allowlist.js): it is fetched lazily
-# on the request path and memoised in a module global, so it needs neither a KV
-# binding to live in nor a [triggers] cron to refresh it.
+# The TRMNL IP allowlist (src/allowlist.js) is fetched lazily on the request
+# path and memoised in a module global, so it needs neither a KV binding to
+# live in nor a [triggers] cron to refresh it.
 #
-# Secret (NOT stored here) — set it once with:
-#   npx wrangler secret put API_TOKEN
-# Requests must send:  Authorization: Bearer <that value>
-# The upstream is keyless; this guards the Worker's own quota. See §2.1.
+# Secret (NOT stored here) — set it once per environment with:
+#   npx wrangler secret put FXRATES_API_KEY            # production
+#   npx wrangler secret put FXRATES_API_KEY --env qa   # QA
+# Without it the Worker serves the ECB series alone, which is what it did
+# before the live rate existed. For `wrangler dev`, put it in .dev.vars.
+
+[[kv_namespaces]]
+binding = "LIVE_CACHE"
+id = "9e5955282d4949a1b1f0060c0f4d70c2"
 
 [observability]
 enabled = true
@@ -38,3 +47,13 @@ name = "exchange-rates-trmnl-qa"
 # proof that the device's request reached this Worker and not production.
 [env.qa.vars]
 DEPLOY_ENV = "qa"
+# The QA Worker shares no quota with production (its own key), but a device
+# polling it hourly would spend as much. Four hours between refetches keeps a
+# free-plan key under its 1,000 a month with production's 720 beside it.
+LIVE_REFRESH_SECONDS = "14400"
+
+# Environments inherit vars but not bindings, so QA names its own namespace:
+# the two Workers must never serve each other's cached value.
+[[env.qa.kv_namespaces]]
+binding = "LIVE_CACHE"
+id = "a64841d976724104b81085351b932b32"

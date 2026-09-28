@@ -18,6 +18,8 @@
 import {
   SUPPORTED, RANGES, HttpError, rangeToDates, symbolUnion, fetchRates, parsePairs,
 } from "./source.js";
+import { mergeLive } from "./series.js";
+import { getLive } from "./live.js";
 import { buildResponse } from "./shape.js";
 import { ipAllowed } from "./allowlist.js";
 
@@ -40,7 +42,7 @@ function clampInt(value, def, min, max) {
   return Math.min(Math.max(n, min), max);
 }
 
-async function handleRates(url, fetchImpl) {
+async function handleRates(url, env, fetchImpl) {
   const pairs = parsePairs(url.searchParams.get("pairs"));
   const range = (url.searchParams.get("range") || "1Y").toUpperCase();
   if (!RANGES[range]) {
@@ -50,9 +52,16 @@ async function handleRates(url, fetchImpl) {
   const h = clampInt(url.searchParams.get("h"), 30, H_MIN, H_MAX);
 
   const { start, end } = rangeToDates(range);
-  const rates = await fetchRates(symbolUnion(pairs), start, end, fetchImpl);
+  const symbols = symbolUnion(pairs);
+  // Both upstreams in parallel: the live lookup adds no latency. Only
+  // Frankfurter can fail the request; getLive never throws (see live.js).
+  const [daily, live] = await Promise.all([
+    fetchRates(symbols, start, end, fetchImpl),
+    getLive(env, fetchImpl),
+  ]);
+  const { rates, applied } = mergeLive(daily, live, symbols);
 
-  return buildResponse(rates, pairs, { range, w, h });
+  return buildResponse(rates, pairs, { range, w, h, live: applied ? live : null });
 }
 
 export default {
@@ -69,6 +78,7 @@ export default {
         usage: "/rates?pairs=GBP/AUD,EUR/USD&range=1Y&w=200&h=30",
         ranges: Object.keys(RANGES),
         currencies: SUPPORTED.size,
+        sources: ["api.frankfurter.dev", "api.fxratesapi.com"],
       });
     }
 
@@ -81,7 +91,7 @@ export default {
     }
 
     try {
-      const body = await handleRates(url, fetchImpl);
+      const body = await handleRates(url, env, fetchImpl);
       // Only a non-production environment names itself (see wrangler.toml), so
       // the field is absent from what installers of the recipe receive.
       if (env?.DEPLOY_ENV) body.env = env.DEPLOY_ENV;

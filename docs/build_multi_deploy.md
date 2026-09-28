@@ -53,8 +53,12 @@ name = "exchange-rates-trmnl-qa"
 
 That is the whole change. Environments inherit `main`, `compatibility_date`,
 `workers_dev` and `[observability]` from the top level; only the name differs,
-and the name is what sets the URL. There are no bindings or secrets to
-duplicate — the Worker is stateless and the IP allowlist is fetched at runtime.
+and the name is what sets the URL. There were no bindings or secrets to
+duplicate — the Worker was stateless and the IP allowlist is fetched at runtime.
+*Since the live rate (`build_live_rates.md`) there is one of each: QA names
+its own `LIVE_CACHE` namespace under `[[env.qa.kv_namespaces]]`, since
+environments inherit vars but not bindings, and holds its own
+`FXRATES_API_KEY` secret.*
 
 `deploy.sh` takes the environment as its first argument and refuses to run
 without one, so `./deploy.sh` alone can no longer mean prod:

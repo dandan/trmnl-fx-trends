@@ -24,7 +24,9 @@ as one.
 
 **The same request also carries the current rate.** `end` clamps to the latest
 publication, so the final point of the series *is* today's rate — no separate
-"latest" call.
+"latest" call. *Since 2026-09: a second call, to fxratesapi, supplies the
+latest market rate as one more point, cached in KV; see
+`docs/build_live_rates.md`.*
 
 Verified 2026-08-08:
 
@@ -85,6 +87,11 @@ fetch(url, { cf: { cacheTtl: 21600, cacheEverything: true } })
 Frankfurter already serves `cache-control: max-age=86400` and sits behind
 Cloudflare, so the upstream request is cheap and usually a cache hit. Nothing
 needs to persist between requests because everything is re-derivable in one call.
+
+*Relaxed 2026-09-28, for one value: the latest market rate lives in a KV
+namespace, because its source has a monthly quota and the per-colo edge cache
+cannot be counted against one. Still no cron. See `docs/build_live_rates.md`
+§4.5.*
 
 The device does no arithmetic — the Worker emits SVG coordinates already scaled
 to the sparkline box, so the template only interpolates strings.
@@ -422,7 +429,8 @@ Carried over from the meetup plugin, learned the hard way there:
 
 `3600`. ECB publishes once per weekday, so faster polling is wasted — and over a
 weekend nothing will move at all. Put `as_of` on screen so a flat or stale-looking
-rate explains itself.
+rate explains itself. *The live point (`docs/build_live_rates.md`) moves hourly
+and is cached for an hour at the edge, so the interval still holds.*
 
 ---
 
@@ -434,6 +442,7 @@ rate explains itself.
 | A wanted pair is outside the 30 | See §8.2 — deliberate decision, not a bug |
 | 5Y request is 123 KB upstream | Edge-cached; verify CPU headroom in §5.3. Drop `5Y` if it's tight |
 | Weekend/holiday flatness looks like a bug | `as_of` on screen |
+| fxratesapi's monthly quota runs out, or the service is down | The live fetch never fails the request; the KV copy is served until it expires, then the panel falls back to ECB-only, i.e. its pre-2026-09 behaviour |
 | TRMNL payload size ceiling | ~6 KB for 6 pairs, far under. Max-8-pairs cap holds the line |
 
 ---

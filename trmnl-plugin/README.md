@@ -144,20 +144,27 @@ These are constraints of the panel, not preferences:
   — the column floors are measured to these sizes, so the TREND track on TRMNL
   OG is 260px where the previous 23/19px scale left it 358px — and the row
   height, which is budgeted to the rate's line box at `line-height: 1`.
-- **The rate column is headed `LATEST`, never `TODAY` or `CURRENT`.** The ECB
-  publishes once per working day around 16:00 CET, so the newest figure is
-  yesterday's or Friday's for roughly three quarters of the week — a "today"
-  label would be wrong most of the time, and "current" implies a live market
-  quote rather than a daily reference fixing. The header answers *which* rate;
-  the title bar's `5 Sep 2025 – 4 Sep 2026` answers *over what window*, and its
-  last date is the same "as of when" the rate carries.
+- **The rate column is headed `LATEST`, never `TODAY` or `CURRENT`.** The last
+  point is usually the market rate at the last refresh, but when that fetch
+  fails it is the ECB fixing, published once per working day around 16:00 CET
+  and so yesterday's or Friday's for roughly three quarters of the week — a
+  "today" label would be wrong then, and "current" claims more than an hourly
+  refresh can back. The header answers *which* rate; the title bar's `5 Sep
+  2025 – 4 Sep 2026 22:18 UTC` answers *over what window* and *as of when*.
 - **Footer dates print as `4 Sep 2026`, from ISO data.** The Worker sends
   `start_date` and `as_of` as `YYYY-MM-DD` and they stay that way in the JSON;
   the template formats them. ISO on a wall reads as a database field, and
   numeric day-month is the one form readers in different countries disagree
   on, so the month is a name. The ends are joined by an en dash, not the arrow,
   which already means "converts to" in the pair column. A window inside one
-  year prints the year once: `5 Aug – 4 Sep 2026`.
+  year prints the year once: `5 Aug – 4 Sep 2026`. When the Worker sends
+  `latest_at`, the end date carries its time, in UTC and labelled so: it is what
+  says the last point is a market snapshot rather than a fixing, and it explains
+  a Sunday date. The wide views credit both sources after the dates
+  (`· ECB · fxratesapi`); without a live point, `· ECB` alone. The narrow views
+  have no room for the range and a time both — the bare range already fills
+  their width on the device — so with a time to show they print the end date
+  and time alone; the column header names the window.
 - **Rates and bounds carry five significant figures, not a fixed number of
   decimals.** That is what the source carries: ECB quotes to about five figures
   whatever the magnitude (`159.68` for JPY, `0.80426` for CHF), so a
