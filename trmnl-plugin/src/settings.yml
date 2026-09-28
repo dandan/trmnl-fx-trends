@@ -35,7 +35,8 @@ custom_fields:
   name: About this plugin
   description: 'Up to 8 currency pairs, each with a sparkline, latest rate and
     percentage change, over 1 month to 5 years. Daily rates from the European Central
-    Bank via <a href="https://frankfurter.dev">Frankfurter</a>, no API key needed.<br/>By
+    Bank via <a href="https://frankfurter.dev">Frankfurter</a>, and the latest market
+    rate from <a href="https://fxratesapi.com">fxratesapi</a>. No account needed.<br/>By
     Daniel Laeng. Source code and issues on GitHub. Version __VERSION__.'
   category: finance
   github_url: https://github.com/dandan/trmnl-fx-trends

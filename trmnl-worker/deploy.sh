@@ -16,8 +16,10 @@
 #   - npm install
 #   - npx wrangler login          (first time only)
 #
-# No secrets to provision: access control is the TRMNL IP allowlist, which the
-# Worker fetches at runtime. See src/allowlist.js.
+# One secret per environment, set once (see wrangler.toml):
+#   npx wrangler secret put FXRATES_API_KEY [--env qa]
+# Without it the Worker serves the ECB series alone. Access control needs
+# nothing: it is the TRMNL IP allowlist, fetched at runtime. See src/allowlist.js.
 #
 # Tests run first: the Worker has no staging environment, and a broken deploy
 # shows up as a blank sparkline on the device rather than an error.

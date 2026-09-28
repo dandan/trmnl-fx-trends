@@ -12,9 +12,30 @@ const FIXTURE = JSON.parse(
   readFileSync(new URL("./fixtures/frankfurter-1y.json", import.meta.url)),
 );
 
+const FXRATES = JSON.parse(
+  readFileSync(new URL("./fixtures/fxratesapi-usd.json", import.meta.url)),
+);
+
+// The default stub answers every URL with the Frankfurter fixture, and the
+// default env carries no API key, so the live lookup falls back and every
+// test written before the live point exercises the ECB-only path unchanged.
 const upstream = async () => new Response(JSON.stringify(FIXTURE), {
   status: 200, headers: { "Content-Type": "application/json" },
 });
+
+// Routes by host: Frankfurter gets the daily fixture, fxratesapi gets `live`
+// (a Response or a body).
+const withLive = (live) => async (url) => {
+  if (String(url).includes("fxratesapi")) {
+    return live instanceof Response ? live : new Response(JSON.stringify(live), {
+      status: 200, headers: { "Content-Type": "application/json" },
+    });
+  }
+  return upstream();
+};
+
+// An env with a key and no KV binding: the live lookup fetches every time.
+const LIVE_ENV = { FXRATES_API_KEY: "fxr_test_key" };
 
 function call(path, { env = {}, fetchImpl = upstream, ip = null } = {}) {
   const headers = ip ? { "CF-Connecting-IP": ip } : {};
@@ -179,4 +200,75 @@ test("the health endpoint reports the deploy's version and environment", async (
   const stamped = await (await call("/", { env: { VERSION: "v1.2.3", DEPLOY_ENV: "qa" } })).json();
   assert.equal(stamped.version, "v1.2.3");
   assert.equal(stamped.env, "qa");
+});
+
+// The live point. The fixture's last fixing is 2026-08-07; the live fixture is
+// dated 2026-09-28, so it is appended.
+test("a live rate becomes the last point of every row and is stamped in the body", async () => {
+  const res = await call("/rates?pairs=GBP/AUD,USD/JPY,EUR/CHF&range=1Y",
+    { env: LIVE_ENV, fetchImpl: withLive(FXRATES) });
+  assert.equal(res.status, 200);
+  const b = await body(res);
+  assert.equal(b.latest_source, "market");
+  assert.equal(b.latest_at, FXRATES.date);
+  assert.equal(b.as_of, FXRATES.date.slice(0, 10));
+  assert.equal(b.start_date, "2025-08-08", "the ECB start is untouched");
+
+  const fx = FXRATES.rates;
+  const expect = { "GBP/AUD": fx.AUD / fx.GBP, "USD/JPY": fx.JPY, "EUR/CHF": fx.CHF / fx.EUR };
+  for (const row of b.rows) {
+    assert.equal(row.rate, Number(expect[row.pair].toPrecision(5)), row.pair);
+    // The dot sits at LATEST: the last plotted point is the live one.
+    assert.ok(row.lo <= row.rate && row.rate <= row.hi, row.pair);
+  }
+  assert.ok(!/NaN|Infinity|null/.test(JSON.stringify(b)));
+});
+
+test("a failed live source yields exactly the ECB-only body", async () => {
+  const path = "/rates?pairs=GBP/AUD,USD/JPY&range=1Y";
+  const plain = await body(await call(path));
+  const failed = await body(await call(path, {
+    env: LIVE_ENV, fetchImpl: withLive(new Response("slow down", { status: 429 })),
+  }));
+  delete plain.generated_at;
+  delete failed.generated_at;
+  assert.deepEqual(failed, plain);
+  assert.equal(failed.latest_source, "ecb");
+  assert.equal("latest_at" in failed, false);
+  assert.equal(failed.as_of, "2026-08-07");
+});
+
+test("without an API key the Worker serves ECB-only and never calls fxratesapi", async () => {
+  let called = false;
+  const fetchImpl = async (url) => {
+    if (String(url).includes("fxratesapi")) called = true;
+    return upstream();
+  };
+  const b = await body(await call("/rates?pairs=GBP/AUD", { env: {}, fetchImpl }));
+  assert.equal(called, false);
+  assert.equal(b.latest_source, "ecb");
+});
+
+test("a live response missing a needed currency falls back for the whole table", async () => {
+  const partial = { ...FXRATES, rates: { ...FXRATES.rates } };
+  delete partial.rates.JPY;
+  const b = await body(await call("/rates?pairs=GBP/AUD,USD/JPY", { env: LIVE_ENV, fetchImpl: withLive(partial) }));
+  assert.equal(b.latest_source, "ecb");
+  assert.equal(b.as_of, "2026-08-07");
+  // ...but a request that does not need JPY still gets the live point.
+  const ok = await body(await call("/rates?pairs=GBP/AUD", { env: LIVE_ENV, fetchImpl: withLive(partial) }));
+  assert.equal(ok.latest_source, "market");
+});
+
+test("a Frankfurter failure is still a 502 even when the live source is fine", async () => {
+  const fetchImpl = async (url) => (String(url).includes("fxratesapi")
+    ? withLive(FXRATES)(url)
+    : new Response("boom", { status: 503 }));
+  const res = await call("/rates?pairs=GBP/AUD", { env: LIVE_ENV, fetchImpl });
+  assert.equal(res.status, 502);
+});
+
+test("the health endpoint names both sources", async () => {
+  const b = await body(await call("/"));
+  assert.deepEqual(b.sources, ["api.frankfurter.dev", "api.fxratesapi.com"]);
 });
