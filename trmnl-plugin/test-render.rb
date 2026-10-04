@@ -61,12 +61,12 @@ check("settings: no version literal committed",
       !SETTINGS.match?(/Version v?\d+\.\d+/))
 
 # The recipe linter counts these declarations in a plugin's CSS as inline
-# styles. Layout is carried by framework classes in the markup instead; only
-# font-size remains here, for want of matching framework sizes.
+# styles. Layout, type and the pill are carried by framework classes in the
+# markup instead; the CSS keeps only the grid tracks, rules and svg geometry.
 css = (VIEWS.keys.map { |v| File.read(File.join(HERE, "src", "#{v}.liquid")) } << SHARED)
         .map { |t| t.scan(%r{<style>(.*?)</style>}m).join }.join
 css_no_comments = css.gsub(/\{% comment %\}.*?\{% endcomment %\}/m, "")
-%w[display justify-content text-align padding margin background-color color border-radius object-fit].each do |prop|
+%w[display justify-content text-align padding margin background-color color border-radius object-fit font-size font-weight font-family line-height white-space].each do |prop|
   check("css: no #{prop} declarations (framework classes carry it)",
         !css_no_comments.match?(/(^|[^-a-z])#{prop}\s*:/))
 end
@@ -136,20 +136,21 @@ VIEWS.each do |view, limit|
   # The change is quoted signed, to a fixed 2dp, so the column lines up and reads
   # as arithmetic (see shape.js). The view must print change_str verbatim: `| abs`
   # or `| round` here would drop the sign, or the trailing zero it carries.
-  # The figure sits in a .fx-pill (filled or outlined); the pill is styling, so it is
-  # stripped here and the text inside it is what has to match.
+  # The figure sits in a framework label pill (label--filled for a fall,
+  # label--outline for a rise); the pill is styling, so it is stripped here and
+  # the text inside it is what has to match.
   cells = out.scan(%r{<div class="fx-chg[^"]*">(.*?)</div>}m).flatten
-  check("#{view}: every change sits in a pill",
-        cells.all? { |c| c.match?(%r{\A\s*<span class="fx-pill[^"]*">[^<]*</span>\s*\z}) })
+  check("#{view}: every change sits in a label pill",
+        cells.all? { |c| c.match?(%r{\A\s*<span class="label [^"]*label--(filled|outline)[^"]*">[^<]*</span>\s*\z}) })
   changes = cells.map { |c| c.gsub(/<[^>]+>/, "").strip }
   # A fall is a filled pill, a rise an outlined one; the sign decides, so the
-  # two never disagree.
+  # two never disagree, and no pill is both.
   check("#{view}: falls are filled and rises outlined",
-        cells.zip(changes).all? { |c, f| c.include?("fx-pill--down") == f.start_with?("-") })
-  # The fill is the framework's own black/white utilities, which dark mode
-  # swaps; a literal colour here would not follow it.
-  check("#{view}: filled pills use the framework's bg/text utilities",
-        cells.all? { |c| !c.include?("fx-pill--down") || (c.include?("bg--black") && c.include?("text--white")) })
+        cells.zip(changes).all? { |c, f| c.include?("label--filled") == f.start_with?("-") && c.include?("label--outline") != f.start_with?("-") })
+  # The pill is the framework's own label variant, not a hand-drawn border
+  # with bg--black behind it: that is what TRMNL's review asked for, and it
+  # is what lets `lg:label--large` scale it on a TRMNL X.
+  check("#{view}: no hand-rolled pill classes", !out.include?("fx-pill") && !out.include?("bg--black"))
   check("#{view}: dates use text--default", out.include?('class="fx-dates text--default"'))
   fig = /\A([+-]?\d+\.\d{2})%\z/m
   check("#{view}: every change is signed and 2dp",
@@ -174,7 +175,7 @@ VIEWS.each do |view, limit|
   # where those values sit in the trace beside them. The original markup had
   # them the other way round, which reads as an upside-down axis.
   if RANGE_VIEWS.include?(view)
-    pairs_hi_lo = out.scan(%r{<div class="fx-range[^"]*"><span>([^<]*)</span><span>([^<]*)</span></div>})
+    pairs_hi_lo = out.scan(%r{<div class="fx-range[^"]*"><span class="[^"]*">([^<]*)</span><span class="[^"]*">([^<]*)</span></div>})
     check("#{view}: HI is printed above LO",
           pairs_hi_lo.all? { |hi, lo| Float(hi) >= Float(lo) },
           pairs_hi_lo.reject { |hi, lo| Float(hi) >= Float(lo) }.inspect)
@@ -222,11 +223,11 @@ puts "\nWith eight pairs:"
 eight = SAMPLE.merge("rows" => SAMPLE["rows"] + SAMPLE["rows"].first(2))
 out, = render("full", eight)
 check("full: eight rows rendered", count(out, /class="fx-row[ "]/) == 8, "got #{count(out, /class="fx-row[ "]/)}")
-check("full: rows 7 and 8 are hidden below lg", count(out, /class="fx-row grid py--3\.5 hidden lg:grid"/) == 2)
-check("full: rows 1-6 are always shown", count(out, /class="fx-row grid py--3\.5"/) == 6)
-check("full: lg plot height divides by 8", out.include?("/ 8 - 29px"))
+check("full: rows 7 and 8 are hidden below lg", count(out, /class="fx-row grid py--2\.5 lg:py--1 lg:portrait:py--2\.5 hidden lg:grid"/) == 2)
+check("full: rows 1-6 are always shown", count(out, /class="fx-row grid py--2\.5 lg:py--1 lg:portrait:py--2\.5"/) == 6)
+check("full: lg plot height divides by 8", out.include?("--fx-rows: 8;"))
 out, = render("full", SAMPLE)
-check("full: with six pairs the lg plot height divides by 6", out.include?("/ 6 - 29px") && !out.include?("hidden lg:grid"))
+check("full: with six pairs the lg plot height divides by 6", out.include?("--fx-rows: 6;") && !out.include?("hidden lg:grid"))
 
 # A response can carry a single day (a fresh 1M window over a holiday week), and
 # an older Worker sends no start_date at all. Neither may print a dangling dash.
@@ -298,7 +299,7 @@ VIEWS.each_key do |view|
   out, = render(view, { "rows" => [flat], "range" => "1Y", "as_of" => SAMPLE["as_of"] })
   cell = out[%r{<div class="fx-chg[^"]*">(.*?)</div>}m, 1].to_s.gsub(/<[^>]+>/, "").strip
   check("#{view}: zero change carries no sign", !cell.match?(/[+-]/))
-  check("#{view}: zero change is outlined, not filled", !out.match?(/class="fx-pill[^"]*fx-pill--down/))
+  check("#{view}: zero change is outlined, not filled", !out.include?("label--filled") && out.include?("label--outline"))
   # Nothing takes the arrow's place: a dash there reads as "minus 0%".
   check("#{view}: the change cell holds an unsigned figure alone",
         cell == "0.00%", cell.inspect)

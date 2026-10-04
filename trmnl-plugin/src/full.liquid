@@ -1,44 +1,67 @@
 {% comment %}
-  Full view — 800x480. Six pair rows with sparklines.
-  Merge variables come from the Worker's /rates response.
+  Full view — 800x480 on an OG, 1040x780 on a TRMNL X. Six pair rows with
+  sparklines, eight on the X. Merge variables come from the Worker's /rates
+  response.
 {% endcomment %}
 
 {% comment %}
     TREND takes the free width (1fr) and HI / LO sizes to its content (auto).
-    The reverse — a fixed sparkline with 1fr on the bounds — left ~119px of
+    The reverse (a fixed sparkline with 1fr on the bounds) left ~119px of
     empty space inside the last cell, stranding the numbers at the far edge.
   {% endcomment %}
 {% comment %}
     THE TYPE SCALE
     The rate is the number the panel exists to show, so it is the largest thing
-    on it: 34px, with the pair at 26px beside it, the two sizes a clear step
-    apart so the row reads pair-then-rate rather than as one line of bold. The
-    change and the bounds step down again. This is the scale of the v2 design
-    critique, adopted at the cost of sparkline width: the floors below are
-    measured to these sizes (see shared.liquid on why they are floors), and the
-    TREND track is what is left — 260px on TRMNL OG, down from 358px at the
-    previous 23/19px scale.
+    on it: `value--base` (38px), with the pair at `value--small` (26px) beside
+    it, the two tiers a clear step apart so the row reads pair-then-rate rather
+    than as one line of bold. The change and the bounds step down again, to
+    `label` and `label--small`. This is the v2 design critique's hierarchy on
+    the framework's own ladder, adopted at the cost of sparkline width: the
+    floors below are measured to these tiers (see shared.liquid on why they
+    are floors), and the TREND track is what is left.
 
-    The 34px rate is what the row height is budgeted to. Its line box is
-    line-height 1 (set in shared.liquid), so 6 rows x (34px + 2 x 14px + 1px
-    rule) fits the panel above the title bar; a 15px pad overflowed by 2px.
+    On a TRMNL X the rate steps up to `lg:value--large` and the change to
+    `lg:label--large`; the pair and the bounds stay where they are, because
+    every px the fixed columns take comes off the trace, and the X's extra
+    width is better spent on wider traces than on a larger name beside a
+    rate that already dominates. The tracks under `.screen--lg` are measured
+    to those tiers. In portrait the X is only 780px wide, so the
+    `lg:portrait:` tiers drop back to the OG ladder and the OG tracks apply;
+    the extra height goes to the plots instead.
   {% endcomment %}
-{% comment %} Row inset is the framework's py--3.5 (14px) on the row itself. {% endcomment %}
 {% comment %}
-    6 rows, ~85px of header+title_bar chrome (the header is 14px here, with a
-    2px rule), 29px of row inset. The result matches the rate's 34px line box
-    to within 2px, so the plot and the type set the row height together.
+    ROW HEIGHT BUDGET
+    The rate's line box sets the row: `value--base` is 42px tall and the row
+    inset is `py--2.5` (10px each side), so 6 rows x (42 + 20 + 1px rule)
+    plus ~85px of header + title_bar chrome fills the OG panel to within 2px.
+    On the X, `value--large` is a 70px line box and the inset drops to
+    `lg:py--1` (4px) so that eight of them still clear the title bar:
+    8 x (70 + 8 + 1) + 85 = 717 of 780.
+  {% endcomment %}
+{% comment %}
+    The plot height is (panel - chrome) / rows - inset, in the custom
+    properties below so each breakpoint can restate one term: --fx-chrome is
+    the header, its rule and the title_bar (8px more on the X, where the
+    header is the 16px `label` tier), --fx-inset the row's padding plus its
+    1px rule, --fx-rows the rows that breakpoint shows. The result matches
+    the rate's line box to within 2px, so the plot and the type set the row
+    height together.
   {% endcomment %}
 {% comment %} Rows a large screen shows: the plot height below divides by it. {% endcomment %}
 {% assign fx_rows_lg = rows | size | at_most: 8 | at_least: 1 %}
 <style>
   .fx--full .fx-row,
-  .fx--full .fx-head { grid-template-columns: 140px minmax(164px, auto) 86px 1fr minmax(70px, auto); gap: 20px; }
-  .fx--full { --fx-top-pad: 10px; --fx-pair: 26px; --fx-rate: 34px; --fx-chg: 17px; --fx-range: 14px; --fx-head: 14px; }
+  .fx--full .fx-head { grid-template-columns: 140px minmax(208px, auto) 86px 1fr minmax(82px, auto); gap: 20px; }
+  .screen--lg .fx--full .fx-row,
+  .screen--lg .fx--full .fx-head { grid-template-columns: 140px minmax(316px, auto) 92px 1fr minmax(88px, auto); }
+  .screen--portrait .fx--full .fx-row,
+  .screen--portrait .fx--full .fx-head { grid-template-columns: 140px minmax(208px, auto) 86px 1fr minmax(82px, auto); }
+  .fx--full { --fx-top-pad: 10px; --fx-chrome: 85px; --fx-inset: 21px; --fx-rows: 6; }
+  .screen--lg .fx--full { --fx-chrome: 93px; --fx-inset: 9px; --fx-rows: {{ fx_rows_lg }}; }
+  .screen--lg.screen--portrait .fx--full { --fx-inset: 21px; }
   .fx--full .fx-dot  { r: 4.5px; }
-  .fx--full .fx-head { letter-spacing: 0.08em; }
-  .fx--full .fx-spark svg { height: calc((var(--screen-h) - 85px - var(--fx-top-pad)) / 6 - 29px); }
-  .screen--lg .fx--full .fx-spark svg { height: calc((var(--screen-h) - 85px - var(--fx-top-pad)) / {{ fx_rows_lg }} - 29px); }
+  .screen--lg .fx--full .fx-dot { r: 6px; }
+  .fx--full .fx-spark svg { height: calc((var(--screen-h) - var(--fx-chrome) - var(--fx-top-pad)) / var(--fx-rows) - var(--fx-inset)); }
 </style>
 
 <div class="layout layout--col layout--justify-start">
@@ -52,18 +75,18 @@
   {% else %}
     <div class="fx-list flex flex--col gap--none pt--2.5 fx--full">
       {% comment %}
-        The window names the TREND column but governs three of them — the change
+        The window names the TREND column but governs three of them: the change
         figure, the sparkline and hi/lo are all measured over it. It sits here
         rather than in the title bar because a column header is read with the
         numbers, which is what keeps CHANGE from being taken for a daily move.
       {% endcomment %}
       <div class="fx-head grid pb--1">
-        <span>PAIR</span><span class="text--right">LATEST</span><span class="text--right">CHANGE</span><span class="text--center">{% if range_label %}{{ range_label }} {% endif %}TREND</span><span class="text--right">HI / LO</span>
+        <span class="label label--small text--bold lg:label--base">PAIR</span><span class="label label--small text--bold lg:label--base text--right">LATEST</span><span class="label label--small text--bold lg:label--base text--right">CHANGE</span><span class="label label--small text--bold lg:label--base text--center">{% if range_label %}{{ range_label }} {% endif %}TREND</span><span class="label label--small text--bold lg:label--base text--right">HI / LO</span>
       </div>
 
       {% comment %}
         EIGHT ROWS ON A LARGE SCREEN, SIX ELSEWHERE
-        The field allows eight pairs. Six rows of 34px rate fill a TRMNL OG;
+        The field allows eight pairs. Six rows of 38px rate fill a TRMNL OG;
         the TRMNL X has 300px more height, so it shows all eight. Rows seven
         and eight are `hidden` and `lg:grid`, the framework's own breakpoint
         classes, so only a large screen displays them; the plot height above
@@ -71,10 +94,10 @@
         still fill it. Portrait X is also `lg` and taller still.
       {% endcomment %}
       {% for row in rows limit: 8 %}
-        <div class="fx-row grid py--3.5{% if forloop.index > 6 %} hidden lg:grid{% endif %}">
-          <div class="fx-pair">{{ row.from }}<span class="fx-arrow px--0.5">&rarr;</span>{{ row.to }}</div>
-            <div class="fx-rate text--right">{{ row.rate_str }}</div>
-          <div class="fx-chg flex flex--right gap--none"><span class="fx-pill inline-block rounded--xsmall py--1 px--2{% if row.change_pct < 0 %} fx-pill--down bg--black text--white{% endif %}">{{ row.change_str }}%</span></div>
+        <div class="fx-row grid py--2.5 lg:py--1 lg:portrait:py--2.5{% if forloop.index > 6 %} hidden lg:grid{% endif %}">
+          <div class="fx-pair value value--small text--bold">{{ row.from }}<span class="fx-arrow text--regular px--0.5">&rarr;</span>{{ row.to }}</div>
+          <div class="fx-rate value value--base value--tnums text--bold lg:value--large lg:portrait:value--base text--right">{{ row.rate_str }}</div>
+          <div class="fx-chg flex flex--right gap--none"><span class="label text--bold lg:label--large lg:portrait:label--base {% if row.change_pct < 0 %}label--filled{% else %}label--outline{% endif %}">{{ row.change_str }}%</span></div>
           {% assign fx_end = row.points | split: " " | last | split: "," %}
           {% assign fx_end_y = fx_end[1] | times: 100.0 | divided_by: 30 %}
           <div class="fx-spark flex gap--none">
@@ -85,7 +108,7 @@
               <circle class="fx-dot" cx="100%" cy="{{ fx_end_y }}%"/>
             </svg>
           </div>
-          <div class="fx-range flex flex--col flex--between gap--none text--right"><span>{{ row.hi_str }}</span><span>{{ row.lo_str }}</span></div>
+          <div class="fx-range flex flex--col flex--between gap--none text--right"><span class="label value--tnums">{{ row.hi_str }}</span><span class="label value--tnums">{{ row.lo_str }}</span></div>
         </div>
       {% endfor %}
     </div>

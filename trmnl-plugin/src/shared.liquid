@@ -6,13 +6,26 @@
   A grid of currency-pair rows: pair, latest rate, signed change in a pill, a
   sparkline with its end dot, and (wide views) the window's high and low. The
   full view shows up to 8 rows on a TRMNL X and 6 elsewhere; half views 6 or
-  3. Layout comes from framework classes in the views; this CSS holds only
-  what the framework has no utility for — the grid columns, the type scale
-  (per-view custom properties), rules, and the sparkline geometry. Row
-  heights are derived from the screen height so every device fills its panel;
-  the pixel budgets are in each view's <style> block. The long comments below
-  record why each decision was made; none of them is needed to fork the
-  plugin.
+  3. Type, weight, the pill and the spacing all come from framework classes
+  in the views, with `lg:` variants stepping the type up on a TRMNL X and
+  `portrait:` variants reflowing the narrow views. This CSS holds only what
+  the framework has no utility for: the grid tracks (mixed fixed, auto and
+  1fr columns), the rules, the header tracking, and the sparkline geometry.
+  Row heights are derived from the screen height so every device fills its
+  panel; the pixel budgets are in each view's <style> block. The long
+  comments below record why each decision was made; none of them is needed
+  to fork the plugin.
+
+  THE TYPE SCALE IS THE FRAMEWORK'S
+  Every piece of text carries a framework tier (`value--small`, `label`,
+  `label--large` ...) and, where a TRMNL X has room for more, a `lg:` tier
+  above it. The framework resolves each tier to the right face for the
+  panel: the bitmap faces (TRMNL16, TRMNL12) for the 16px-and-under tiers on
+  a 1-bit OG, Inter above that. The plugin used to set its own Inter sizes
+  in px, which looked right on an OG and then simply did not grow on the X,
+  so the half and quadrant views shrank to a strip of small type in a large
+  panel. The tiers are what TRMNL's reviewers asked for, and they are the
+  only way to size text per device without custom CSS per breakpoint.
 
   THE SPARKLINE TRICK
   The Worker emits `points` in a fixed 200x30 coordinate space (w=200&h=30 in
@@ -25,29 +38,36 @@
   WHY THE RATE COLUMN HAS A PIXEL FLOOR
   Every .fx-row is its own grid container, so a track sized `auto` is resolved
   per row: the widest rate would set only its own row's column, pushing CHANGE
-  and TREND out of line with the rows above it — and the header, being another
+  and TREND out of line with the rows above it, and the header, being another
   grid, would drift too. The floor in each view's grid-template-columns is what
   keeps the tracks identical. It is sized to the widest string the column can
-  hold (a 5-figure sub-1 rate like 0.0051823, measured at that view's font
-  size), so `auto` never has to grow and every row agrees.
+  hold (a 5-figure sub-1 rate like 0.0051823, measured at that view's tier),
+  so `auto` never has to grow and every row agrees. A TRMNL X sets its own
+  tracks under `.screen--lg`, since its tiers are a step larger.
 
-  The CHANGE track is sized by its HEADER, not its data: "CHANGE" in Inter is
-  wider than the widest figure it sits above once the header is legible, so the
-  narrow views spend a few px there that the sparkline would otherwise take.
-  That held with a ▲/▼ glyph in the cell only by 1-2px, and the wrap it caused
-  was invisible; the floor is width the sparkline gives up, so re-measure it
-  (scrollWidth of .fx-chg) rather than widening it by eye.
+  The CHANGE track is sized by its HEADER on the narrow views: "CHANGE" is
+  wider than the widest figure it sits above once the header is legible, so
+  those views spend a few px there that the sparkline would otherwise take.
+  The floor is width the sparkline gives up, so re-measure it (scrollWidth of
+  .fx-chg) rather than widening it by eye.
 
   The HI / LO track carries a floor for the same reason, and it matters more
   there: that column sits after the 1fr sparkline, so a row whose bounds run
   long steals width from its own trace and the traces stop being comparable.
 
+  PORTRAIT REFLOWS THE NARROW VIEWS ONTO TWO LINES
+  In portrait a half_vertical or quadrant cell is narrower still, and a
+  one-line row left the sparkline a few px wide beside the figures. So in
+  portrait each row becomes two lines: the pair, rate and change on the
+  first, the sparkline across the whole width on the second
+  (`portrait:col--span-3` on the trace cell), and the header does the same
+  so its TREND label sits over the traces. The tracks for that come from
+  `.screen--portrait` rules below each view, because a grid of mixed auto
+  and 1fr tracks has no utility; the spanning does come from the framework.
+
   FRAMEWORK CAVEATS (carried over from meetup_2026, learned the hard way)
-  - No `label--inverted`, and no bare `label label--small` for text that must be
-    readable. Framework 3.2.0 resolves those through --framework-slot-* vars
-    that fall back to `transparent` under some palettes: the text occupies its
-    box but paints invisibly. Classes carrying their own colour are safe, and
-    anything below that must be readable sets its colour explicitly.
+  - No `label--gray` without `1bit:text--black`: the gray slot can resolve
+    to transparent on a 1-bit palette and the text paints invisibly.
   - `.title_bar` must be a SIBLING of `.layout`, placed after it, or it renders
     inline instead of pinning to the bottom.
   - Direction is stated in the figure itself (a signed change), never a colour:
@@ -58,30 +78,15 @@
     Rows share the panel height equally, and the plot fills whatever height its
     row gets. TRMNL X has ~240 CSS px more height than OG; sending that surplus
     to the gutters (space-between on the column) produced 33px gaps between
-    rows and left the traces at 52px — tall rows with a thin chart floating in
+    rows and left the traces at 52px: tall rows with a thin chart floating in
     them. Sending it to the plots instead is what actually uses the panel.
-  {% endcomment %}
-{% comment %}
-    Inter is the framework's only true sans: the other bundled families
-    (NicoClean, NicoPups, TRMNL12/16/21) are bitmap faces drawn for exact pixel
-    sizes, and this type scale — 10 to 23px — matches almost none of them, so
-    they render smeared at our sizes.
-
-    Setting it here is not optional tidying. The framework only gives a family
-    to elements using ITS classes; it sets none on html, body or .screen, so
-    every .fx-* element inherited the browser default and rendered in Times.
-
-    The device fetches the font same-origin and gets Inter. A local preview
-    cannot: trmnl.com serves /fonts without CORS headers, so `trmnlp serve`
-    falls back to whatever sans the previewing machine has. Keep the generic
-    sans-serif at the end of the stack so that fallback stays close.
   {% endcomment %}
 {% comment %}
     TOP INSET
     The device case sits proud of the panel, so with light coming from above it
     casts a shadow along the top edge of the screen. Whatever lands in that band
-    is physically hard to read, and here that is the header rule and its labels
-    — the smallest type on the panel.
+    is physically hard to read, and here that is the header rule and its labels,
+    the smallest type on the panel.
 
     Each view sets --fx-top-pad and subtracts the same value from its plot-height
     chrome constant, so the inset comes out of the sparklines rather than
@@ -93,23 +98,17 @@
 {% comment %}
     LAYOUT COMES FROM FRAMEWORK CLASSES, NOT FROM THESE RULES
     The recipe linter (Chef) counts every occurrence of eight property names in
-    the raw source — justification, alignment, inset, colour, radius, type size
-    — comments included, and allows six in total. So the layout properties are
-    absent from this CSS entirely and the type scale is set ONCE per element
-    below, from per-view custom properties; test-render.rb reproduces the
-    count. Chef wants the
-    framework's utilities instead. So every element carries them as classes in
-    the markup — `flex`, `grid`, `flex--right`, `text--right`, `py--3.5` — and
-    this stylesheet keeps only what the framework has no utility for: the grid
-    columns, the type scale, borders, the svg geometry. Two things to know:
+    the raw source (justification, alignment, inset, colour, radius, type size,
+    object fit), comments included, and allows six in total; test-render.rb
+    reproduces the count. So every element carries the framework's utilities
+    as classes in the markup (`flex`, `grid`, `flex--right`, `text--right`,
+    `py--2.5`, `value--base`, `label--filled`) and this stylesheet keeps only
+    what the framework has no utility for. Two things to know:
 
     - `.flex` and `.grid` add `gap: var(--gap)`, so every one carries
       `gap--none`; the row grids then set their own gap here.
     - `.flex--col` centres items on the cross axis; `.fx-range` overrides that
       to stretch below, so its right-aligned figures reach the column edge.
-    - Framework inset steps are content-scaled (py--3.5 is 14px on OG). The
-      narrow views' row inset moved to the nearest step and their plot-height
-      constants were adjusted to match, so the fit is unchanged.
   {% endcomment %}
 {% comment %}
     Solid rules, not dotted. A 1px dotted line is a row of single pixels, which
@@ -118,28 +117,20 @@
     so the header reads as a header and not as a seventh row.
   {% endcomment %}
 {% comment %}
-    12px, not the 10px this carried while it was a serif. Inter's caps read
-    cleanly small, but 10px Times at this tracking was mush on a 1-bit panel.
-    The tracking comes down with it: a serif needed 0.14em to read as small
-    caps, Inter holds together at 0.1em.
-  {% endcomment %}
-{% comment %}
     Header alignment follows the data beneath it. Column 1 (PAIR) is text and
-    left-aligns with it. Column 4 centres: a sparkline is a trace spanning its whole
-    track, with no edge to align to. Every other header sits above a
-    right-aligned number and right-aligns with it. LATEST used to centre, from
-    when the rate was decimal-aligned and had two ragged outer edges; now that
-    the column is right-aligned, centring left the word visibly off its
-    numbers. The alignment is carried by `text--right` / `text--center` on
-    each header span in the views.
+    left-aligns with it. Column 4 centres: a sparkline is a trace spanning its
+    whole track, with no edge to align to. Every other header sits above a
+    right-aligned number and right-aligns with it. The alignment is carried by
+    `text--right` / `text--center` on each header span in the views; the
+    tracking here is the one thing the header needs that no utility sets.
   {% endcomment %}
 {% comment %}
     Every number in the row right-aligns on its column edge. The decimal points
     are deliberately NOT lined up: rates from different pairs are not a
-    comparable series — 158.34 JPY-per-USD and 1.9104 AUD-per-GBP measure
-    different things — so there is nothing to gain by scanning down the point,
+    comparable series (158.34 JPY-per-USD and 1.9104 AUD-per-GBP measure
+    different things), so there is nothing to gain by scanning down the point,
     and the fixed-width spans it needed cost real width in the narrow views.
-    Tabular figures still keep the digits from shifting between refreshes.
+    `value--tnums` keeps the digits from shifting between refreshes.
   {% endcomment %}
 {% comment %}
     The arrow states the direction of conversion: GBP -> AUD reads as "1 GBP
@@ -148,39 +139,23 @@
     wrong by a large factor if misread. The column is headed PAIR all the same:
     the label costs nothing (every other column has one, so the row is there)
     and without it the header reads as starting at LATEST, one column in.
-  {% endcomment %}
-{% comment %}
-    line-height 1 on the two large cells: the full view budgets its row height
-    to the 34px rate, and the default ~1.2 line box would add 7px to every row
-    and push the last one under the title bar.
-  {% endcomment %}
-{% comment %}
-    nowrap: the cell is only as wide as its figure by design, and a track a few
-    px short should overflow visibly rather than restack its contents — which is
-    how a ▲/▼ glyph once ended up on its own line above the number, looking
-    deliberate while hiding that the column needed widening.
+    The arrow is `text--regular` inside the bold pair so it reads as
+    punctuation rather than as a third token.
   {% endcomment %}
 {% comment %}
     THE CHANGE SITS IN A PILL: FILLED FOR A FALL, OUTLINED FOR A RISE
     The figure is boxed so it reads as a badge, the one derived number in a row
-    of quoted ones. A fall is a filled black pill with white type, a rise an
-    outline of the same shape, so the panel can be read from across the room:
-    the heavy marks are the pairs that dropped. The sign stays on the figure
-    inside either pill — the fill is a glance-level cue, the sign is the fact,
-    and a rounded-to-zero change (no sign, see above) takes the outline since
-    no fall can be claimed for it. The border is drawn on both so the two
-    pills are the same size and the column stays aligned. Each view sets the
-    inset to its type size.
+    of quoted ones. A fall is `label label--filled` (black pill, white type),
+    a rise `label label--outline` (the same shape as a border), so the panel
+    can be read from across the room: the heavy marks are the pairs that
+    dropped. The sign stays on the figure inside either pill: the fill is a
+    glance-level cue, the sign is the fact, and a rounded-to-zero change (no
+    sign, see below) takes the outline since no fall can be claimed for it.
 
-    The fill and its type come from the framework's own utilities, `bg--black`
-    and `text--white` on the span, not from #000 and #fff here: in dark mode
-    the framework swaps black and white, and a literal black pill vanished
-    into the black ground with its white figure floating alone. Black and
-    white are "real colours" in the framework's terms, so unlike the label
-    variants they never resolve to transparent under a palette. The radius is
-    `rounded--xsmall` (5px), a framework step rather than a literal. The
-    filled pill's border goes transparent: the background paints under it, so
-    both pills keep the same size and the column stays aligned.
+    Both are framework label variants, not a hand-drawn border and `bg--black`
+    as before, so the pill takes the framework's radius, inset and type for
+    the panel, inverts with the panel in dark mode, and steps up with
+    `lg:label--large` on a TRMNL X like every other tier on the row.
   {% endcomment %}
 {% comment %}
     THE CHANGE CARRIES ITS OWN DIRECTION
@@ -188,37 +163,34 @@
     marker in the row. It used to be a ▲/▼ glyph, alone and then alongside the
     sign; a triangle at this size reads as decoration where a sign reads as
     arithmetic, and once the sign was there the glyph was a second mark saying
-    the same thing — for ~10px of sparkline in the narrow views.
+    the same thing, for ~10px of sparkline in the narrow views.
 
     A change that rounds to zero prints `0.00%` with no sign at all. change_pct
     is rounded to 2dp upstream, so that means "moved less than 0.005%", not "did
     not move", and neither direction can be claimed for it.
   {% endcomment %}
 {% comment %}
-    No opacity here, deliberately. The panel is 1-bit: anything between black
-    and white is dithered into a halftone, which at 10px turns small text into
-    grey mush. Secondary information is made secondary by size, not by tone.
+    No opacity on HI / LO, deliberately. The panel is 1-bit: anything between
+    black and white is dithered into a halftone, which at label size turns
+    small text into grey mush. Secondary information is made secondary by
+    size (the `label--small` tier), not by tone.
 
     These are the sparkline's y-axis bounds, so they are laid out as axis labels:
     HI at the top of the plot box, LO at the bottom, matching where those values
-    actually sit in the trace beside them. Each view sets the height to match its
-    own plot box.
+    actually sit in the trace beside them. The cell stretches to the row's
+    content height, which the sparkline sets, so HI and LO stay pinned to the
+    top and bottom of the plot box at any device size.
   {% endcomment %}
-{% comment %}
-      Stretch to the row's content height, which the sparkline sets — so HI and
-      LO stay pinned to the top and bottom of the plot box at any device size.
-      A fixed px height here would drift apart from the trace on TRMNL X.
-    {% endcomment %}
 {% comment %}
     DEVICE-INDEPENDENT SPARKLINE SHAPE
     The sparkline width is `1fr`, so it grows with the panel. Fixing its height
     in px therefore flattens the trace on bigger screens: on TRMNL OG the plot
     was 331x30 (11:1), but on TRMNL X the width grew 3.1x while a fixed 30px
-    only grew by the device's 1.8x UI scale, giving 1028x54 — 19:1.
+    only grew by the device's 1.8x UI scale, giving 1028x54 (19:1).
 
     An `aspect-ratio` was the first answer: it pinned the shape, but a ratio is
     unbounded in height, and on a panel much wider than it is tall the rows no
-    longer fit — half_vertical overflowed TRMNL X by 495px, which is where the
+    longer fit; half_vertical overflowed TRMNL X by 495px, which is where the
     max-height caps came from. The height calc in the next comment replaced
     the ratio, and the caps went with it: derived from the panel, the plot can
     never overflow, and a cap only cut the rows short on the X.
@@ -229,13 +201,15 @@
         (screen height - chrome) / rows - row inset
 
     Deliberately NOT height: 100%. A percentage needs a definite parent height,
-    and inside a flexed row that resolves circularly — the rows grew to fit the
+    and inside a flexed row that resolves circularly: the rows grew to fit the
     plot rather than the plot fitting the rows, overflowing TRMNL OG by 76px.
 
     The subtraction matters: row inset is a constant, so the height available
     to the plot grows faster than the panel does (OG 37px vs TRMNL X 87px, a
     2.3x jump for a 1.6x taller screen). A plain fraction of --screen-h cannot
-    hit both, which is why this is a subtraction and not a division.
+    hit both, which is why this is a subtraction and not a division. The
+    portrait rules subtract the figures line as well, since the plot then
+    sits under it rather than beside it.
   {% endcomment %}
 {% comment %}
     .fx-plot is an OUTER svg with no viewBox, so its user units are CSS pixels
@@ -254,7 +228,7 @@
     The trace ends in a round dot: it marks where LATEST sits on the trace and
     gives the eye a place to land after reading the row's numbers. It cannot
     live inside the trace's svg, where preserveAspectRatio="none" scales x and
-    y independently and a circle renders as an ellipse — an earlier <line>
+    y independently and a circle renders as an ellipse; an earlier <line>
     marker read as an artefact for the same reason. It sits in the outer svg
     instead, which has no viewBox and so no scaling, placed by percentage: cx
     is always 100% (the Worker keeps the last sample, at x = w) and cy is the
@@ -267,13 +241,13 @@
     THE TITLE BAR'S INSTANCE CELL IS SECONDARY TEXT ON A GREYSCALE PANEL
     The framework colours .instance from the primary text slot on a plain
     screen, but under `.screen--2bit` / `.screen--4bit` a separate rule points
-    the same cell at --framework-semantic-text-secondary-* — grey (#555). A
+    the same cell at --framework-semantic-text-secondary-*, grey (#555). A
     1-bit panel thresholds that back to black; a greyscale one renders it as it
     is, leaving the whole footer washed out beside its own title.
 
     Only the dates are lifted out of that. They are the panel's second real
-    fact — the rest of the cell is provenance, and grey is the right weight for
-    it — so the dates get their own class and the source keeps the framework's
+    fact (the rest of the cell is provenance, and grey is the right weight for
+    it), so the dates get their own class and the source keeps the framework's
     tone, whatever the palette makes it.
 
     Colouring the span rather than the cell also sidesteps a specificity trap:
@@ -295,15 +269,9 @@
 <style>
 
   .fx-list {
-    font-family: "Inter Variable", Inter, sans-serif;
     flex: 1;
     width: 100%;
   }
-  .fx-pair  { font-size: var(--fx-pair); }
-  .fx-rate  { font-size: var(--fx-rate); }
-  .fx-chg   { font-size: var(--fx-chg); }
-  .fx-range { font-size: var(--fx-range); }
-  .fx-head  { font-size: var(--fx-head, 12px); }
 
   .fx-row {
     align-items: center;
@@ -312,31 +280,12 @@
   .fx-row:last-child { border-bottom: 0; }
 
   .fx-head {
-    letter-spacing: 0.1em;
-    font-weight: 700;
+    letter-spacing: 0.08em;
     border-bottom: 2px solid currentColor;
   }
 
-  .fx-rate, .fx-chg, .fx-range {
-    font-variant-numeric: tabular-nums;
-  }
-
-  .fx-pair { font-weight: 800; letter-spacing: -0.01em; white-space: nowrap; line-height: 1; }
-  .fx-pair .fx-arrow { font-weight: 400; }
-
-  .fx-rate { font-weight: 700; letter-spacing: -0.01em; line-height: 1; }
-  .fx-chg  { font-weight: 700; white-space: nowrap; }
-
-  .fx-pill {
-    border: 1.5px solid currentColor;
-    line-height: 1;
-  }
-  .fx-pill--down { border-color: transparent; }
-
   .fx-range {
     align-items: stretch;
-    line-height: 1;
-    white-space: nowrap;
     align-self: stretch;
   }
 

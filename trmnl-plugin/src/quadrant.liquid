@@ -1,6 +1,8 @@
 {% comment %}
-  Quadrant — 400x240. Same shape as half_vertical (pair, rate, change, trend,
-  no HI/LO) but three rows instead of six, since the panel is half the height.
+  Quadrant — 400x240 on an OG. Same shape as half_vertical (pair, rate,
+  change, trend, no HI/LO) but three rows instead of six, since the panel is
+  half the height. The tiers, the X step-up and the portrait reflow are
+  half_vertical's too; see the notes there.
 
   Earlier this view showed no sparkline at all, on the reasoning that a trace
   this small was noise. With the row layout borrowed from half_vertical it earns
@@ -11,17 +13,25 @@
 {% comment %} Row inset is py--2 (8px) on the row: 9px would not step. {% endcomment %}
 {% comment %}
   Half the panel height, 3 rows, 17px of row inset (2 x 8 + rule). No cap (see
-  half_vertical), so the 75px chrome constant is what sets the fit: it is the
-  header, its rule and the compact title bar, measured so three rows end 1px
-  above the bar on OG. The old 70px only ever fitted because the cap hid it.
+  half_vertical), so the chrome term is what sets the fit: it is the header,
+  its rule and the compact title bar, measured so three rows end on the bar's
+  top edge on OG. It grows by 8px on the X and by the header's second line in
+  portrait; see full.liquid for the terms.
 {% endcomment %}
 <style>
   .fx--quad .fx-row,
-  .fx--quad .fx-head { grid-template-columns: 88px minmax(66px, auto) 50px 1fr; gap: 7px; }
-  .fx--quad { --fx-top-pad: 8px; --fx-pair: 13px; --fx-rate: 15px; --fx-chg: 10px; --fx-head: 10px; }
+  .fx--quad .fx-head { grid-template-columns: 80px minmax(110px, auto) 62px 1fr; gap: 7px; }
+  .screen--lg .fx--quad .fx-row,
+  .screen--lg .fx--quad .fx-head { grid-template-columns: 112px minmax(142px, auto) 86px 1fr; }
+  .screen--portrait .fx--quad .fx-row,
+  .screen--portrait .fx--quad .fx-head { grid-template-columns: max-content max-content 1fr; }
+  .fx--quad { --fx-top-pad: 8px; --fx-chrome: 76px; --fx-inset: 17px; }
+  .screen--lg .fx--quad { --fx-chrome: 84px; }
+  .screen--portrait .fx--quad { --fx-chrome: 104px; --fx-inset: 54px; }
+  .screen--lg.screen--portrait .fx--quad { --fx-chrome: 97px; --fx-inset: 58px; }
   .fx--quad .fx-dot  { r: 2.5px; }
-  .fx--quad .fx-head { letter-spacing: 0.06em; }
-  .fx--quad .fx-spark svg { height: calc((var(--screen-h) / 2 - 75px - var(--fx-top-pad)) / 3 - 17px); }
+  .screen--lg .fx--quad .fx-dot { r: 3.5px; }
+  .fx--quad .fx-spark svg { height: calc((var(--screen-h) / 2 - var(--fx-chrome) - var(--fx-top-pad)) / 3 - var(--fx-inset)); }
 </style>
 
 <div class="layout layout--col layout--justify-start">
@@ -32,17 +42,17 @@
   {% else %}
     <div class="fx-list flex flex--col gap--none pt--2 fx--quad">
       <div class="fx-head grid pb--1">
-        <span>PAIR</span><span class="text--right">LATEST</span><span class="text--right">CHANGE</span><span class="text--center">{% if range_label %}{{ range_label }} {% endif %}TREND</span>
+        <span class="label label--small text--bold lg:label--base">PAIR</span><span class="label label--small text--bold lg:label--base text--right">LATEST</span><span class="label label--small text--bold lg:label--base text--right">CHANGE</span><span class="label label--small text--bold lg:label--base text--center portrait:col--span-3 portrait:flex--center">{% if range_label %}{{ range_label }} {% endif %}TREND</span>
       </div>
 
       {% for row in rows limit: 3 %}
         <div class="fx-row grid py--2">
-          <div class="fx-pair">{{ row.from }}<span class="fx-arrow px--0.5">&rarr;</span>{{ row.to }}</div>
-          <div class="fx-rate text--right">{{ row.rate_str }}</div>
-          <div class="fx-chg flex flex--right gap--none"><span class="fx-pill inline-block rounded--xsmall py--1 px--1{% if row.change_pct < 0 %} fx-pill--down bg--black text--white{% endif %}">{{ row.change_str }}%</span></div>
+          <div class="fx-pair value value--xxsmall text--bold lg:value--xsmall">{{ row.from }}<span class="fx-arrow text--regular px--0.5">&rarr;</span>{{ row.to }}</div>
+          <div class="fx-rate value value--xsmall value--tnums text--bold lg:value--small text--right">{{ row.rate_str }}</div>
+          <div class="fx-chg flex flex--right gap--none"><span class="label text--bold lg:label--large {% if row.change_pct < 0 %}label--filled{% else %}label--outline{% endif %}">{{ row.change_str }}%</span></div>
           {% assign fx_end = row.points | split: " " | last | split: "," %}
           {% assign fx_end_y = fx_end[1] | times: 100.0 | divided_by: 30 %}
-          <div class="fx-spark flex gap--none pr--1">
+          <div class="fx-spark flex gap--none pr--1 portrait:col--span-3">
             <svg class="fx-plot block" width="100%" height="24">
               <svg class="block" viewBox="0 0 200 30" width="100%" height="100%" preserveAspectRatio="none">
                 <polyline points="{{ row.points }}" vector-effect="non-scaling-stroke"/>

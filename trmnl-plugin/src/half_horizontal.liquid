@@ -1,21 +1,32 @@
 {% comment %}
-  Half horizontal — 800x240. Same grid as the full view, three rows.
+  Half horizontal — 800x240 on an OG. Same grid as the full view, three rows,
+  one tier down on every column.
 {% endcomment %}
 
 {% comment %} TREND takes the free width; HI / LO sizes to content. See full.liquid. {% endcomment %}
 {% comment %}
-    11px, not 14: three rows plus the header and title_bar only just fit 240px
-    on TRMNL OG, and the list now fills its container, so an overflow would
-    push the last row under the title bar rather than leaving a gap.
+    Three rows plus the header and title_bar only just fit 240px on TRMNL OG,
+    and the list fills its container, so an overflow would push the last row
+    under the title bar rather than leaving a gap. The rate is `value--small`,
+    a 29px line box, and the row inset `py--2.5` (10px): 3 x (29 + 20 + 1)
+    under ~90px of chrome lands on the panel to the pixel. The X steps every
+    tier up one (`lg:`) and, at half of 780px, has the height to spare.
   {% endcomment %}
-{% comment %} Row inset is py--2.5 (10px) on the row: 11px would not step. {% endcomment %}
-{% comment %} Half the panel height, 3 rows, 21px of row inset (2 x 10 + rule). {% endcomment %}
+{% comment %}
+  Half the panel height, 3 rows, 21px of row inset (2 x 10 + rule). The chrome
+  term is 8px more on the X, where the header is the 16px `label` tier; see
+  full.liquid for the terms.
+{% endcomment %}
 <style>
   .fx--halfh .fx-row,
-  .fx--halfh .fx-head { grid-template-columns: 100px minmax(84px, auto) 64px 1fr minmax(50px, auto); gap: 14px; }
-  .fx--halfh { --fx-top-pad: 8px; --fx-pair: 16px; --fx-rate: 19px; --fx-chg: 12px; --fx-range: 11px; --fx-head: 12px; }
+  .fx--halfh .fx-head { grid-template-columns: 106px minmax(142px, auto) 64px 1fr minmax(64px, auto); gap: 14px; }
+  .screen--lg .fx--halfh .fx-row,
+  .screen--lg .fx--halfh .fx-head { grid-template-columns: 140px minmax(208px, auto) 92px 1fr minmax(88px, auto); }
+  .fx--halfh { --fx-top-pad: 8px; --fx-chrome: 82px; --fx-inset: 21px; }
+  .screen--lg .fx--halfh { --fx-chrome: 90px; }
   .fx--halfh .fx-dot  { r: 3.5px; }
-  .fx--halfh .fx-spark svg { height: calc((var(--screen-h) / 2 - 82px - var(--fx-top-pad)) / 3 - 21px); }
+  .screen--lg .fx--halfh .fx-dot { r: 4.5px; }
+  .fx--halfh .fx-spark svg { height: calc((var(--screen-h) / 2 - var(--fx-chrome) - var(--fx-top-pad)) / 3 - var(--fx-inset)); }
 </style>
 
 <div class="layout layout--col layout--justify-start">
@@ -26,14 +37,14 @@
   {% else %}
     <div class="fx-list flex flex--col gap--none pt--2 fx--halfh">
       <div class="fx-head grid pb--1">
-        <span>PAIR</span><span class="text--right">LATEST</span><span class="text--right">CHANGE</span><span class="text--center">{% if range_label %}{{ range_label }} {% endif %}TREND</span><span class="text--right">HI / LO</span>
+        <span class="label label--small text--bold lg:label--base">PAIR</span><span class="label label--small text--bold lg:label--base text--right">LATEST</span><span class="label label--small text--bold lg:label--base text--right">CHANGE</span><span class="label label--small text--bold lg:label--base text--center">{% if range_label %}{{ range_label }} {% endif %}TREND</span><span class="label label--small text--bold lg:label--base text--right">HI / LO</span>
       </div>
 
       {% for row in rows limit: 3 %}
         <div class="fx-row grid py--2.5">
-          <div class="fx-pair">{{ row.from }}<span class="fx-arrow px--0.5">&rarr;</span>{{ row.to }}</div>
-            <div class="fx-rate text--right">{{ row.rate_str }}</div>
-          <div class="fx-chg flex flex--right gap--none"><span class="fx-pill inline-block rounded--xsmall py--1 px--1.5{% if row.change_pct < 0 %} fx-pill--down bg--black text--white{% endif %}">{{ row.change_str }}%</span></div>
+          <div class="fx-pair value value--xsmall text--bold lg:value--small">{{ row.from }}<span class="fx-arrow text--regular px--0.5">&rarr;</span>{{ row.to }}</div>
+          <div class="fx-rate value value--small value--tnums text--bold lg:value--base text--right">{{ row.rate_str }}</div>
+          <div class="fx-chg flex flex--right gap--none"><span class="label text--bold lg:label--large {% if row.change_pct < 0 %}label--filled{% else %}label--outline{% endif %}">{{ row.change_str }}%</span></div>
           {% assign fx_end = row.points | split: " " | last | split: "," %}
           {% assign fx_end_y = fx_end[1] | times: 100.0 | divided_by: 30 %}
           <div class="fx-spark flex gap--none">
@@ -44,7 +55,7 @@
               <circle class="fx-dot" cx="100%" cy="{{ fx_end_y }}%"/>
             </svg>
           </div>
-          <div class="fx-range flex flex--col flex--between gap--none text--right"><span>{{ row.hi_str }}</span><span>{{ row.lo_str }}</span></div>
+          <div class="fx-range flex flex--col flex--between gap--none text--right"><span class="label label--small value--tnums lg:label--base">{{ row.hi_str }}</span><span class="label label--small value--tnums lg:label--base">{{ row.lo_str }}</span></div>
         </div>
       {% endfor %}
     </div>

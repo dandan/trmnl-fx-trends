@@ -22,7 +22,7 @@ trmnl-plugin/
     ├── half_horizontal.liquid # 3 rows
     ├── half_vertical.liquid   # 6 rows, narrow — no LO/HI column
     ├── quadrant.liquid        # 3 rows, same columns as half_vertical
-    └── shared.liquid      # shared styles + framework workarounds
+    └── shared.liquid      # the little CSS the framework has no utility for
 ```
 
 ## One response, four view sizes
@@ -117,9 +117,11 @@ These are constraints of the panel, not preferences:
   such. The fill is the glance-level cue — from across the room the heavy marks
   are the pairs that dropped — and the sign inside stays as the fact. A change
   that rounds to zero is outlined, since no fall can be claimed for it. The
-  fill is the framework's `bg--black text--white` utilities rather than
-  literal colours, so it inverts with the panel in dark mode; the footer dates
-  carry `text--default` for the same reason. Colour goes through the
+  pill is the framework's own `label label--filled` / `label label--outline`,
+  not a hand-drawn border, so it takes the panel's radius, inset and face,
+  inverts with the panel in dark mode, and steps up with `lg:label--large` on
+  a TRMNL X; the footer dates carry `text--default` for the same reason.
+  Colour goes through the
   framework's utility classes, never its `--framework-*` variables: those are
   undocumented, and the [theme docs](https://trmnl.com/framework/docs/3.3/theme_slots)
   say plugins should reach colour through the utilities.
@@ -140,11 +142,23 @@ These are constraints of the panel, not preferences:
   and a 7.12% mover both read clearly. Row shapes are therefore **not**
   comparable to each other — the LO/HI column is what keeps that honest, so
   don't drop it from the wide views.
-- **The full view's type is scaled to the rate: 34px, with the pair at 26px.**
-  The rate is the number the panel exists to show. The cost is sparkline width
-  — the column floors are measured to these sizes, so the TREND track on TRMNL
-  OG is 260px where the previous 23/19px scale left it 358px — and the row
-  height, which is budgeted to the rate's line box at `line-height: 1`.
+- **Every piece of text is a framework tier, and a TRMNL X steps it up.** The
+  rate is the number the panel exists to show, so it takes the largest tier on
+  the row (`value--base` on the full view, `lg:value--large` on an X) with the
+  pair a clear step below (`value--small`); the change and the bounds step
+  down again to `label` tiers. The narrow views start lower (`value--xxsmall`
+  / `value--xsmall`) and climb one tier under `lg:`, which is what fills an X
+  panel that at OG sizes showed a strip of small type beside oversized traces.
+  No `font-size` is set anywhere: the framework resolves each tier to the
+  right face and size for the panel. The cost is sparkline width (the column
+  floors are measured to the widest nine-character rate at each tier, so
+  everything the fixed columns gain comes off the TREND track), and the row
+  height, which is budgeted to the rate's line box.
+- **Portrait reflows the narrow views onto two lines.** In portrait a
+  half_vertical or quadrant cell is narrower still, so each row becomes the
+  pair, rate and change on one line and the sparkline across the full width
+  on the next (`portrait:col--span-3` on the trace cell), and the header does
+  the same so its TREND label sits over the traces.
 - **The rate column is headed `LATEST`, never `TODAY` or `CURRENT`.** The ECB
   publishes once per working day around 16:00 CET, so the newest figure is
   yesterday's or Friday's for roughly three quarters of the week — a "today"
@@ -206,11 +220,19 @@ classes and variables the views lean on.
 
 Carried over from `meetup_2026`, learned the hard way there:
 
-- **Don't use `label--inverted`, or a bare `label label--small`** for text that
-  must be readable. Framework 3.2.0 resolves those through
-  `--framework-slot-*` / `--framework-semantic-*` variables that fall back to
-  `transparent` under some palettes: the text occupies its box but paints
-  invisibly.
+- **Don't use `label--gray` without `1bit:text--black`**: the gray slot can
+  resolve to `transparent` on a 1-bit palette and the text paints invisibly.
+  (`label--inverted` is the deprecated name for `label--filled`; the pill
+  uses the current one.)
+- **Prefer a framework tier to a custom rule.** TRMNL's recipe review flagged
+  a `font-weight: 700` and a hand-drawn pill border as rewriting `text--bold`,
+  `label--filled` and `label--outline`: the utilities exist, and only they
+  take `lg:` / `portrait:` prefixes, which is what scales the plugin to a
+  TRMNL X. `shared.liquid` keeps only what has no utility: the mixed-track
+  grid columns, the rules, the header tracking and the sparkline geometry.
+  The [TRMNL X guide](https://trmnl.com/framework/docs/trmnl_x_guide) and the
+  [recipe publishing tips](https://trmnl.com/blog/plugin-recipe-publishing-tips)
+  are the references.
 - **`.title_bar` must be a sibling of `.layout`, placed after it**, or it renders
   inline instead of pinning to the bottom.
 - `src/settings.yml` pins `framework_version: 3.3.1`, which is what
