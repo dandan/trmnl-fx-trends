@@ -14,6 +14,7 @@ trmnl-plugin/
 ├── sample.json            # data snapshot (regenerate with refresh-sample.mjs)
 ├── refresh-sample.mjs     # rebuild sample.json + .trmnlp.yml from the Worker
 ├── trmnlp-snap            # trmnlp wrapper for Ubuntu's snap Firefox
+├── screenshots.sh         # every layout x device x orientation x mode -> docs/screenshots/
 ├── test-render.rb         # render assertions incl. the states a build can't reach
 └── src/
     ├── settings.yml       # polling config + form-field definitions
