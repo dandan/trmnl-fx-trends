@@ -130,6 +130,12 @@ VIEWS.each do |view, limit|
   check("#{view}: no unresolved Liquid", !out.include?("{{") && !out.include?("{%"))
   # The recipe linter (Chef) rejects inline styles; everything is classes.
   check("#{view}: no inline style attributes", !out.include?("style="))
+  # TRMNL renders each mashup slot in its own frame, where --screen-h is 100%
+  # and not a length; a plot height built on it resolves to nothing there and
+  # the trace disappears on the device. The height comes from the layout box.
+  css = out.scan(%r{<style>(.*?)</style>}m).join
+  check("#{view}: plot height does not read --screen-h", !css.include?("--screen-h"))
+  check("#{view}: plot height reads the layout box", css.include?("100cqh") && css.include?("container-type: size") && out.include?("fx-box"))
   # The title names the environment only when the Worker names itself (the QA
   # deployment does, production does not), so the recipe's title stays bare.
   check("#{view}: production title is bare", out.match?(%r{<span class="title[^"]*">Exchange Rates</span>}))

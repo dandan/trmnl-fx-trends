@@ -4,8 +4,7 @@
   (`value--xsmall`, `value--small`, `label--small`); on an X, which has the
   height to spare, they are the full view's own (`lg:`). The header and the
   pill are the full view's on both. Tracks, portrait reflow and the plot
-  height terms are as in full.liquid, with half the panel height and three
-  rows.
+  height terms are as in full.liquid, with three rows.
 {% endcomment %}
 <style>
   .fx--halfh .fx-row,
@@ -16,16 +15,16 @@
   .screen--portrait .fx--halfh .fx-head { grid-template-columns: 106px 1fr 86px; gap: 8px; }
   .screen--lg.screen--portrait .fx--halfh .fx-row,
   .screen--lg.screen--portrait .fx--halfh .fx-head { grid-template-columns: 140px 1fr 100px; }
-  .fx--halfh { --fx-top-pad: 8px; --fx-chrome: 93px; --fx-inset: 17px; }
+  .fx--halfh { --fx-chrome: 34px; --fx-inset: 17px; }
   .screen--lg .fx--halfh { --fx-inset: 21px; }
-  .screen--portrait .fx--halfh { --fx-chrome: 118px; --fx-inset: 54px; }
+  .screen--portrait .fx--halfh { --fx-chrome: 59px; --fx-inset: 54px; }
   .screen--lg.screen--portrait .fx--halfh { --fx-inset: 71px; }
   .fx--halfh .fx-dot  { r: 3.5px; }
   .screen--lg .fx--halfh .fx-dot { r: 4.5px; }
-  .fx--halfh .fx-spark svg { height: calc((var(--screen-h) / 2 - var(--fx-chrome) - var(--fx-top-pad)) / 3 - var(--fx-inset)); }
+  .fx--halfh .fx-spark svg { height: calc((100cqh - var(--fx-chrome)) / 3 - var(--fx-inset)); }
 </style>
 
-<div class="layout layout--col layout--justify-start">
+<div class="layout layout--col layout--justify-start fx-box">
   {% if fx_failed %}
     <div class="fx-error flex flex--col flex--center-y text--center">
       <span class="title">Rates unavailable</span>

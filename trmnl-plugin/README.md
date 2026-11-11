@@ -16,6 +16,7 @@ trmnl-plugin/
 ├── trmnlp-snap            # trmnlp wrapper for Ubuntu's snap Firefox
 ├── screenshots.sh         # every layout x device x orientation x mode -> docs/screenshots/
 ├── test-render.rb         # render assertions incl. the states a build can't reach
+├── test-frame.rb          # the mashup views in a browser, framed as TRMNL's generator frames them
 └── src/
     ├── settings.yml       # polling config + form-field definitions
     ├── full.liquid            # 6 rows
@@ -103,6 +104,18 @@ array, fewer pairs than a view has room for, and a perfectly flat series (both
 finite coordinate pairs, and that each view prints the Worker's pre-formatted
 strings unaltered — a change cell that is not signed and 2dp fails the run.
 (The one substitution is the minus sign; see the design rules.)
+
+```bash
+ruby test-frame.rb
+```
+
+`test-frame.rb` loads the three mashup views in headless Firefox, each in a
+frame of its slot's size where the framework's `--screen-h` is `100%`, which is
+how TRMNL's screen generator draws a mashup and how neither the markup editor
+nor trmnlp does. It covers the X and the OG, landscape and portrait. It asserts every sparkline has a height and the rows stop
+short of the title bar. A plot height built on `--screen-h` passes every
+preview and renders 0px tall on the device; this is the test that catches it.
+It needs the network and a Firefox, so it is run by hand and not by `deploy.sh`.
 
 ## Design rules
 

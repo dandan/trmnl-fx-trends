@@ -88,9 +88,9 @@
     is physically hard to read, and here that is the header rule and its labels,
     the smallest type on the panel.
 
-    Each view sets --fx-top-pad and subtracts the same value from its plot-height
-    chrome constant, so the inset comes out of the sparklines rather than
-    overflowing the panel. The shadow is a fixed physical depth, so the value
+    Each view pads its list by that much (`pt--2`, `pt--2.5`) and counts the same
+    value in its plot-height chrome constant, so the inset comes out of the
+    sparklines rather than overflowing the panel. The shadow is a fixed physical depth, so the value
     does not scale with the view; the half-height views take slightly less
     because they may be placed in the LOWER half of a mashup, where the inset
     buys nothing and the height is scarcer.
@@ -202,9 +202,18 @@
     never overflow, and a cap only cut the rows short on the X.
   {% endcomment %}
 {% comment %}
-    Each view gives the plot an explicit height derived from the panel:
+    Each view gives the plot an explicit height derived from the box it is in:
 
-        (screen height - chrome) / rows - row inset
+        (layout height - chrome) / rows - row inset
+
+    THE LAYOUT HEIGHT IS MEASURED, NOT TAKEN FROM --screen-h
+    The layout is a size container (`.fx-box`, below) and the calc reads its
+    height as `100cqh`. It used to read the framework's --screen-h, halved for
+    the half-height views. That is a pixel length in the markup editor and in
+    trmnlp, but TRMNL renders each mashup slot in a frame of its own, where
+    --screen-h is `100%`; the calc then resolved to nothing and the device
+    showed a dot and no trace. The layout's own height is the same number in
+    every one of those places, and needs no halving.
 
     Deliberately NOT height: 100%. A percentage needs a definite parent height,
     and inside a flexed row that resolves circularly: the rows grew to fit the
@@ -212,7 +221,7 @@
 
     The subtraction matters: row inset is a constant, so the height available
     to the plot grows faster than the panel does (OG 37px vs TRMNL X 87px, a
-    2.3x jump for a 1.6x taller screen). A plain fraction of --screen-h cannot
+    2.3x jump for a 1.6x taller screen). A plain fraction of the height cannot
     hit both, which is why this is a subtraction and not a division. The
     portrait rules subtract the figures line as well, since the plot then
     sits under it rather than beside it.
@@ -273,6 +282,8 @@
   {% endcomment %}
 {% comment %} Shown instead of the list when the Worker returns an error. {% endcomment %}
 <style>
+
+  .fx-box { container-type: size; }
 
   .fx-list {
     flex: 1;

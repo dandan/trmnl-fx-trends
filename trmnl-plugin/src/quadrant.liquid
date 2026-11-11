@@ -11,8 +11,8 @@
 {% endcomment %}
 
 {% comment %}
-  Half the panel height, 3 rows, a row inset of `py--2`. See full.liquid for
-  the plot height terms.
+  3 rows, a row inset of `py--2`. See full.liquid for the plot height terms;
+  as in half_vertical, the chrome term is negative on an OG in portrait.
 {% endcomment %}
 {% comment %}
     THE RATE TRACK IS CUT TO THE LONGEST RATE ON SHOW
@@ -49,17 +49,17 @@
   .screen--md.screen--portrait .fx--quad .fx-row,
   .screen--md.screen--portrait .fx--quad .fx-head { grid-template-columns: 80px 1fr; }
   .screen--md.screen--portrait .fx--quad .fx-spark { grid-column: auto; }
-  .screen--md.screen--portrait .fx--quad { --fx-chrome: 44px; }
-  .fx--quad { --fx-top-pad: 8px; --fx-chrome: 82px; --fx-inset: 17px; }
-  .screen--lg .fx--quad { --fx-chrome: 90px; }
-  .screen--portrait .fx--quad { --fx-chrome: 104px; --fx-inset: 54px; }
-  .screen--lg.screen--portrait .fx--quad { --fx-chrome: 97px; --fx-inset: 58px; }
+  .screen--md.screen--portrait .fx--quad { --fx-chrome: -15px; }
+  .fx--quad { --fx-chrome: 23px; --fx-inset: 17px; }
+  .screen--lg .fx--quad { --fx-chrome: 31px; }
+  .screen--portrait .fx--quad { --fx-chrome: 45px; --fx-inset: 54px; }
+  .screen--lg.screen--portrait .fx--quad { --fx-chrome: 38px; --fx-inset: 58px; }
   .fx--quad .fx-dot  { r: 2.5px; }
   .screen--lg .fx--quad .fx-dot { r: 3.5px; }
-  .fx--quad .fx-spark svg { height: calc((var(--screen-h) / 2 - var(--fx-chrome) - var(--fx-top-pad)) / 3 - var(--fx-inset)); }
+  .fx--quad .fx-spark svg { height: calc((100cqh - var(--fx-chrome)) / 3 - var(--fx-inset)); }
 </style>
 
-<div class="layout layout--col layout--justify-start">
+<div class="layout layout--col layout--justify-start fx-box">
   {% if fx_failed %}
     <div class="fx-error flex flex--col flex--center-y text--center">
       <span class="title">Rates unavailable</span>

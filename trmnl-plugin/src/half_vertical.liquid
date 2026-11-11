@@ -41,8 +41,11 @@
   {% endcomment %}
 {% comment %}
     THE PLOT HEIGHT
-    (panel - chrome) / 6 - inset, with no cap: six rows fill every device. The
-    row inset is `py--4`. See full.liquid for the terms.
+    (box - chrome) / 6 - inset, with no cap: six rows fill every device. The
+    row inset is `py--4`. See full.liquid for the terms. On an OG in portrait
+    there is no header, and the chrome term is negative: the rows are budgeted
+    to run a few px into the layout's bottom padding, which is still clear of
+    the title bar.
   {% endcomment %}
 {% comment %}
     THE RATE TRACK IS CUT TO THE LONGEST RATE ON SHOW
@@ -79,17 +82,17 @@
   .screen--md.screen--portrait .fx--halfv .fx-row,
   .screen--md.screen--portrait .fx--halfv .fx-head { grid-template-columns: 80px 1fr; }
   .screen--md.screen--portrait .fx--halfv .fx-spark { grid-column: auto; }
-  .screen--md.screen--portrait .fx--halfv { --fx-chrome: 44px; }
-  .fx--halfv { --fx-top-pad: 10px; --fx-chrome: 88px; --fx-inset: 33px; }
-  .screen--lg .fx--halfv { --fx-chrome: 96px; }
-  .screen--portrait .fx--halfv { --fx-chrome: 110px; --fx-inset: 70px; }
-  .screen--lg.screen--portrait .fx--halfv { --fx-chrome: 98px; --fx-inset: 74px; }
+  .screen--md.screen--portrait .fx--halfv { --fx-chrome: -18px; }
+  .fx--halfv { --fx-chrome: 26px; --fx-inset: 33px; }
+  .screen--lg .fx--halfv { --fx-chrome: 34px; }
+  .screen--portrait .fx--halfv { --fx-chrome: 48px; --fx-inset: 70px; }
+  .screen--lg.screen--portrait .fx--halfv { --fx-chrome: 36px; --fx-inset: 74px; }
   .fx--halfv .fx-dot  { r: 3px; }
   .screen--lg .fx--halfv .fx-dot { r: 4px; }
-  .fx--halfv .fx-spark svg { height: calc((var(--screen-h) - var(--fx-chrome) - var(--fx-top-pad)) / 6 - var(--fx-inset)); }
+  .fx--halfv .fx-spark svg { height: calc((100cqh - var(--fx-chrome)) / 6 - var(--fx-inset)); }
 </style>
 
-<div class="layout layout--col layout--justify-start">
+<div class="layout layout--col layout--justify-start fx-box">
   {% if fx_failed %}
     <div class="fx-error flex flex--col flex--center-y text--center">
       <span class="title">Rates unavailable</span>

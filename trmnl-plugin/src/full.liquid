@@ -40,12 +40,14 @@
   {% endcomment %}
 {% comment %}
     THE PLOT HEIGHT
-    The trace fills the row: (panel - chrome) / rows - inset, in the custom
-    properties below so each breakpoint can restate one term. --fx-chrome is
-    the header, its rule and the title_bar, --fx-inset the row's padding plus
-    its 1px rule, and in portrait also the first line and the gap under it,
-    --fx-rows the rows that breakpoint shows. The terms are set so the last
-    row ends 7 to 11px above the title bar on every device.
+    The trace fills the row: (box - chrome) / rows - inset, in the custom
+    properties below so each breakpoint can restate one term. The box is the
+    layout's own height (`100cqh`; see shared.liquid for why not the screen's),
+    --fx-chrome what in it is not a row (the top inset, the header and its
+    rule), --fx-inset the row's padding plus its 1px rule, and in portrait
+    also the first line and the gap under it, --fx-rows the rows that
+    breakpoint shows. The terms are set so the last row ends 7 to 11px above
+    the title bar on every device.
   {% endcomment %}
 {% comment %} Rows a large screen shows: the plot height below divides by it. {% endcomment %}
 {% assign fx_rows_lg = rows | size | at_most: 8 | at_least: 1 %}
@@ -58,14 +60,14 @@
   .screen--portrait .fx--full .fx-head { grid-template-columns: 140px 1fr 86px; gap: 8px; }
   .screen--lg.screen--portrait .fx--full .fx-row,
   .screen--lg.screen--portrait .fx--full .fx-head { grid-template-columns: 140px 1fr 100px; }
-  .fx--full { --fx-top-pad: 10px; --fx-chrome: 96px; --fx-inset: 21px; --fx-rows: 6; }
+  .fx--full { --fx-chrome: 36px; --fx-inset: 21px; --fx-rows: 6; }
   .screen--lg .fx--full { --fx-rows: {{ fx_rows_lg }}; }
-  .screen--portrait .fx--full { --fx-chrome: 110px; --fx-inset: 68px; }
+  .screen--portrait .fx--full { --fx-chrome: 50px; --fx-inset: 68px; }
   .fx--full .fx-dot  { r: 4.5px; }
-  .fx--full .fx-spark svg { height: calc((var(--screen-h) - var(--fx-chrome) - var(--fx-top-pad)) / var(--fx-rows) - var(--fx-inset)); }
+  .fx--full .fx-spark svg { height: calc((100cqh - var(--fx-chrome)) / var(--fx-rows) - var(--fx-inset)); }
 </style>
 
-<div class="layout layout--col layout--justify-start">
+<div class="layout layout--col layout--justify-start fx-box">
   {% if fx_failed %}
     <div class="fx-error flex flex--col flex--center-y text--center">
       <span class="title">Rates unavailable</span>
