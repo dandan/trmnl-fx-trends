@@ -42,11 +42,19 @@ const round2 = (v) => (Number.isFinite(v) ? Number(v.toFixed(2)) : null);
 // "-" are read as arithmetic. A change that rounds to zero takes neither — it is
 // not a rise, and `v === 0` catches the -0 that round2 can produce, so a
 // hair-negative move cannot reach the panel as "-0.00%".
+// Three digits, whatever the size: `2.30`, `12.3`, `112`. The pill that holds
+// the figure is a fixed width on the device, cut for a sign, three digits, a
+// point and a percent sign, so a fourth digit loses its right-hand end. The
+// tier is chosen on the ROUNDED figure: 9.996 is `10.0`, not `10.00`, and
+// 99.96 is `100`, not `100.0`.
 const changeStr = (v) => {
   if (v === null) return null;
   if (v === 0) return "0.00";
-  return `${v > 0 ? "+" : "-"}${Math.abs(v).toFixed(2)}`;
+  const abs = Math.abs(v);
+  const digits = [2, 1].find((dp) => Number(abs.toFixed(dp)) < 10 ** (3 - dp)) ?? 0;
+  return `${v > 0 ? "+" : "-"}${abs.toFixed(digits)}`;
 };
+export { changeStr };
 
 export function buildRow(rates, { from, to }, { w, h, maxPoints = MAX_POINTS }) {
   const full = crossSeries(rates, from, to);

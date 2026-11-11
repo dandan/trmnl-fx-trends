@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { sigFigs, buildRow, buildResponse } from "../src/shape.js";
+import { sigFigs, buildRow, buildResponse, changeStr } from "../src/shape.js";
 import { HttpError } from "../src/source.js";
 
 const FIXTURE = JSON.parse(
@@ -83,6 +83,18 @@ test("an identical pair is flat rather than broken", () => {
   assert.equal(row.change_pct, 0);
   assert.equal(row.change_str, "0.00");
   assert.ok(!/NaN/.test(row.points));
+});
+
+// The device's pill is a fixed width, so the figure is always three digits:
+// precision gives way as the change grows, and the tier follows the rounded
+// figure so a value on a boundary never gains a fourth digit.
+test("change_str holds three digits as the change grows", () => {
+  for (const [v, want] of [[2.3, "+2.30"], [-9.99, "-9.99"], [9.996, "+10.0"],
+                           [12.34, "+12.3"], [-45.67, "-45.7"], [99.94, "+99.9"],
+                           [99.96, "+100"], [-112.5, "-113"], [412.5, "+413"],
+                           [1234.56, "+1235"], [0, "0.00"], [null, null]]) {
+    assert.equal(changeStr(v), want, String(v));
+  }
 });
 
 // JSON cannot carry a trailing zero, so a change of 8.4 would reach the device
