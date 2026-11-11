@@ -2,6 +2,9 @@ node_modules/
 .wrangler/
 _build/
 
+# scratch output: comparison pages, mockups, screenshot copies
+tmp/
+
 # Secrets and per-account deploy profiles.
 # NOTE: gitignore only treats '#' as a comment at the START of a line — a
 # trailing comment becomes part of the pattern and silently matches nothing.
