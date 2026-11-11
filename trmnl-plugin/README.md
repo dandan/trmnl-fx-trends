@@ -253,6 +253,13 @@ Carried over from `meetup_2026`, learned the hard way there:
   resolve to `transparent` on a 1-bit palette and the text paints invisibly.
   (`label--inverted` is the deprecated name for `label--filled`; the pill
   uses the current one.)
+- **Text Scale is honoured at small and regular only.** The device setting
+  ([Text Scale](https://trmnl.com/framework/docs/3.4/text_scale)) multiplies
+  the framework's fonts by 0.8, 1, 1.25 or 1.5 and leaves geometry alone. The
+  tracks and plot heights are pixel budgets cut to the regular size, and the
+  narrow slots have no room for larger text, so `shared.liquid` sets large and
+  x-large back to 1 on `.screen`. The framework resolves font sizes there, so
+  a rule lower down has no effect; the docs do not describe overriding it.
 - **Prefer a framework tier to a custom rule.** TRMNL's recipe review flagged
   a `font-weight: 700` and a hand-drawn pill border as rewriting `text--bold`,
   `label--filled` and `label--outline`: the utilities exist, and only they

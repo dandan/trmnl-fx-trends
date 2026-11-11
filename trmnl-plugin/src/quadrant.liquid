@@ -39,15 +39,26 @@
   {% endcomment %}
 {% assign fx_window = range_label %}
 {% if range_label.size > 7 %}{% assign fx_range = range_label | split: " " %}{% capture fx_window %}{{ fx_range[0] }}{{ fx_range[1] | slice: 0 }}{% endcapture %}{% endif %}
+{% comment %}
+    THE PAIR TRACK UNDER A PINNED TEXT SCALE
+    80px holds XXX -> XXX in the OG's pixel font. With Text Scale at large or
+    x-large the size is held at regular (shared.liquid) but the OG is on Inter,
+    where the same pair is up to 88px. The track is 88px there and no more:
+    the 8px comes off the trace track, and "5 YEARS TREND" needs 94 of the 96
+    that leaves in landscape. A wider pair runs into the gap, not the rate.
+  {% endcomment %}
 <style>
+  .fx--quad { --fx-pair: 80px; }
+  .screen--md.screen--text-scale-large .fx--quad,
+  .screen--md.screen--text-scale-xlarge .fx--quad { --fx-pair: 88px; }
   .fx--quad .fx-row,
-  .fx--quad .fx-head { grid-template-columns: 80px {{ fx_rate_w }}px 70px 1fr; gap: 7px; }
+  .fx--quad .fx-head { grid-template-columns: var(--fx-pair) {{ fx_rate_w }}px 70px 1fr; gap: 7px; }
   .screen--lg .fx--quad .fx-row,
   .screen--lg .fx--quad .fx-head { grid-template-columns: 112px {{ fx_rate_w_lg }}px 95px 1fr; }
   .screen--portrait .fx--quad .fx-row,
   .screen--portrait .fx--quad .fx-head { grid-template-columns: 112px 1fr 95px; }
   .screen--md.screen--portrait .fx--quad .fx-row,
-  .screen--md.screen--portrait .fx--quad .fx-head { grid-template-columns: 80px 1fr; }
+  .screen--md.screen--portrait .fx--quad .fx-head { grid-template-columns: var(--fx-pair) 1fr; }
   .screen--md.screen--portrait .fx--quad .fx-spark { grid-column: auto; }
   .screen--md.screen--portrait .fx--quad { --fx-chrome: -15px; }
   .fx--quad { --fx-chrome: 23px; --fx-inset: 17px; }

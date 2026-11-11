@@ -285,6 +285,27 @@
 
   .fx-box { container-type: size; }
 
+  {% comment %}
+     TEXT SCALE: LARGE AND X-LARGE ARE HELD AT REGULAR
+     The device's Text Scale setting (0.8, 1, 1.25, 1.5) multiplies every
+     framework font and leaves the geometry alone. The column tracks and the
+     plot height here are pixel budgets cut to the regular size, so at 1.25 the
+     pair runs over the rate and the rows run into the title bar, in all 24
+     layouts. Scaling the budgets with the text fits only the wide layouts on
+     an X: the narrow slots have no width to give. So the two larger settings
+     are set back to 1. Small fits as it is and is left alone.
+     The framework resolves its font sizes on .screen, so this has to be set
+     there and not on the layout; a rule on .fx-box does nothing. That makes it
+     a rule on an element the plugin does not own, which the framework docs do
+     not describe. TRMNL's generator draws each mashup slot in a frame of its
+     own, so it does not reach a neighbouring plugin there.
+     Any setting but regular also moves an OG from its pixel fonts to Inter,
+     which this cannot undo and which sets a pair about 12px wider (88px against 76) at the
+     narrow views' size: half_vertical and quadrant widen that track to match.
+  {% endcomment %}
+  .trmnl .screen.screen--text-scale-large,
+  .trmnl .screen.screen--text-scale-xlarge { --modifier-text-scale: 1; }
+
   .fx-list {
     flex: 1;
     width: 100%;
