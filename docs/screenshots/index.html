@@ -1,0 +1,133 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FX Trends layouts</title>
+<style>
+  :root { color-scheme: light dark; --bg: #f2f2f0; --fg: #1a1a1a; --dim: #666; --line: #c8c8c4; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #1b1b1c; --fg: #ececec; --dim: #9a9a9a; --line: #444; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 24px 16px 48px; background: var(--bg); color: var(--fg);
+         font: 15px/1.45 system-ui, sans-serif; }
+  main { max-width: 1500px; margin: 0 auto; }
+  header { display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: baseline; justify-content: space-between; }
+  h1 { font-size: 22px; margin: 0; }
+  h2 { font-size: 17px; margin: 40px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+  p { margin: 6px 0 0; color: var(--dim); max-width: 70ch; }
+  label { cursor: pointer; white-space: nowrap; }
+  .devices { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; align-items: start; }
+  figure { margin: 0 0 20px; }
+  figcaption { display: flex; gap: 8px; align-items: baseline; margin-bottom: 6px; color: var(--dim); }
+  figcaption b { color: var(--fg); font-size: 18px; font-variant-numeric: tabular-nums; min-width: 1.6em; }
+  img { display: block; width: 100%; height: auto; border: 1px solid var(--line); }
+  .portrait img { width: 60%; }
+  .x .portrait img { width: 75%; }
+</style>
+</head>
+<body>
+<main>
+<header>
+  <div>
+    <h1>FX Trends layouts</h1>
+    <p>Every view on every device and orientation, from the sample in <code>.trmnlp.yml</code>.
+       Written by <code>trmnl-plugin/screenshots.sh</code>. Select an image to open it at full size.</p>
+  </div>
+  <label><input type="checkbox" id="dark"> Dark mode screenshots</label>
+</header>
+<h2>full</h2>
+<div class="devices">
+  <div class="og">
+    <figure class="landscape" id="layout-1"><figcaption><b>1</b> TRMNL OG (1-bit), landscape</figcaption>
+      <a href="full/og-landscape-light.png"><img src="full/og-landscape-light.png" alt="Layout 1: full on TRMNL OG (1-bit), landscape" loading="lazy"></a></figure>
+    <figure class="portrait" id="layout-2"><figcaption><b>2</b> TRMNL OG (1-bit), portrait</figcaption>
+      <a href="full/og-portrait-light.png"><img src="full/og-portrait-light.png" alt="Layout 2: full on TRMNL OG (1-bit), portrait" loading="lazy"></a></figure>
+  </div>
+  <div class="og">
+    <figure class="landscape" id="layout-3"><figcaption><b>3</b> TRMNL OG (2-bit), landscape</figcaption>
+      <a href="full/ogv2-landscape-light.png"><img src="full/ogv2-landscape-light.png" alt="Layout 3: full on TRMNL OG (2-bit), landscape" loading="lazy"></a></figure>
+    <figure class="portrait" id="layout-4"><figcaption><b>4</b> TRMNL OG (2-bit), portrait</figcaption>
+      <a href="full/ogv2-portrait-light.png"><img src="full/ogv2-portrait-light.png" alt="Layout 4: full on TRMNL OG (2-bit), portrait" loading="lazy"></a></figure>
+  </div>
+  <div class="x">
+    <figure class="landscape" id="layout-5"><figcaption><b>5</b> TRMNL X (4-bit), landscape</figcaption>
+      <a href="full/x-landscape-light.png"><img src="full/x-landscape-light.png" alt="Layout 5: full on TRMNL X (4-bit), landscape" loading="lazy"></a></figure>
+    <figure class="portrait" id="layout-6"><figcaption><b>6</b> TRMNL X (4-bit), portrait</figcaption>
+      <a href="full/x-portrait-light.png"><img src="full/x-portrait-light.png" alt="Layout 6: full on TRMNL X (4-bit), portrait" loading="lazy"></a></figure>
+  </div>
+</div>
+<h2>half_horizontal</h2>
+<div class="devices">
+  <div class="og">
+    <figure class="landscape" id="layout-7"><figcaption><b>7</b> TRMNL OG (1-bit), landscape</figcaption>
+      <a href="half_horizontal/og-landscape-light.png"><img src="half_horizontal/og-landscape-light.png" alt="Layout 7: half_horizontal on TRMNL OG (1-bit), landscape" loading="lazy"></a></figure>
+    <figure class="portrait" id="layout-8"><figcaption><b>8</b> TRMNL OG (1-bit), portrait</figcaption>
+      <a href="half_horizontal/og-portrait-light.png"><img src="half_horizontal/og-portrait-light.png" alt="Layout 8: half_horizontal on TRMNL OG (1-bit), portrait" loading="lazy"></a></figure>
+  </div>
+  <div class="og">
+    <figure class="landscape" id="layout-9"><figcaption><b>9</b> TRMNL OG (2-bit), landscape</figcaption>
+      <a href="half_horizontal/ogv2-landscape-light.png"><img src="half_horizontal/ogv2-landscape-light.png" alt="Layout 9: half_horizontal on TRMNL OG (2-bit), landscape" loading="lazy"></a></figure>
+    <figure class="portrait" id="layout-10"><figcaption><b>10</b> TRMNL OG (2-bit), portrait</figcaption>
+      <a href="half_horizontal/ogv2-portrait-light.png"><img src="half_horizontal/ogv2-portrait-light.png" alt="Layout 10: half_horizontal on TRMNL OG (2-bit), portrait" loading="lazy"></a></figure>
+  </div>
+  <div class="x">
+    <figure class="landscape" id="layout-11"><figcaption><b>11</b> TRMNL X (4-bit), landscape</figcaption>
+      <a href="half_horizontal/x-landscape-light.png"><img src="half_horizontal/x-landscape-light.png" alt="Layout 11: half_horizontal on TRMNL X (4-bit), landscape" loading="lazy"></a></figure>
+    <figure class="portrait" id="layout-12"><figcaption><b>12</b> TRMNL X (4-bit), portrait</figcaption>
+      <a href="half_horizontal/x-portrait-light.png"><img src="half_horizontal/x-portrait-light.png" alt="Layout 12: half_horizontal on TRMNL X (4-bit), portrait" loading="lazy"></a></figure>
+  </div>
+</div>
+<h2>half_vertical</h2>
+<div class="devices">
+  <div class="og">
+    <figure class="landscape" id="layout-13"><figcaption><b>13</b> TRMNL OG (1-bit), landscape</figcaption>
+      <a href="half_vertical/og-landscape-light.png"><img src="half_vertical/og-landscape-light.png" alt="Layout 13: half_vertical on TRMNL OG (1-bit), landscape" loading="lazy"></a></figure>
+    <figure class="portrait" id="layout-14"><figcaption><b>14</b> TRMNL OG (1-bit), portrait</figcaption>
+      <a href="half_vertical/og-portrait-light.png"><img src="half_vertical/og-portrait-light.png" alt="Layout 14: half_vertical on TRMNL OG (1-bit), portrait" loading="lazy"></a></figure>
+  </div>
+  <div class="og">
+    <figure class="landscape" id="layout-15"><figcaption><b>15</b> TRMNL OG (2-bit), landscape</figcaption>
+      <a href="half_vertical/ogv2-landscape-light.png"><img src="half_vertical/ogv2-landscape-light.png" alt="Layout 15: half_vertical on TRMNL OG (2-bit), landscape" loading="lazy"></a></figure>
+    <figure class="portrait" id="layout-16"><figcaption><b>16</b> TRMNL OG (2-bit), portrait</figcaption>
+      <a href="half_vertical/ogv2-portrait-light.png"><img src="half_vertical/ogv2-portrait-light.png" alt="Layout 16: half_vertical on TRMNL OG (2-bit), portrait" loading="lazy"></a></figure>
+  </div>
+  <div class="x">
+    <figure class="landscape" id="layout-17"><figcaption><b>17</b> TRMNL X (4-bit), landscape</figcaption>
+      <a href="half_vertical/x-landscape-light.png"><img src="half_vertical/x-landscape-light.png" alt="Layout 17: half_vertical on TRMNL X (4-bit), landscape" loading="lazy"></a></figure>
+    <figure class="portrait" id="layout-18"><figcaption><b>18</b> TRMNL X (4-bit), portrait</figcaption>
+      <a href="half_vertical/x-portrait-light.png"><img src="half_vertical/x-portrait-light.png" alt="Layout 18: half_vertical on TRMNL X (4-bit), portrait" loading="lazy"></a></figure>
+  </div>
+</div>
+<h2>quadrant</h2>
+<div class="devices">
+  <div class="og">
+    <figure class="landscape" id="layout-19"><figcaption><b>19</b> TRMNL OG (1-bit), landscape</figcaption>
+      <a href="quadrant/og-landscape-light.png"><img src="quadrant/og-landscape-light.png" alt="Layout 19: quadrant on TRMNL OG (1-bit), landscape" loading="lazy"></a></figure>
+    <figure class="portrait" id="layout-20"><figcaption><b>20</b> TRMNL OG (1-bit), portrait</figcaption>
+      <a href="quadrant/og-portrait-light.png"><img src="quadrant/og-portrait-light.png" alt="Layout 20: quadrant on TRMNL OG (1-bit), portrait" loading="lazy"></a></figure>
+  </div>
+  <div class="og">
+    <figure class="landscape" id="layout-21"><figcaption><b>21</b> TRMNL OG (2-bit), landscape</figcaption>
+      <a href="quadrant/ogv2-landscape-light.png"><img src="quadrant/ogv2-landscape-light.png" alt="Layout 21: quadrant on TRMNL OG (2-bit), landscape" loading="lazy"></a></figure>
+    <figure class="portrait" id="layout-22"><figcaption><b>22</b> TRMNL OG (2-bit), portrait</figcaption>
+      <a href="quadrant/ogv2-portrait-light.png"><img src="quadrant/ogv2-portrait-light.png" alt="Layout 22: quadrant on TRMNL OG (2-bit), portrait" loading="lazy"></a></figure>
+  </div>
+  <div class="x">
+    <figure class="landscape" id="layout-23"><figcaption><b>23</b> TRMNL X (4-bit), landscape</figcaption>
+      <a href="quadrant/x-landscape-light.png"><img src="quadrant/x-landscape-light.png" alt="Layout 23: quadrant on TRMNL X (4-bit), landscape" loading="lazy"></a></figure>
+    <figure class="portrait" id="layout-24"><figcaption><b>24</b> TRMNL X (4-bit), portrait</figcaption>
+      <a href="quadrant/x-portrait-light.png"><img src="quadrant/x-portrait-light.png" alt="Layout 24: quadrant on TRMNL X (4-bit), portrait" loading="lazy"></a></figure>
+  </div>
+</div>
+</main>
+<script>
+  document.getElementById("dark").addEventListener("change", (e) => {
+    const [from, to] = e.target.checked ? ["-light.png", "-dark.png"] : ["-dark.png", "-light.png"];
+    for (const img of document.images) {
+      img.src = img.getAttribute("src").replace(from, to);
+      img.parentElement.href = img.getAttribute("src");
+    }
+  });
+</script>
+</body>
+</html>

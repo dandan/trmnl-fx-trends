@@ -1,10 +1,12 @@
 #!/usr/bin/env bash
 #
 # Screenshot every layout on every device, orientation and mode, and write
-# one markdown page per layout under ../docs/screenshots/.
+# one markdown page per layout under ../docs/screenshots/, plus index.html,
+# an overview of all 24 layouts on one page, numbered 1-24.
 #
 #   ./screenshots.sh            # all 48 combinations
 #   FIREFOX=/usr/bin/firefox ./screenshots.sh
+#   PAGES_ONLY=1 ./screenshots.sh   # rewrite the pages, keep the images
 #
 # Starts `trmnlp serve` itself (via ./trmnlp-snap, see README) unless one is
 # already answering on port 4567, and stops it again on exit. Renders come
@@ -37,7 +39,9 @@ declare -A NAMES=( [og]="TRMNL OG (1-bit)" [ogv2]="TRMNL OG (2-bit)" [x]="TRMNL 
 LAYOUTS=(full half_horizontal half_vertical quadrant)
 
 # --- preview server ---
-if ! curl -fs "http://localhost:$PORT/" >/dev/null 2>&1; then
+if [ -n "${PAGES_ONLY:-}" ]; then
+  :
+elif ! curl -fs "http://localhost:$PORT/" >/dev/null 2>&1; then
   # setsid puts trmnlp and the puma it spawns in their own process group,
   # so the trap can stop both; killing the wrapper alone leaves puma running.
   setsid ./trmnlp-snap serve >/dev/null 2>&1 &
@@ -59,6 +63,7 @@ shoot() { # layout device orientation mode
   [ "$mode" = dark ] && classes="$classes screen--dark-mode"
   local url="http://localhost:$PORT/render/$layout.html?screen_classes=${classes// /%20}"
   local file="$OUT/$layout/$dev-$orient-$mode.png"
+  [ -n "${PAGES_ONLY:-}" ] && return 0
   local profile
   profile="$(mktemp -d)"
   timeout 90 "$FIREFOX" --headless --profile "$profile" --window-size="$size" \
@@ -100,5 +105,88 @@ done
   echo "the plugin looks like at a given commit. Regenerate with"
   echo "\`trmnl-plugin/screenshots.sh\`."
   echo
+  echo "[\`index.html\`](index.html) shows all 24 layouts on one page, numbered"
+  echo "1-24, with a switch between light and dark. GitHub lists it as source, so"
+  echo "open it from a checkout."
+  echo
   for layout in "${LAYOUTS[@]}"; do echo "- [$layout]($layout.md)"; done
 } > "$OUT/README.md"
+
+# --- overview page ---
+# A layout is a view on a device in an orientation: 4 x 3 x 2 = 24, numbered
+# in the order of the loops above. Light and dark are the same layout, so they
+# share a number and the page switches between them. Each device is a column,
+# landscape above portrait, and a portrait image is as wide as its panel is
+# tall, so both orientations of a device are drawn at one scale.
+{
+  cat <<'HTML'
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FX Trends layouts</title>
+<style>
+  :root { color-scheme: light dark; --bg: #f2f2f0; --fg: #1a1a1a; --dim: #666; --line: #c8c8c4; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #1b1b1c; --fg: #ececec; --dim: #9a9a9a; --line: #444; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 24px 16px 48px; background: var(--bg); color: var(--fg);
+         font: 15px/1.45 system-ui, sans-serif; }
+  main { max-width: 1500px; margin: 0 auto; }
+  header { display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: baseline; justify-content: space-between; }
+  h1 { font-size: 22px; margin: 0; }
+  h2 { font-size: 17px; margin: 40px 0 12px; padding-bottom: 6px; border-bottom: 1px solid var(--line); }
+  p { margin: 6px 0 0; color: var(--dim); max-width: 70ch; }
+  label { cursor: pointer; white-space: nowrap; }
+  .devices { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; align-items: start; }
+  figure { margin: 0 0 20px; }
+  figcaption { display: flex; gap: 8px; align-items: baseline; margin-bottom: 6px; color: var(--dim); }
+  figcaption b { color: var(--fg); font-size: 18px; font-variant-numeric: tabular-nums; min-width: 1.6em; }
+  img { display: block; width: 100%; height: auto; border: 1px solid var(--line); }
+  .portrait img { width: 60%; }
+  .x .portrait img { width: 75%; }
+</style>
+</head>
+<body>
+<main>
+<header>
+  <div>
+    <h1>FX Trends layouts</h1>
+    <p>Every view on every device and orientation, from the sample in <code>.trmnlp.yml</code>.
+       Written by <code>trmnl-plugin/screenshots.sh</code>. Select an image to open it at full size.</p>
+  </div>
+  <label><input type="checkbox" id="dark"> Dark mode screenshots</label>
+</header>
+HTML
+  n=0
+  for layout in "${LAYOUTS[@]}"; do
+    echo "<h2>$layout</h2>"
+    echo '<div class="devices">'
+    for dev in "${DEVICES[@]}"; do
+      cls=og; [ "$dev" = x ] && cls=x
+      echo "  <div class=\"$cls\">"
+      for orient in landscape portrait; do
+        n=$((n + 1))
+        src="$layout/$dev-$orient-light.png"
+        echo "    <figure class=\"$orient\" id=\"layout-$n\"><figcaption><b>$n</b> ${NAMES[$dev]}, $orient</figcaption>"
+        echo "      <a href=\"$src\"><img src=\"$src\" alt=\"Layout $n: $layout on ${NAMES[$dev]}, $orient\" loading=\"lazy\"></a></figure>"
+      done
+      echo "  </div>"
+    done
+    echo "</div>"
+  done
+  cat <<'HTML'
+</main>
+<script>
+  document.getElementById("dark").addEventListener("change", (e) => {
+    const [from, to] = e.target.checked ? ["-light.png", "-dark.png"] : ["-dark.png", "-light.png"];
+    for (const img of document.images) {
+      img.src = img.getAttribute("src").replace(from, to);
+      img.parentElement.href = img.getAttribute("src");
+    }
+  });
+</script>
+</body>
+</html>
+HTML
+} > "$OUT/index.html"
