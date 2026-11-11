@@ -1,29 +1,25 @@
 {% comment %}
-  Half horizontal — 800x240 on an OG. Same grid as the full view, three rows,
-  one tier down on every column.
-{% endcomment %}
-
-{% comment %} TREND takes the free width; HI / LO sizes to content. See full.liquid. {% endcomment %}
-{% comment %}
-    Three rows plus the header and title_bar only just fit 240px on TRMNL OG,
-    and the list fills its container, so an overflow would push the last row
-    under the title bar rather than leaving a gap. The rate is `value--small`,
-    a 29px line box, and the row inset `py--2.5` (10px): 3 x (29 + 20 + 1)
-    under ~90px of chrome lands on the panel to the pixel. The X steps every
-    tier up one (`lg:`) and, at half of 780px, has the height to spare.
-  {% endcomment %}
-{% comment %}
-  Half the panel height, 3 rows, 21px of row inset (2 x 10 + rule). The chrome
-  term is 8px more on the X, where the header is the 16px `label` tier; see
-  full.liquid for the terms.
+  Half horizontal — 800x240 on an OG. The full view's grid at three rows. On
+  an OG the pair, rate and bounds are one tier down from the full view's
+  (`value--xsmall`, `value--small`, `label--small`); on an X, which has the
+  height to spare, they are the full view's own (`lg:`). The header and the
+  pill are the full view's on both. Tracks, portrait reflow and the plot
+  height terms are as in full.liquid, with half the panel height and three
+  rows.
 {% endcomment %}
 <style>
   .fx--halfh .fx-row,
-  .fx--halfh .fx-head { grid-template-columns: 106px minmax(142px, auto) 64px 1fr minmax(64px, auto); gap: 14px; }
+  .fx--halfh .fx-head { grid-template-columns: 106px minmax(142px, auto) 86px 1fr minmax(64px, auto); gap: 14px; }
   .screen--lg .fx--halfh .fx-row,
-  .screen--lg .fx--halfh .fx-head { grid-template-columns: 140px minmax(208px, auto) 92px 1fr minmax(88px, auto); }
-  .fx--halfh { --fx-top-pad: 8px; --fx-chrome: 82px; --fx-inset: 21px; }
-  .screen--lg .fx--halfh { --fx-chrome: 90px; }
+  .screen--lg .fx--halfh .fx-head { grid-template-columns: 140px minmax(208px, auto) 100px 1fr minmax(88px, auto); }
+  .screen--portrait .fx--halfh .fx-row,
+  .screen--portrait .fx--halfh .fx-head { grid-template-columns: 106px 1fr 86px; gap: 8px; }
+  .screen--lg.screen--portrait .fx--halfh .fx-row,
+  .screen--lg.screen--portrait .fx--halfh .fx-head { grid-template-columns: 140px 1fr 100px; }
+  .fx--halfh { --fx-top-pad: 8px; --fx-chrome: 93px; --fx-inset: 17px; }
+  .screen--lg .fx--halfh { --fx-inset: 21px; }
+  .screen--portrait .fx--halfh { --fx-chrome: 118px; --fx-inset: 54px; }
+  .screen--lg.screen--portrait .fx--halfh { --fx-inset: 71px; }
   .fx--halfh .fx-dot  { r: 3.5px; }
   .screen--lg .fx--halfh .fx-dot { r: 4.5px; }
   .fx--halfh .fx-spark svg { height: calc((var(--screen-h) / 2 - var(--fx-chrome) - var(--fx-top-pad)) / 3 - var(--fx-inset)); }
@@ -37,17 +33,17 @@
   {% else %}
     <div class="fx-list flex flex--col gap--none pt--2 fx--halfh">
       <div class="fx-head grid pb--1">
-        <span class="label label--small text--bold lg:label--base">PAIR</span><span class="label label--small text--bold lg:label--base text--right">LATEST</span><span class="label label--small text--bold lg:label--base text--right">CHANGE</span><span class="label label--small text--bold lg:label--base text--center">{% if range_label %}{{ range_label }} {% endif %}TREND</span><span class="label label--small text--bold lg:label--base text--right">HI / LO</span>
+        <div class="flex gap--none"><span class="label text--bold">PAIR</span></div><div class="flex flex--right gap--none"><span class="label text--bold">LATEST</span></div><div class="flex flex--right gap--none"><span class="label text--bold">CHANGE</span></div><div class="flex flex--center-x portrait:flex--left gap--none portrait:col--span-2"><span class="label text--bold portrait:label--small">{% if range_label %}{{ range_label }} {% endif %}TREND</span></div><div class="flex flex--right gap--none"><span class="label text--bold portrait:label--small">HI / LO</span></div>
       </div>
 
       {% for row in rows limit: 3 %}
-        <div class="fx-row grid py--2.5">
+        <div class="fx-row grid py--2 lg:py--2.5">
           <div class="fx-pair value value--xsmall text--bold lg:value--small">{{ row.from }}<span class="fx-arrow text--regular px--0.5">&rarr;</span>{{ row.to }}</div>
           <div class="fx-rate value value--small value--tnums text--bold lg:value--base text--right">{{ row.rate_str }}</div>
-          <div class="fx-chg flex flex--right gap--none"><span class="label text--bold lg:label--large {% if row.change_pct < 0 %}label--filled{% else %}label--outline{% endif %}">{{ row.change_str }}%</span></div>
+          <div class="fx-chg flex flex--right gap--none"><span class="label text--bold value--tnums px--2 py--1 lg:label--large {% if row.change_pct < 0 %}label--filled{% else %}label--outline{% endif %}">{{ row.change_str | replace: "-", "&minus;" }}%</span></div>
           {% assign fx_end = row.points | split: " " | last | split: "," %}
           {% assign fx_end_y = fx_end[1] | times: 100.0 | divided_by: 30 %}
-          <div class="fx-spark flex gap--none">
+          <div class="fx-spark flex gap--none portrait:col--span-2 portrait:pr--3">
             <svg class="fx-plot block" width="100%" height="26">
               <svg class="block" viewBox="0 0 200 30" width="100%" height="100%" preserveAspectRatio="none">
                 <polyline points="{{ row.points }}" vector-effect="non-scaling-stroke"/>

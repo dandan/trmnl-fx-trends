@@ -101,17 +101,24 @@ covers what a build cannot reach: the Worker returning an error, an empty `rows`
 array, fewer pairs than a view has room for, and a perfectly flat series (both
 `0` and a rounded `-0.0`). It also asserts every `points` attribute parses as
 finite coordinate pairs, and that each view prints the Worker's pre-formatted
-strings unaltered — a change cell that is not signless and 2dp fails the run.
+strings unaltered — a change cell that is not signed and 2dp fails the run.
+(The one substitution is the minus sign; see the design rules.)
 
 ## Design rules
 
 These are constraints of the panel, not preferences:
 
-- **Direction is the sign on the figure (`+0.38%`, `-8.79%`), never colour.**
+- **Direction is the sign on the figure (`+0.38%`, `−8.79%`), never colour.**
   The display is 1-bit, so any tone between black and white is a halftone. A
   ▲/▼ glyph did this job first: alone it read as decoration rather than as a
   direction, and beside the sign it said the same thing twice for ~10px of
-  sparkline in the narrow views.
+  sparkline in the narrow views. A fall prints with a true minus sign
+  (`&minus;`), which each view swaps in for the Worker's hyphen: it is as wide
+  as the plus, so the pills match.
+- **The change is always three digits: `2.30`, `12.3`, `113`.** The pill sits
+  in a fixed-width track, so a fourth digit would be clipped. The Worker drops
+  precision as the figure grows; a two-year or five-year window makes
+  double-digit changes ordinary.
 - **The change sits in a pill: filled black for a fall, outlined for a rise.**
   It is the one derived number in a row of quoted ones, and the box marks it as
   such. The fill is the glance-level cue — from across the room the heavy marks
@@ -142,23 +149,29 @@ These are constraints of the panel, not preferences:
   and a 7.12% mover both read clearly. Row shapes are therefore **not**
   comparable to each other — the LO/HI column is what keeps that honest, so
   don't drop it from the wide views.
-- **Every piece of text is a framework tier, and a TRMNL X steps it up.** The
-  rate is the number the panel exists to show, so it takes the largest tier on
-  the row (`value--base` on the full view, `lg:value--large` on an X) with the
-  pair a clear step below (`value--small`); the change and the bounds step
-  down again to `label` tiers. The narrow views start lower (`value--xxsmall`
-  / `value--xsmall`) and climb one tier under `lg:`, which is what fills an X
-  panel that at OG sizes showed a strip of small type beside oversized traces.
-  No `font-size` is set anywhere: the framework resolves each tier to the
-  right face and size for the panel. The cost is sparkline width (the column
-  floors are measured to the widest nine-character rate at each tier, so
-  everything the fixed columns gain comes off the TREND track), and the row
-  height, which is budgeted to the rate's line box.
-- **Portrait reflows the narrow views onto two lines.** In portrait a
-  half_vertical or quadrant cell is narrower still, so each row becomes the
-  pair, rate and change on one line and the sparkline across the full width
-  on the next (`portrait:col--span-3` on the trace cell), and the header does
-  the same so its TREND label sits over the traces.
+- **Every piece of text is a framework tier.** The rate is the number the
+  panel exists to show, so it takes the largest tier on the row (`value--base`
+  on the full view) with the pair a clear step below (`value--small`); the
+  change and the bounds step down again to `label` tiers, and the header is a
+  bold `label`. The smaller views start lower and climb one tier under `lg:`
+  on a TRMNL X. The full view does not: on an X only its pill steps up, and
+  the extra width goes to the trace. No `font-size` is set anywhere: the
+  framework resolves each tier to the right face and size for the panel.
+- **The fixed columns are measured, and the trace takes the rest.** The rate
+  track fits the widest nine-character rate at its tier and the change track
+  the widest pill. The two narrow views, where width is shortest, cut the rate
+  track to the longest rate actually on show (seven characters at least), so
+  a panel of ordinary pairs is not paying for `0.0063521`. Each row is its own
+  grid, so these tracks must be fixed widths: a track sized to its content
+  would put one row's pill and trace out of line with the others.
+- **Portrait puts each row on two lines.** No view has the width for a
+  one-line row in portrait. On the full and half_horizontal views, and on the
+  narrow views on a TRMNL X, the pair, rate and change share one line and the
+  trace runs beneath; the header follows, with the trend label on a second,
+  smaller line at the trace's left edge. On an OG the narrow views are 240px
+  wide and drop the header altogether: pair and rate on one line, pill and
+  trace on the next, and the window moves to the title bar as
+  `1Y to 25 Sep 2026`.
 - **The rate column is headed `LATEST`, never `TODAY` or `CURRENT`.** The ECB
   publishes once per working day around 16:00 CET, so the newest figure is
   yesterday's or Friday's for roughly three quarters of the week — a "today"
@@ -172,7 +185,8 @@ These are constraints of the panel, not preferences:
   numeric day-month is the one form readers in different countries disagree
   on, so the month is a name. The ends are joined by an en dash, not the arrow,
   which already means "converts to" in the pair column. A window inside one
-  year prints the year once: `5 Aug – 4 Sep 2026`.
+  year prints the year once: `5 Aug – 4 Sep 2026`. The two narrow views have
+  no room for both ends and print the as-of date alone.
 - **Rates and bounds carry five significant figures, not a fixed number of
   decimals.** That is what the source carries: ECB quotes to about five figures
   whatever the magnitude (`159.68` for JPY, `0.80426` for CHF), so a
@@ -181,7 +195,7 @@ These are constraints of the panel, not preferences:
 - **Every displayed figure arrives pre-formatted as a string** — `rate_str`,
   `lo_str`, `hi_str`, `change_str` — alongside its numeric form. JSON cannot
   carry a trailing zero, so `1.3450` would reach the device as `1.345` and render
-  a character short of its neighbours. The views print the string verbatim; any
+  a character short of its neighbours. The views print the digits verbatim; any
   `| round` or `| abs` in a template puts the ragged edge back.
 - **Rates are right-aligned, and their decimal points deliberately do not line
   up.** Rates from different pairs are not a comparable series — `159.68`
@@ -207,7 +221,9 @@ These are constraints of the panel, not preferences:
 - **The window is stated once, on the TREND header** (`1 YEAR TREND`). It governs
   three of the columns — the change figure, the sparkline and HI / LO are all
   measured over it — and a column header is read together with the numbers,
-  which is what keeps CHANGE from being taken for a daily move.
+  which is what keeps CHANGE from being taken for a daily move. Where there is
+  no header (the narrow views on an OG in portrait) the title bar states it
+  instead.
 
 ### Framework caveats
 

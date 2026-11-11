@@ -96,9 +96,18 @@ VIEWS.each do |view, limit|
   # printed as `5 Sep 2025 - 4 Sep 2026`: month names rather than ISO, since
   # numeric day-month is the one form readers disagree on, and an en dash, since
   # the arrow already means "converts to" in the pair column. The data stays ISO.
-  check("#{view}: title bar spans start_date to as_of",
-        out.include?("#{fmt(SAMPLE['start_date'])} &ndash; #{fmt(SAMPLE['as_of'])}"),
-        out[%r{<span class="instance">(.*?)</span>}m, 1].to_s.gsub(/\s+/, " ").strip)
+  # The two narrow views have no room for the span: they print the as-of date
+  # alone, prefixed on an OG in portrait (where the header is hidden) by the
+  # window in short form, `1Y to 4 Sep 2026`.
+  if %w[half_vertical quadrant].include?(view)
+    check("#{view}: title bar carries as_of alone",
+          out.include?("to </span>#{fmt(SAMPLE['as_of'])}</span>") && !out.include?(fmt(SAMPLE['start_date'])),
+          out[%r{<span class="instance">(.*?)</span>\s*</div>}m, 1].to_s.gsub(/\s+/, " ").strip)
+  else
+    check("#{view}: title bar spans start_date to as_of",
+          out.include?("#{fmt(SAMPLE['start_date'])} &ndash; #{fmt(SAMPLE['as_of'])}"),
+          out[%r{<span class="instance">(.*?)</span>}m, 1].to_s.gsub(/\s+/, " ").strip)
+  end
   check("#{view}: footer carries no raw ISO date", !out.match?(/\d{4}-\d{2}-\d{2}/))
   # "LATEST", never "TODAY"/"CURRENT": ECB publishes once per working day around
   # 16:00 CET, so the newest figure is yesterday's or Friday's for roughly three
@@ -123,9 +132,9 @@ VIEWS.each do |view, limit|
   check("#{view}: no inline style attributes", !out.include?("style="))
   # The title names the environment only when the Worker names itself (the QA
   # deployment does, production does not), so the recipe's title stays bare.
-  check("#{view}: production title is bare", out.include?('<span class="title">Exchange Rates</span>'))
+  check("#{view}: production title is bare", out.match?(%r{<span class="title[^"]*">Exchange Rates</span>}))
   qa_out, = render(view, SAMPLE.merge("env" => "qa"))
-  check("#{view}: QA title carries the suffix", qa_out.include?('<span class="title">Exchange Rates (QA)</span>'))
+  check("#{view}: QA title carries the suffix", qa_out.match?(%r{<span class="title[^"]*">Exchange Rates \(QA\)</span>}))
   # Direction is stated explicitly: "GBP -> AUD" reads as "1 GBP buys N AUD".
   # The slash form relies on knowing which currency is being quoted.
   check("#{view}: pairs use the direction arrow",
@@ -134,7 +143,7 @@ VIEWS.each do |view, limit|
   check("#{view}: no slash-form pairs left", !out.include?("fx-slash"))
 
   # The change is quoted signed, to a fixed 2dp, so the column lines up and reads
-  # as arithmetic (see shape.js). The view must print change_str verbatim: `| abs`
+  # as arithmetic (see shape.js). The view must print change_str's digits verbatim: `| abs`
   # or `| round` here would drop the sign, or the trailing zero it carries.
   # The figure sits in a framework label pill (label--filled for a fall,
   # label--outline for a rise); the pill is styling, so it is stripped here and
@@ -146,13 +155,16 @@ VIEWS.each do |view, limit|
   # A fall is a filled pill, a rise an outlined one; the sign decides, so the
   # two never disagree, and no pill is both.
   check("#{view}: falls are filled and rises outlined",
-        cells.zip(changes).all? { |c, f| c.include?("label--filled") == f.start_with?("-") && c.include?("label--outline") != f.start_with?("-") })
+        cells.zip(changes).all? { |c, f| c.include?("label--filled") == f.start_with?("&minus;") && c.include?("label--outline") != f.start_with?("&minus;") })
   # The pill is the framework's own label variant, not a hand-drawn border
   # with bg--black behind it: that is what TRMNL's review asked for, and it
   # is what lets `lg:label--large` scale it on a TRMNL X.
   check("#{view}: no hand-rolled pill classes", !out.include?("fx-pill") && !out.include?("bg--black"))
   check("#{view}: dates use text--default", out.include?('class="fx-dates text--default"'))
-  fig = /\A([+-]?\d+\.\d{2})%\z/m
+  # A fall carries a true minus sign, swapped in by the view for the worker's
+  # hyphen: it is as wide as the plus, so the two pills match, and it sits at
+  # the height of the plus's bar where a hyphen sits low.
+  fig = /\A((\+|&minus;)?\d+\.\d{2})%\z/m
   check("#{view}: every change is signed and 2dp",
         changes.all? { |c| c.match?(fig) },
         changes.reject { |c| c.match?(fig) }.inspect)
@@ -223,8 +235,8 @@ puts "\nWith eight pairs:"
 eight = SAMPLE.merge("rows" => SAMPLE["rows"] + SAMPLE["rows"].first(2))
 out, = render("full", eight)
 check("full: eight rows rendered", count(out, /class="fx-row[ "]/) == 8, "got #{count(out, /class="fx-row[ "]/)}")
-check("full: rows 7 and 8 are hidden below lg", count(out, /class="fx-row grid py--2\.5 lg:py--1 lg:portrait:py--2\.5 hidden lg:grid"/) == 2)
-check("full: rows 1-6 are always shown", count(out, /class="fx-row grid py--2\.5 lg:py--1 lg:portrait:py--2\.5"/) == 6)
+check("full: rows 7 and 8 are hidden below lg", count(out, /class="fx-row grid py--2\.5 portrait:py--2 hidden lg:grid"/) == 2)
+check("full: rows 1-6 are always shown", count(out, /class="fx-row grid py--2\.5 portrait:py--2"/) == 6)
 check("full: lg plot height divides by 8", out.include?("--fx-rows: 8;"))
 out, = render("full", SAMPLE)
 check("full: with six pairs the lg plot height divides by 6", out.include?("--fx-rows: 6;") && !out.include?("hidden lg:grid"))
@@ -248,6 +260,7 @@ end
 # reads `5 Aug - 4 Sep 2026`, not `5 Aug 2026 - 4 Sep 2026`.
 puts "\nWith a window inside one year:"
 VIEWS.each_key do |view|
+  next if %w[half_vertical quadrant].include?(view) # these print as_of alone
   one_month = SAMPLE.merge("start_date" => "2026-08-05")
   out, = render(view, one_month)
   check("#{view}: same-year window prints the year once",
@@ -287,6 +300,37 @@ one = { "rows" => [SAMPLE["rows"].first], "range" => SAMPLE["range"], "as_of" =>
 VIEWS.each_key do |view|
   out, errors = render(view, one)
   check("#{view}: renders one row", count(out, /class="fx-row[ "]/) == 1, errors.join("; "))
+end
+
+# ------------------------------------------------------------- long figures
+# The two narrow views cut the rate track to the longest rate on show, so a
+# nine-character rate widens every row's track together and no row's pill or
+# trace sits out of line. A large change arrives from the Worker at three
+# digits and prints with a true minus sign.
+puts "\nWith a nine-character rate and a three-digit fall:"
+long_rows = SAMPLE["rows"].map(&:dup)
+long_rows[1] = long_rows[1].merge("rate_str" => "0.0063521", "change_pct" => -112.5, "change_str" => "-113")
+long = SAMPLE.merge("rows" => long_rows)
+%w[half_vertical quadrant].each do |view|
+  out, = render(view, long)
+  check("#{view}: rate track fits nine characters", out.include?(" 112px 70px 1fr") && out.include?(" 146px 95px 1fr"))
+  check("#{view}: seven characters is the floor", render(view, SAMPLE).first.include?(" 86px 70px 1fr"))
+end
+VIEWS.each_key do |view|
+  out, = render(view, long)
+  check("#{view}: three-digit fall prints with a minus sign", out.include?(">&minus;113%</span>"))
+end
+
+# --------------------------------------------------------------- long windows
+# "6 MONTHS TREND" is wider than the trace track on the narrow views, where it
+# wrapped and pushed the last row into the title bar. They shorten it; the
+# wide views have the room and print it in full.
+puts "\nWith a six-month window:"
+six = SAMPLE.merge("range" => "6M", "range_label" => "6 MONTHS")
+VIEWS.each_key do |view|
+  out, = render(view, six)
+  want = %w[half_vertical quadrant].include?(view) ? ">6M TREND<" : ">6 MONTHS TREND<"
+  check("#{view}: trend header reads #{want[1..-2]}", out.include?(want))
 end
 
 # ---------------------------------------------------------------- flat pairs

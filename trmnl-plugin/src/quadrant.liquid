@@ -1,8 +1,8 @@
 {% comment %}
   Quadrant — 400x240 on an OG. Same shape as half_vertical (pair, rate,
-  change, trend, no HI/LO) but three rows instead of six, since the panel is
-  half the height. The tiers, the X step-up and the portrait reflow are
-  half_vertical's too; see the notes there.
+  change, trend, no HI / LO) but three rows instead of six, since the panel is
+  half the height. The tiers, the tracks, the X step-up and both portrait
+  layouts are half_vertical's; see the notes there.
 
   Earlier this view showed no sparkline at all, on the reasoning that a trace
   this small was noise. With the row layout borrowed from half_vertical it earns
@@ -10,23 +10,48 @@
   carries shape rather than digits.
 {% endcomment %}
 
-{% comment %} Row inset is py--2 (8px) on the row: 9px would not step. {% endcomment %}
 {% comment %}
-  Half the panel height, 3 rows, 17px of row inset (2 x 8 + rule). No cap (see
-  half_vertical), so the chrome term is what sets the fit: it is the header,
-  its rule and the compact title bar, measured so three rows end on the bar's
-  top edge on OG. It grows by 8px on the X and by the header's second line in
-  portrait; see full.liquid for the terms.
+  Half the panel height, 3 rows, a row inset of `py--2`. See full.liquid for
+  the plot height terms.
 {% endcomment %}
+{% comment %}
+    THE RATE TRACK IS CUT TO THE LONGEST RATE ON SHOW
+    Each row is its own grid, so a track that sized to its content would put
+    the pill and the trace of a long-rate row (JPY -> USD is `0.0063521`, nine
+    characters) to the right of every other row's. The track is therefore a
+    fixed width, and since width is what this view is short of, it is the
+    width of the longest rate in these rows rather than of the longest rate
+    possible: tabular figures run 13px a character at the OG tier and 17px at
+    the X's, less the narrower point. Seven characters is the floor (`0.82829`),
+    so the track does not move when a rate crosses 1.
+  {% endcomment %}
+{% assign fx_rate_chars = 7 %}
+{% for row in rows limit: 3 %}{% assign fx_n = row.rate_str | size %}{% if fx_n > fx_rate_chars %}{% assign fx_rate_chars = fx_n %}{% endif %}{% endfor %}
+{% assign fx_rate_w = fx_rate_chars | times: 13 | minus: 5 %}
+{% assign fx_rate_w_lg = fx_rate_chars | times: 17 | minus: 7 %}
+{% comment %}
+    THE WINDOW IS SHORTENED WHERE ITS NAME IS TOO LONG FOR THE TRACE TRACK
+    The trend header sits over a track about 100px wide in landscape. "1 YEAR
+    TREND" and "5 YEARS TREND" fit it; "3 MONTHS TREND" and "6 MONTHS TREND"
+    do not, and a header that wraps to a second line pushes the last row into
+    the title bar. Those two print as "3M TREND" and "6M TREND", the form the
+    narrow portrait title bar already uses.
+  {% endcomment %}
+{% assign fx_window = range_label %}
+{% if range_label.size > 7 %}{% assign fx_range = range_label | split: " " %}{% capture fx_window %}{{ fx_range[0] }}{{ fx_range[1] | slice: 0 }}{% endcapture %}{% endif %}
 <style>
   .fx--quad .fx-row,
-  .fx--quad .fx-head { grid-template-columns: 80px minmax(110px, auto) 62px 1fr; gap: 7px; }
+  .fx--quad .fx-head { grid-template-columns: 80px {{ fx_rate_w }}px 70px 1fr; gap: 7px; }
   .screen--lg .fx--quad .fx-row,
-  .screen--lg .fx--quad .fx-head { grid-template-columns: 112px minmax(142px, auto) 86px 1fr; }
+  .screen--lg .fx--quad .fx-head { grid-template-columns: 112px {{ fx_rate_w_lg }}px 95px 1fr; }
   .screen--portrait .fx--quad .fx-row,
-  .screen--portrait .fx--quad .fx-head { grid-template-columns: max-content max-content 1fr; }
-  .fx--quad { --fx-top-pad: 8px; --fx-chrome: 76px; --fx-inset: 17px; }
-  .screen--lg .fx--quad { --fx-chrome: 84px; }
+  .screen--portrait .fx--quad .fx-head { grid-template-columns: 112px 1fr 95px; }
+  .screen--md.screen--portrait .fx--quad .fx-row,
+  .screen--md.screen--portrait .fx--quad .fx-head { grid-template-columns: 80px 1fr; }
+  .screen--md.screen--portrait .fx--quad .fx-spark { grid-column: auto; }
+  .screen--md.screen--portrait .fx--quad { --fx-chrome: 44px; }
+  .fx--quad { --fx-top-pad: 8px; --fx-chrome: 82px; --fx-inset: 17px; }
+  .screen--lg .fx--quad { --fx-chrome: 90px; }
   .screen--portrait .fx--quad { --fx-chrome: 104px; --fx-inset: 54px; }
   .screen--lg.screen--portrait .fx--quad { --fx-chrome: 97px; --fx-inset: 58px; }
   .fx--quad .fx-dot  { r: 2.5px; }
@@ -41,15 +66,15 @@
     </div>
   {% else %}
     <div class="fx-list flex flex--col gap--none pt--2 fx--quad">
-      <div class="fx-head grid pb--1">
-        <span class="label label--small text--bold lg:label--base">PAIR</span><span class="label label--small text--bold lg:label--base text--right">LATEST</span><span class="label label--small text--bold lg:label--base text--right">CHANGE</span><span class="label label--small text--bold lg:label--base text--center portrait:col--span-3 portrait:flex--center">{% if range_label %}{{ range_label }} {% endif %}TREND</span>
+      <div class="fx-head grid pb--1 portrait:hidden lg:portrait:grid">
+        <div class="flex gap--none"><span class="label label--small text--bold lg:label--base">PAIR</span></div><div class="flex flex--right gap--none"><span class="label label--small text--bold lg:label--base">LATEST</span></div><div class="flex flex--right gap--none"><span class="label label--small text--bold lg:label--base">CHANGE</span></div><div class="fx-trend flex flex--center-x portrait:flex--left gap--none portrait:col--span-3"><span class="label label--small text--bold lg:label--base lg:portrait:label--small">{% if range_label %}{{ fx_window }} {% endif %}TREND</span></div>
       </div>
 
       {% for row in rows limit: 3 %}
         <div class="fx-row grid py--2">
           <div class="fx-pair value value--xxsmall text--bold lg:value--xsmall">{{ row.from }}<span class="fx-arrow text--regular px--0.5">&rarr;</span>{{ row.to }}</div>
           <div class="fx-rate value value--xsmall value--tnums text--bold lg:value--small text--right">{{ row.rate_str }}</div>
-          <div class="fx-chg flex flex--right gap--none"><span class="label text--bold lg:label--large {% if row.change_pct < 0 %}label--filled{% else %}label--outline{% endif %}">{{ row.change_str }}%</span></div>
+          <div class="fx-chg flex flex--right portrait:flex--left lg:portrait:flex--right gap--none"><span class="label text--bold value--tnums lg:label--large {% if row.change_pct < 0 %}label--filled{% else %}label--outline{% endif %}">{{ row.change_str | replace: "-", "&minus;" }}%</span></div>
           {% assign fx_end = row.points | split: " " | last | split: "," %}
           {% assign fx_end_y = fx_end[1] | times: 100.0 | divided_by: 30 %}
           <div class="fx-spark flex gap--none pr--1 portrait:col--span-3">
@@ -66,8 +91,15 @@
   {% endif %}
 </div>
 
+{% comment %}
+  The title bar has half a panel's width at most, which the full window
+  (`26 Sep 2025 - 25 Sep 2026`) does not fit, so it carries the as-of date
+  alone: the header already names the window. On an OG in portrait there is no
+  header and no room for the title either, so the title is hidden and the date
+  is prefixed with the window in short form (`1Y`, from the range label).
+{% endcomment %}
 <div class="title_bar">
   {{ fx_icon }}
-  <span class="title">Exchange Rates{% if env %} ({{ env | upcase }}){% endif %}</span>
-  <span class="instance">{% if fx_failed %}No data{% else %}<span class="fx-dates text--default">{{ fx_dates }}</span>{% endif %}</span>
+  <span class="title portrait:hidden lg:portrait:inline">Exchange Rates{% if env %} ({{ env | upcase }}){% endif %}</span>
+  <span class="instance">{% if fx_failed %}No data{% else %}<span class="fx-dates text--default">{% if range_label %}{% assign fx_range = range_label | split: " " %}<span class="hidden portrait:inline lg:portrait:hidden">{{ fx_range[0] }}{{ fx_range[1] | slice: 0 }} to </span>{% endif %}{{ as_of | date: "%-d %b %Y" }}</span>{% endif %}</span>
 </div>

@@ -165,6 +165,12 @@
     arithmetic, and once the sign was there the glyph was a second mark saying
     the same thing, for ~10px of sparkline in the narrow views.
 
+    A fall prints with a true minus sign, swapped in by each view for the
+    hyphen the Worker sends: it is the width of the plus, so the pills match,
+    and it sits level with the plus's bar where a hyphen sits low. The figure
+    is always three digits (`2.30`, `12.3`, `113`; see the Worker's shape.js),
+    because the pill's track is a fixed width.
+
     A change that rounds to zero prints `0.00%` with no sign at all. change_pct
     is rounded to 2dp upstream, so that means "moved less than 0.005%", not "did
     not move", and neither direction can be claimed for it.
@@ -285,7 +291,7 @@
   }
 
   .fx-range {
-    align-items: stretch;
+    align-items: flex-end;
     align-self: stretch;
   }
 
