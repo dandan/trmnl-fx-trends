@@ -217,7 +217,7 @@ VIEWS.each do |view, limit|
     # inside a preserveAspectRatio="none" box is squashed with it.
     # The dot is a <circle> in the unscaled OUTER svg; nothing may be drawn
     # inside the inner, squashed one but the polyline.
-    inner = out.scan(%r{<svg viewBox="0 0 200 30".*?</svg>}m).join
+    inner = out.scan(%r{<svg class="block" viewBox="[^"]*".*?</svg>}m).join
     check("#{view}: nothing but the polyline inside the squashed svg",
           !inner.include?("<line") && !inner.include?("<circle"))
     check("#{view}: one end dot per row", count(out, /class="fx-dot"/) == expected_rows)
@@ -228,8 +228,11 @@ VIEWS.each do |view, limit|
           tops.size == expected_rows && tops.all? { |t| (v = Float(t, exception: false)) && v > 0 && v < 100 },
           tops.inspect)
     last_ys = pts.map { |p| p.split(" ").last.split(",").last.to_f }
+    # The viewBox is taller than the 30 units the points occupy wherever the
+    # shared scale draws a trace short, so the dot is placed within it.
+    vbs = out.scan(/<svg class="block" viewBox="0 (\S+) 200 (\S+)"/).map { |y, h| [y.to_f, h.to_f] }
     check("#{view}: each dot sits on its trace's last point",
-          tops.map(&:to_f).zip(last_ys).all? { |t, y| (t - y / 30 * 100).abs < 0.05 })
+          tops.map(&:to_f).zip(last_ys, vbs).all? { |t, y, (vy, vh)| (t - (y - vy) / vh * 100).abs < 0.1 })
   else
     check("#{view}: no sparkline (by design)", count(out, /<polyline/).zero?)
   end
@@ -363,6 +366,54 @@ end
 out, = render("full", { "rows" => [flat.merge("change_pct" => -0.0)],
                         "range" => "1Y", "as_of" => SAMPLE["as_of"] })
 check("full: negative zero is flat, not a negative", !out.include?("-0.00"))
+
+# ------------------------------------------------------------- shared scale
+# The traces a view shows are put on one percentage scale by making each inner
+# viewBox taller than the 30 units the points occupy. The points themselves
+# are the Worker's, which fill the box.
+puts "\nWith the shared scale:"
+span = ->(r) { (r["hi"] - r["lo"]) * (1 + r["change_pct"] / 100.0) / r["rate"] }
+VIEWS.each do |view, limit|
+  rows = SAMPLE["rows"].first(limit)
+  out, errors = render(view, SAMPLE)
+  check("#{view}: renders without Liquid errors", errors.empty?, errors.map(&:message).join("; "))
+  boxes = out.scan(/<svg class="block" viewBox="0 (\S+) 200 (\S+)"/).map { |y, h| [y.to_f, h.to_f] }
+  check("#{view}: one viewBox per row", boxes.size == rows.size, boxes.inspect)
+  spans = rows.map(&span)
+  widest = spans.each_with_index.max.last
+  check("#{view}: the widest pair fills its box", boxes[widest] == [0.0, 30.0], boxes[widest].inspect)
+  want = spans.map { |s| 30 / [s / spans.max, 0.1].max }
+  check("#{view}: each trace is drawn at its share of the widest range",
+        boxes.map(&:last).zip(want).all? { |h, w| (h - w).abs < 0.02 }, boxes.map(&:last).inspect)
+  check("#{view}: every trace is centred in its box",
+        boxes.all? { |y, h| (y - (30 - h) / 2).abs < 0.02 })
+  check("#{view}: the points are the Worker's own", out.scan(/points="([^"]*)"/).flatten == rows.map { |r| r["points"] })
+  tops = out.scan(/class="fx-dot" cx="100%" cy="([^"%]*)%"/).flatten.map(&:to_f)
+  last_ys = rows.map { |r| r["points"].split(" ").last.split(",").last.to_f }
+  check("#{view}: each dot sits on its trace's last point",
+        tops.size == rows.size && tops.zip(last_ys, boxes).all? { |t, y, (vy, vh)| (t - (y - vy) / vh * 100).abs < 0.1 },
+        tops.inspect)
+end
+
+# A pegged pair beside a volatile one: the minimum holds it at a tenth.
+peg = SAMPLE["rows"][0].merge("lo" => 7.4663, "hi" => 7.4759, "rate" => 7.4755, "change_pct" => 0.1)
+wild = SAMPLE["rows"][1].merge("lo" => 42.235, "hi" => 50.229, "rate" => 50.229, "change_pct" => 18.9)
+out, = render("quadrant", SAMPLE.merge("rows" => [peg, wild]))
+heights = out.scan(/<svg class="block" viewBox="0 \S+ 200 (\S+)"/).flatten.map(&:to_f)
+check("quadrant: a pegged pair beside a volatile one is drawn at a tenth",
+      heights == [300.0, 30.0], heights.inspect)
+
+# A single pair, or pairs with no range at all, have nothing to be scaled
+# against and fill the box.
+out, = render("quadrant", SAMPLE.merge("rows" => [SAMPLE["rows"][0]]))
+check("quadrant: a single pair fills its box",
+      out.scan(/<svg class="block" viewBox="([^"]*)"/).flatten == ["0 0 200 30"])
+still = SAMPLE["rows"][0].merge("lo" => 1.1, "hi" => 1.1, "rate" => 1.1, "change_pct" => 0)
+out, = render("quadrant", SAMPLE.merge("rows" => [still, still]))
+check("quadrant: pairs that did not move fill their boxes",
+      out.scan(/<svg class="block" viewBox="([^"]*)"/).flatten == ["0 0 200 30"] * 2)
+
+check("settings: no scale field", !SETTINGS.include?("keyname: scale"))
 
 puts(($failures.zero? ? "\nAll render checks passed." : "\n#{$failures} render check(s) FAILED."))
 exit($failures.zero? ? 0 : 1)

@@ -388,3 +388,31 @@
 {% capture fx_icon %}<svg class="image" viewBox="0 0 28 28" width="28" height="28" aria-hidden="true"><path fill="currentColor" d="M2 4h10.5v4H6.5v4.2h5.5v4H6.5V24H2zM13.2 4h5l2.9 5.6L24 4h4.4l-5.3 9.6L28.8 24h-5l-3.2-6.2L17.3 24h-4.7l5.7-10.4z"/></svg>{% endcapture %}
 
 {% capture fx_dates %}{% if start_date and start_date != as_of %}{% assign fx_start_year = start_date | date: "%Y" %}{% assign fx_end_year = as_of | date: "%Y" %}{% if fx_start_year == fx_end_year %}{{ start_date | date: "%-d %b" }}{% else %}{{ start_date | date: "%-d %b %Y" }}{% endif %} &ndash; {% endif %}{{ as_of | date: "%-d %b %Y" }}{% endcapture %}
+
+{% comment %}
+  THE TRACE'S VERTICAL SCALE: ONE FOR THE ROWS ON SHOW
+  The Worker draws every trace to fill its 200x30 box, so a pair that moved 1%
+  and one that moved 19% would look alike. The traces a view shows are put on
+  one percentage scale instead: the pair with the widest range over the window
+  fills the box and the others are drawn in proportion to it. This was tried
+  as a setting beside the Worker's own scale and kept as the only behaviour:
+  a second mode was one more thing to choose and to test.
+
+  In proportion, with a minimum: a trace is drawn at its share of the widest
+  range, and never under a tenth of the box. Without the minimum a pegged pair
+  next to a volatile one has no height at all. A blend (20% of the box plus
+  80% of the share) was tried first and kept more shape in the quiet pairs,
+  but it drew a pair that moved 42% as far at 54% of the height; the clamp
+  draws what the figures say. Pairs under the minimum are all drawn alike.
+
+  The range is (hi - lo) over the rate the window opened on, which the
+  payload does not carry but implies: rate / (1 + change_pct / 100).
+
+  Nothing is redrawn. The points stay as the Worker sent them and the inner
+  svg's viewBox is made taller than the 30 units they occupy, centred on
+  them, so the same polyline covers less of the box. Each view takes its
+  viewBoxes from the list cut for the number of rows it shows (3, 6 or 8),
+  split on `;` then `|`. The full view's is cut for eight, so on an OG, which
+  hides rows seven and eight, those two still count towards the scale.
+{% endcomment %}
+{% capture fx_viewboxes %}{% assign fx_limits = "3,6,8" | split: "," %}{% for fx_lim in fx_limits %}{% assign fx_n = fx_lim | plus: 0 %}{% assign fx_span_max = 0.0 %}{% for row in rows limit: fx_n %}{% if row.rate and row.rate > 0 %}{% assign fx_span = row.change_pct | divided_by: 100.0 | plus: 1 | times: row.hi %}{% assign fx_span_lo = row.change_pct | divided_by: 100.0 | plus: 1 | times: row.lo %}{% assign fx_span = fx_span | minus: fx_span_lo | divided_by: row.rate %}{% if fx_span > fx_span_max %}{% assign fx_span_max = fx_span %}{% endif %}{% endif %}{% endfor %}{% for row in rows limit: fx_n %}{% assign fx_vb_h = 30 %}{% if fx_span_max > 0 and row.rate and row.rate > 0 %}{% assign fx_span = row.change_pct | divided_by: 100.0 | plus: 1 | times: row.hi %}{% assign fx_span_lo = row.change_pct | divided_by: 100.0 | plus: 1 | times: row.lo %}{% assign fx_span = fx_span | minus: fx_span_lo | divided_by: row.rate %}{% assign fx_frac = fx_span | divided_by: fx_span_max | at_least: 0.1 %}{% assign fx_vb_h = 30.0 | divided_by: fx_frac | round: 2 %}{% endif %}{% if fx_vb_h == 30 %}0 0 200 30{% else %}{% assign fx_vb_y = 30 | minus: fx_vb_h | divided_by: 2.0 | round: 2 %}0 {{ fx_vb_y }} 200 {{ fx_vb_h }}{% endif %}{% unless forloop.last %}|{% endunless %}{% endfor %}{% unless forloop.last %};{% endunless %}{% endfor %}{% endcapture %}

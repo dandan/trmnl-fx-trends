@@ -54,6 +54,24 @@ x is always 100%, and y is the last point's y over the 30px box:
 <span class="fx-dot" style="top: {{ fx_end_y }}%"></span>
 ```
 
+### The shared scale
+
+The Worker draws every trace to fill its box, so on its own a pair that moved
+1% and one that moved 19% would look alike. The views put the traces they show
+on one percentage scale instead: the pair with the widest range over the
+window fills its box, and each of the others is drawn at its share of that
+widest range, never under a tenth of the box. The minimum is there so that a
+pegged pair next to a volatile one still has a trace; pairs under it are all
+drawn alike. There is no setting for it.
+
+The Worker is not involved. A pair's range is `(hi - lo)` over the rate the
+window opened on, which the payload implies (`rate / (1 + change_pct / 100)`),
+and `shared.liquid` turns it into a `viewBox` taller than the 30 units the
+points occupy, centred on them. The `points` string is untouched. The scale is
+cut per view, over the rows that view shows (3, 6 or 8), so the same pair can
+be drawn at different heights in a quadrant and a full view. The full view's
+is cut for eight rows even on an OG, which hides the last two.
+
 ## Local preview
 
 ```bash
@@ -158,10 +176,10 @@ These are constraints of the panel, not preferences:
 - **No opacity, no grey text.** Anything between black and white is dithered into
   a halftone, which turns 10px text into mush. Secondary information is made
   secondary by *size*.
-- **Each sparkline is scaled to its own range**, which is what lets a 0.67% mover
-  and a 7.12% mover both read clearly. Row shapes are therefore **not**
-  comparable to each other — the LO/HI column is what keeps that honest, so
-  don't drop it from the wide views.
+- **The sparklines a view shows share one percentage scale**, so a pair that
+  moved more is drawn taller (see "The shared scale" above). The narrow views
+  scale over fewer rows than the full view, so the LO/HI column is still what
+  states the size of a move; don't drop it from the wide views.
 - **Every piece of text is a framework tier.** The rate is the number the
   panel exists to show, so it takes the largest tier on the row (`value--base`
   on the full view) with the pair a clear step below (`value--small`); the

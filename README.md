@@ -102,8 +102,9 @@ nothing secret ships in the recipe.
 
 The panel is 1-bit e-paper, and most of the design follows from that: direction
 is the sign on the figure rather than a colour, secondary information is smaller
-rather than greyer, and each sparkline is scaled to its own range with the high
-and low printed beside it so the shapes stay honest. The full list, with
+rather than greyer, and the sparklines on a screen share one percentage scale,
+so a pair that moved more is drawn taller, with the high and low printed beside
+each on the wide views. The full list, with
 reasons, is in the plugin README's
 [design rules](trmnl-plugin/README.md#design-rules).
 

@@ -96,16 +96,18 @@
         divides by the rows a large screen actually has, so six pairs on an X
         still fill it. Portrait X is also `lg` and taller still.
       {% endcomment %}
+      {% assign fx_vbs = fx_viewboxes | split: ";" %}{% assign fx_vbs = fx_vbs[2] | split: "|" %}
       {% for row in rows limit: 8 %}
         <div class="fx-row grid py--2.5 portrait:py--2{% if forloop.index > 6 %} hidden lg:grid{% endif %}">
           <div class="fx-pair value value--small text--bold">{{ row.from }}<span class="fx-arrow text--regular px--0.5">&rarr;</span>{{ row.to }}</div>
           <div class="fx-rate value value--base value--tnums text--bold text--right">{{ row.rate_str }}</div>
           <div class="fx-chg flex flex--right gap--none"><span class="label text--bold value--tnums px--2 py--1 lg:label--large {% if row.change_pct < 0 %}label--filled{% else %}label--outline{% endif %}">{{ row.change_str | replace: "-", "&minus;" }}%</span></div>
           {% assign fx_end = row.points | split: " " | last | split: "," %}
-          {% assign fx_end_y = fx_end[1] | times: 100.0 | divided_by: 30 %}
+          {% assign fx_vb = fx_vbs[forloop.index0] | split: " " %}
+          {% assign fx_end_y = fx_end[1] | minus: fx_vb[1] | times: 100.0 | divided_by: fx_vb[3] %}
           <div class="fx-spark flex gap--none portrait:col--span-2 portrait:pr--3">
             <svg class="fx-plot block" width="100%" height="30">
-              <svg class="block" viewBox="0 0 200 30" width="100%" height="100%" preserveAspectRatio="none">
+              <svg class="block" viewBox="{{ fx_vbs[forloop.index0] }}" width="100%" height="100%" preserveAspectRatio="none">
                 <polyline points="{{ row.points }}" vector-effect="non-scaling-stroke"/>
               </svg>
               <circle class="fx-dot" cx="100%" cy="{{ fx_end_y }}%"/>

@@ -59,6 +59,7 @@
     so the track does not move when a rate crosses 1.
   {% endcomment %}
 {% assign fx_rate_chars = 7 %}
+{% assign fx_vbs = fx_viewboxes | split: ";" %}{% assign fx_vbs = fx_vbs[1] | split: "|" %}
 {% for row in rows limit: 6 %}{% assign fx_n = row.rate_str | size %}{% if fx_n > fx_rate_chars %}{% assign fx_rate_chars = fx_n %}{% endif %}{% endfor %}
 {% assign fx_rate_w = fx_rate_chars | times: 13 | minus: 5 %}
 {% assign fx_rate_w_lg = fx_rate_chars | times: 17 | minus: 7 %}
@@ -120,10 +121,11 @@
           <div class="fx-rate value value--xsmall value--tnums text--bold lg:value--small text--right">{{ row.rate_str }}</div>
           <div class="fx-chg flex flex--right portrait:flex--left lg:portrait:flex--right gap--none"><span class="label text--bold value--tnums lg:label--large {% if row.change_pct < 0 %}label--filled{% else %}label--outline{% endif %}">{{ row.change_str | replace: "-", "&minus;" }}%</span></div>
           {% assign fx_end = row.points | split: " " | last | split: "," %}
-          {% assign fx_end_y = fx_end[1] | times: 100.0 | divided_by: 30 %}
+          {% assign fx_vb = fx_vbs[forloop.index0] | split: " " %}
+          {% assign fx_end_y = fx_end[1] | minus: fx_vb[1] | times: 100.0 | divided_by: fx_vb[3] %}
           <div class="fx-spark flex gap--none pr--1 portrait:col--span-3">
             <svg class="fx-plot block" width="100%" height="24">
-              <svg class="block" viewBox="0 0 200 30" width="100%" height="100%" preserveAspectRatio="none">
+              <svg class="block" viewBox="{{ fx_vbs[forloop.index0] }}" width="100%" height="100%" preserveAspectRatio="none">
                 <polyline points="{{ row.points }}" vector-effect="non-scaling-stroke"/>
               </svg>
               <circle class="fx-dot" cx="100%" cy="{{ fx_end_y }}%"/>
