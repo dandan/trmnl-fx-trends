@@ -51,7 +51,16 @@ elif ! curl -fs "http://localhost:$PORT/" >/dev/null 2>&1; then
     curl -fs "http://localhost:$PORT/" >/dev/null 2>&1 && break
     sleep 1
   done
+  # Firefox screenshots its own "unable to connect" page as readily as the
+  # plugin, so without this a server that never started would overwrite all
+  # 48 committed images with error pages.
+  if ! curl -fs "http://localhost:$PORT/" >/dev/null 2>&1; then
+    echo "The preview server did not answer on port $PORT; no screenshots taken." >&2
+    exit 1
+  fi
 fi
+
+FAILED=0
 
 shoot() { # layout device orientation mode
   local layout=$1 dev=$2 orient=$3 mode=$4
@@ -66,10 +75,19 @@ shoot() { # layout device orientation mode
   [ -n "${PAGES_ONLY:-}" ] && return 0
   local profile
   profile="$(mktemp -d)"
-  timeout 90 "$FIREFOX" --headless --profile "$profile" --window-size="$size" \
-    --screenshot "$file" "$url" >/dev/null 2>&1 || echo "FAILED: $file" >&2
+  # Checked before each shot as well: a server that dies part-way would
+  # otherwise turn every later image into an error page. Shot to a temporary
+  # file, so a failure leaves the committed image as it was.
+  if curl -fs -o /dev/null "$url" && timeout 90 "$FIREFOX" --headless --profile "$profile" \
+      --window-size="$size" --screenshot "$file.new" "$url" >/dev/null 2>&1 && [ -s "$file.new" ]; then
+    mv "$file.new" "$file"
+    echo "$file"
+  else
+    rm -f "$file.new"
+    echo "FAILED: $file" >&2
+    FAILED=$((FAILED + 1))
+  fi
   rm -rf "$profile"
-  echo "$file"
 }
 
 for layout in "${LAYOUTS[@]}"; do
@@ -190,3 +208,8 @@ HTML
 </html>
 HTML
 } > "$OUT/index.html"
+
+if [ "$FAILED" -gt 0 ]; then
+  echo "$FAILED screenshot(s) failed; those images were left as they were." >&2
+  exit 1
+fi

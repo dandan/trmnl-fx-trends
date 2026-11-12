@@ -150,8 +150,8 @@ VIEWS.each do |view, limit|
         "got #{count(out, /class=\"fx-arrow[ \"]/)}")
   check("#{view}: no slash-form pairs left", !out.include?("fx-slash"))
 
-  # The change is quoted signed, to a fixed 2dp, so the column lines up and reads
-  # as arithmetic (see shape.js). The view must print change_str's digits verbatim: `| abs`
+  # The change is quoted signed, to three digits (`2.30`, `12.3`, `112`), so the
+  # pill is one width and it reads as arithmetic (see shape.js). The view must print change_str's digits verbatim: `| abs`
   # or `| round` here would drop the sign, or the trailing zero it carries.
   # The figure sits in a framework label pill (label--filled for a fall,
   # label--outline for a rise); the pill is styling, so it is stripped here and
@@ -172,8 +172,8 @@ VIEWS.each do |view, limit|
   # A fall carries a true minus sign, swapped in by the view for the worker's
   # hyphen: it is as wide as the plus, so the two pills match, and it sits at
   # the height of the plus's bar where a hyphen sits low.
-  fig = /\A((\+|&minus;)?\d+\.\d{2})%\z/m
-  check("#{view}: every change is signed and 2dp",
+  fig = /\A(\+|&minus;)?(\d\.\d{2}|\d{2}\.\d|\d{3})%\z/m
+  check("#{view}: every change is signed and three digits",
         changes.all? { |c| c.match?(fig) },
         changes.reject { |c| c.match?(fig) }.inspect)
   # The sign is the only direction marker: a ▲/▼ beside it would say the same
@@ -191,9 +191,10 @@ VIEWS.each do |view, limit|
   check("#{view}: rate cells print rate_str unaltered",
         rendered == expected, "#{rendered.inspect} != #{expected.inspect}")
 
-  # LO/HI are the sparkline's y-axis bounds, so HI must print above LO to match
-  # where those values sit in the trace beside them. The original markup had
-  # them the other way round, which reads as an upside-down axis.
+  # HI must print above LO, the way an axis reads. The original markup had
+  # them the other way round. They are the window's bounds, not marks on the
+  # trace: on the shared scale a quiet pair's trace covers only the middle of
+  # the box, so the two figures no longer sit level with its extremes.
   if RANGE_VIEWS.include?(view)
     pairs_hi_lo = out.scan(%r{<div class="fx-range[^"]*"><span class="[^"]*">([^<]*)</span><span class="[^"]*">([^<]*)</span></div>})
     check("#{view}: HI is printed above LO",
@@ -336,12 +337,16 @@ end
 # "6 MONTHS TREND" is wider than the trace track on the narrow views, where it
 # wrapped and pushed the last row into the title bar. They shorten it; the
 # wide views have the room and print it in full.
-puts "\nWith a six-month window:"
-six = SAMPLE.merge("range" => "6M", "range_label" => "6 MONTHS")
-VIEWS.each_key do |view|
-  out, = render(view, six)
-  want = %w[half_vertical quadrant].include?(view) ? ">6M TREND<" : ">6 MONTHS TREND<"
-  check("#{view}: trend header reads #{want[1..-2]}", out.include?(want))
+# "1 MONTH TREND" fits at the regular size but wraps on an OG with Text Scale
+# pinned, so every month window is shortened. The year windows fit in full.
+puts "\nWith each window:"
+{ "1M" => ["1 MONTH", "1M"], "3M" => ["3 MONTHS", "3M"], "6M" => ["6 MONTHS", "6M"],
+  "1Y" => ["1 YEAR", "1 YEAR"], "2Y" => ["2 YEARS", "2 YEARS"], "5Y" => ["5 YEARS", "5 YEARS"] }.each do |range, (label, short)|
+  VIEWS.each_key do |view|
+    out, = render(view, SAMPLE.merge("range" => range, "range_label" => label))
+    want = %w[half_vertical quadrant].include?(view) ? ">#{short} TREND<" : ">#{label} TREND<"
+    check("#{view}: trend header reads #{want[1..-2]}", out.include?(want))
+  end
 end
 
 # ---------------------------------------------------------------- flat pairs

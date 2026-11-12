@@ -181,11 +181,13 @@
     small text into grey mush. Secondary information is made secondary by
     size (the `label--small` tier), not by tone.
 
-    These are the sparkline's y-axis bounds, so they are laid out as axis labels:
-    HI at the top of the plot box, LO at the bottom, matching where those values
-    actually sit in the trace beside them. The cell stretches to the row's
-    content height, which the sparkline sets, so HI and LO stay pinned to the
-    top and bottom of the plot box at any device size.
+    These are the highest and lowest rate in the window, stacked the way an
+    axis reads: HI at the top of the plot box, LO at the bottom. The cell
+    stretches to the row's content height, which the sparkline sets, so they
+    stay pinned there at any device size. They are not marks on the trace.
+    Since the shared scale (end of this file), only the pair with the widest
+    range fills its box; a quieter pair's trace is drawn shorter and centred,
+    so its extremes sit inside the two figures, not level with them.
   {% endcomment %}
 {% comment %}
     DEVICE-INDEPENDENT SPARKLINE SHAPE

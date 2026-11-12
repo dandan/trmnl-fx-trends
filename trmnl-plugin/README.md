@@ -120,7 +120,7 @@ covers what a build cannot reach: the Worker returning an error, an empty `rows`
 array, fewer pairs than a view has room for, and a perfectly flat series (both
 `0` and a rounded `-0.0`). It also asserts every `points` attribute parses as
 finite coordinate pairs, and that each view prints the Worker's pre-formatted
-strings unaltered — a change cell that is not signed and 2dp fails the run.
+strings unaltered — a change cell that is not signed and three digits fails the run.
 (The one substitution is the minus sign; see the design rules.)
 
 ```bash
@@ -239,10 +239,10 @@ These are constraints of the panel, not preferences:
   resolved per row: the widest rate would set only its own row's column and push
   CHANGE and TREND out of line with the rows above. The floor is sized to the
   widest string the column can hold, so `auto` never has to grow.
-- **The change is the exception: signed, fixed 2dp, always** (`change_str`). It
-  is a percentage, so its magnitude says nothing about the precision available —
-  `8.79%` and `0.64%` are good to the same 2dp — and a fixed width is what lets
-  the column line up. The sign is set in the Worker, so the views print it
+- **The change is the exception: signed, three digits, always** (`change_str`:
+  `2.30`, `12.3`, `112`). It is a percentage, so its magnitude says nothing
+  about the precision available, and the pill that holds it is a fixed width
+  cut for a sign, three digits, a point and a percent sign. The sign is set in the Worker, so the views print it
   verbatim like every other figure.
 - **A change that rounds to zero takes no sign.** `change_pct` is rounded to 2dp
   upstream, so `0.00%` means "moved less than 0.005%", not "did not move";

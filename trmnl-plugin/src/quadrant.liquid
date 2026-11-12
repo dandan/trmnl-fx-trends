@@ -35,11 +35,13 @@
     The trend header sits over a track about 100px wide in landscape. "1 YEAR
     TREND" and "5 YEARS TREND" fit it; "3 MONTHS TREND" and "6 MONTHS TREND"
     do not, and a header that wraps to a second line pushes the last row into
-    the title bar. Those two print as "3M TREND" and "6M TREND", the form the
-    narrow portrait title bar already uses.
+    the title bar. "1 MONTH TREND" fits at the regular size but not on an OG
+    with Text Scale pinned, where the font is wider and the track 8px
+    narrower. All three months print short ("1M TREND"), the form the narrow
+    portrait title bar already uses.
   {% endcomment %}
 {% assign fx_window = range_label %}
-{% if range_label.size > 7 %}{% assign fx_range = range_label | split: " " %}{% capture fx_window %}{{ fx_range[0] }}{{ fx_range[1] | slice: 0 }}{% endcapture %}{% endif %}
+{% if range_label contains "MONTH" %}{% assign fx_range = range_label | split: " " %}{% capture fx_window %}{{ fx_range[0] }}{{ fx_range[1] | slice: 0 }}{% endcapture %}{% endif %}
 {% comment %}
     THE PAIR TRACK UNDER A PINNED TEXT SCALE
     80px holds XXX -> XXX in the OG's pixel font. With Text Scale at large or
